@@ -13,6 +13,7 @@ find_package(catkin REQUIRED COMPONENTS
   tesseract_rosutils
   octomap_ros
   pcl_conversions
+  vsl_msgs
 )
 
 ## System dependencies are found with CMake's conventions
@@ -23,92 +24,19 @@ find_package(tesseract_motion_planners REQUIRED)
 find_package(tesseract_common REQUIRED)
 find_package(PCL REQUIRED COMPONENTS core features filters io segmentation surface)
 
-## Uncomment this if the package has a setup.py. This macro ensures
-## modules and global scripts declared therein get installed
-## See http://ros.org/doc/api/catkin/html/user_guide/setup_dot_py.html
-# catkin_python_setup()
-
-################################################
-## Declare ROS messages, services and actions ##
-################################################
-
-## To declare and build messages, services or actions from within this
-## package, follow these steps:
-## * Let MSG_DEP_SET be the set of packages whose message types you use in
-##   your messages/services/actions (e.g. std_msgs, actionlib_msgs, ...).
-## * In the file package.xml:
-##   * add a build_depend tag for "message_generation"
-##   * add a build_depend and a exec_depend tag for each package in MSG_DEP_SET
-##   * If MSG_DEP_SET isn't empty the following dependency has been pulled in
-##     but can be declared for certainty nonetheless:
-##     * add a exec_depend tag for "message_runtime"
-## * In this file (CMakeLists.txt):
-##   * add "message_generation" and every package in MSG_DEP_SET to
-##     find_package(catkin REQUIRED COMPONENTS ...)
-##   * add "message_runtime" and every package in MSG_DEP_SET to
-##     catkin_package(CATKIN_DEPENDS ...)
-##   * uncomment the add_*_files sections below as needed
-##     and list every .msg/.srv/.action file to be processed
-##   * uncomment the generate_messages entry below
-##   * add every package in MSG_DEP_SET to generate_messages(DEPENDENCIES ...)
-
-## Generate messages in the 'msg' folder
-#  add_message_files(
-#    FILES
-#    EERequest.msg
-#    JointRequest.msg
-#  )
-
-## Generate services in the 'srv' folder
-#  add_service_files(
-#    FILES
-#    PoseBuilder.srv
-#  )
-
-## Generate actions in the 'action' folder
-# add_action_files(
-#   FILES
-#   Action1.action
-#   Action2.action
-# )
-
-## Generate added messages and services with any dependencies listed here
-#  generate_messages(
-#    DEPENDENCIES
-#    geometry_msgs # Or other packages containing msgs
-#    std_msgs
-#  )
-
-################################################
-## Declare ROS dynamic reconfigure parameters ##
-################################################
-
-## To declare and build dynamic reconfigure parameters within this
-## package, follow these steps:
-## * In the file package.xml:
-##   * add a build_depend and a exec_depend tag for "dynamic_reconfigure"
-## * In this file (CMakeLists.txt):
-##   * add "dynamic_reconfigure" to
-##     find_package(catkin REQUIRED COMPONENTS ...)
-##   * uncomment the "generate_dynamic_reconfigure_options" section below
-##     and list every .cfg file to be processed
-
-## Generate dynamic reconfigure parameters in the 'cfg' folder
-# generate_dynamic_reconfigure_options(
-#   cfg/DynReconf1.cfg
-#   cfg/DynReconf2.cfg
-# )
-
-###################################
-## catkin specific configuration ##
-###################################
-## The catkin_package macro generates cmake config files for your package
-## Declare things to be passed to dependent projects
-## INCLUDE_DIRS: uncomment this if your package contains header files
-## LIBRARIES: libraries you create in this project that dependent projects also need
-## CATKIN_DEPENDS: catkin_packages dependent projects also need
-## DEPENDS: system dependencies of this project that dependent projects also need
-catkin_package()
+catkin_package(
+  INCLUDE_DIRS 
+  include
+  LIBRARIES
+  ${PROJECT_NAME}
+  CATKIN_DEPENDS
+   roscpp
+   roslib
+   tesseract_rosutils
+   octomap_ros
+   pcl_conversions
+   vsl_msgs
+)
 
 ###########
 ## Build ##
@@ -116,59 +44,33 @@ catkin_package()
 
 ## Specify additional locations of header files
 ## Your package locations should be listed before other locations
-# include_directories(
-#   include
-#   ${catkin_INCLUDE_DIRS}
-# )
+include_directories(
+  include
+  ${catkin_INCLUDE_DIRS}
+)
 
 ## Declare a C++ library
-# add_library(${PROJECT_NAME}
-#    src/task/init_ros.cpp
-#    src/task/init_descartes.cpp
-#    src/task/generate_trajectory.cpp
-#    src/task/plan_path.cpp
-#    src/task/run_path.cpp
-#    src/task/get_course.cpp
-#    src/task/const_ee_speed_time_parameterization.cpp
-# )
+add_library(problem_construction src/problem_construction.cpp)
 
-## Add cmake target dependencies of the library
-## as an example, code may need to be generated before libraries
-## either from message generation or dynamic reconfigure
-# add_dependencies(${PROJECT_NAME} ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+add_executable(vsl_trajopt_main src/vsl_trajopt_main.cpp)
 
-## Declare a C++ executable
-## With catkin_make all packages are built within a single CMake context
-## The recommended prefix ensures that target names across packages don't collide
-add_executable(${PROJECT_NAME}_pick_and_place_example_node src/pick_and_place_example_node.cpp)
+add_dependencies(vsl_trajopt_main vsl_msgs_generate_messages_cpp ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 
-## Rename C++ executable without prefix
-## The above recommended prefix causes long target names, the following renames the
-## target back to the shorter version for ease of user use
-## e.g. "rosrun someones_pkg node" instead of "rosrun someones_pkg someones_pkg_node"
-# set_target_properties(${PROJECT_NAME}_node PROPERTIES OUTPUT_NAME node PREFIX "")
-add_library(${PROJECT_NAME}_pick_and_place_example src/pick_and_place_example.cpp)
+target_link_libraries(problem_construction tesseract::tesseract tesseract::tesseract_motion_planners_trajopt ${catkin_LIBRARIES})
+target_link_libraries(vsl_trajopt_main problem_construction ${catkin_LIBRARIES})
 
-## Add cmake target dependencies of the executable
-## same as for the library above
-# add_dependencies(${PROJECT_NAME} vsl_core_generate_messages_cpp ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
-
-## Specify libraries to link a library or executable target against
-target_link_libraries(${PROJECT_NAME}_pick_and_place_example tesseract::tesseract tesseract::tesseract_motion_planners_trajopt ${catkin_LIBRARIES})
-target_link_libraries(${PROJECT_NAME}_pick_and_place_example_node ${PROJECT_NAME}_pick_and_place_example ${catkin_LIBRARIES})
-
-tesseract_target_compile_options(${PROJECT_NAME}_pick_and_place_example PUBLIC)
-target_include_directories(${PROJECT_NAME}_pick_and_place_example PUBLIC
+tesseract_target_compile_options(problem_construction PUBLIC)
+target_include_directories(problem_construction PUBLIC
     "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>"
     "$<INSTALL_INTERFACE:include>")
-target_include_directories(${PROJECT_NAME}_pick_and_place_example SYSTEM PUBLIC
+target_include_directories(problem_construction SYSTEM PUBLIC
     ${catkin_INCLUDE_DIRS})
 
-tesseract_target_compile_options(${PROJECT_NAME}_pick_and_place_example_node PRIVATE)
-target_include_directories(${PROJECT_NAME}_pick_and_place_example_node PRIVATE
+tesseract_target_compile_options(vsl_trajopt_main PRIVATE)
+target_include_directories(vsl_trajopt_main PRIVATE
     "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>"
     "$<INSTALL_INTERFACE:include>")
-target_include_directories(${PROJECT_NAME}_pick_and_place_example_node SYSTEM PRIVATE
+target_include_directories(vsl_trajopt_main SYSTEM PRIVATE
     ${catkin_INCLUDE_DIRS})
 
 #############
@@ -188,8 +90,8 @@ target_include_directories(${PROJECT_NAME}_pick_and_place_example_node SYSTEM PR
 ## Mark executables and/or libraries for installation
 install(
   TARGETS
-    ${PROJECT_NAME}_pick_and_place_example
-    ${PROJECT_NAME}_pick_and_place_example_node
+    problem_construction
+    vsl_trajopt_main
   ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
   LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
   RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}

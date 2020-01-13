@@ -5,11 +5,13 @@
 #include <ros/ros.h>
 #include <ros/console.h>
 #include <ros/service_client.h>
+#include <vsl_msgs/PoseBuilder.h>
 
 // C++
 #include <fstream>
 #include <string>
 #include <memory>
+#include <Eigen/Geometry>
 // #include <jsoncpp/json/json.h>
 
 // Tesseract
@@ -21,6 +23,7 @@ TESSERACT_COMMON_IGNORE_WARNINGS_PUSH
 #include <tesseract_motion_planners/trajopt/trajopt_motion_planner.h>
 #include <tesseract_rosutils/plotting.h>
 #include <tesseract_rosutils/utils.h>
+#include <tesseract_environment/core/utils.h>
 #include <tesseract_msgs/ModifyEnvironment.h>
 #include <tesseract_msgs/GetEnvironmentChanges.h>
 #include <tesseract_rosutils/conversions.h>
@@ -34,30 +37,113 @@ TESSERACT_COMMON_IGNORE_WARNINGS_POP
 #include <trajopt_utils/config.hpp>
 #include <trajopt_utils/logging.hpp>
 
-
 namespace vsl_motion_planner
 {
-/**
- * @brief An example of a robot picking up a box and placing it on a shelf leveraging
- * tesseract and trajopt to generate the motion trajectory.
- */
-class VSLTrajoptPlanner : public Example
+const std::string POSE_BUILDER_SERVICE = "single_course";
+const double SERVER_TIMEOUT = 5.0f; // seconds
+const std::string ROBOT_DESCRIPTION_PARAM = "robot_description"; 
+const std::string ROBOT_SEMANTIC_PARAM = "robot_description_semantic"; 
+const std::string GET_ENVIRONMENT_CHANGES_SERVICE = "get_tesseract_changes_rviz";
+const std::string MODIFY_ENVIRONMENT_SERVICE = "modify_tesseract_rviz";
+
+struct VSLTrajoptPlannerConfiguration
+{
+    std::string group_name;
+    std::string tip_link;
+    std::string base_link;
+    std::string world_frame;
+    std::vector<std::string> joint_names;
+    bool plotting;
+    bool rviz;
+};
+
+class VSLTrajoptPlanner
 {
 public:
-  VSLTrajoptPlanner(ros::NodeHandle nh, bool plotting, bool rviz, int steps, bool write_to_file)
-    : Example(plotting, rviz), nh_(nh), steps_(steps), write_to_file_(write_to_file)
-  {
-  }
-  ~VSLTrajoptPlanner() = default;
+  VSLTrajoptPlanner();
+  virtual ~VSLTrajoptPlanner();
 
-  bool run() override;
+  void initRos();
+  tesseract_common::VectorIsometry3d getCourse();
+  bool run();
+
+protected:
+  trajopt::ProblemConstructionInfo cppMethod();
 
 private:
   ros::NodeHandle nh_;
-  int steps_;
-  bool write_to_file_;
+  VSLTrajoptPlannerConfiguration config_; 
+  tesseract::Tesseract::Ptr tesseract_;     /**< @brief Tesseract Manager Class */
+  ros::ServiceClient modify_env_rviz_;      /**< @brief Service for modifying tesseract environment in rviz */
+  ros::ServiceClient get_env_changes_rviz_; /**< @brief Get the environment changes from rviz */
+  ros::ServiceClient pose_builder_client_;
+
+  /**
+   * @brief Check rviz and make sure the rviz environment revision number is zero.
+   * @return True if revision number is zero, otherwise false.
+   */
+  bool checkRviz()
+  {
+    // Get the current state of the environment.
+    // Usually you would not be getting environment state from rviz
+    // this is just an example. You would be gettting it from the
+    // environment_monitor node. Need to update examples to launch
+    // environment_monitor node.
+    get_env_changes_rviz_.waitForExistence();
+    tesseract_msgs::GetEnvironmentChanges env_changes;
+    env_changes.request.revision = 0;
+    if (get_env_changes_rviz_.call(env_changes))
+    {
+      ROS_INFO("Retrieve current environment changes!");
+    }
+    else
+    {
+      ROS_ERROR("Failed to retrieve current environment changes!");
+      return false;
+    }
+
+    // There should not be any changes but check
+    if (env_changes.response.revision != 0)
+    {
+      ROS_ERROR("The environment has changed externally!");
+      return false;
+    }
+    return true;
+  }
+
+  /**
+   * @brief Send RViz the latest number of commands
+   * @param n The past revision number
+   * @return True if successful otherwise false
+   */
+  bool sendRvizChanges(unsigned long past_revision)
+  {
+    modify_env_rviz_.waitForExistence();
+    tesseract_msgs::ModifyEnvironment update_env;
+    update_env.request.id = tesseract_->getEnvironment()->getName();
+    update_env.request.revision = past_revision;
+    if (!tesseract_rosutils::toMsg(update_env.request.commands,
+                                   tesseract_->getEnvironment()->getCommandHistory(),
+                                   update_env.request.revision))
+    {
+      ROS_ERROR("Failed to generate commands to update rviz environment!");
+      return false;
+    }
+
+    if (modify_env_rviz_.call(update_env))
+    {
+      ROS_INFO("RViz environment Updated!");
+    }
+    else
+    {
+      ROS_INFO("Failed to update rviz environment");
+      return false;
+    }
+
+    return true;
+  }
 };
 
-}  // namespace vsl_trajopt_tesseract
+} // namespace vsl_motion_planner
 
 #endif
