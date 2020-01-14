@@ -160,7 +160,7 @@ Visualization Manager:
           Value: true
       Name: TesseractTrajectory
       Trajectory Monitor:
-        Display Mode: Trail
+        Display Mode: Loop
         Interrupt Display: false
         State Display Time: 0.05 s
         Topic: /trajopt/display_tesseract_trajectory

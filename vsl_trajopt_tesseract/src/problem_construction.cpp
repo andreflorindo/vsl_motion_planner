@@ -10,82 +10,21 @@ using namespace tesseract_rosutils;
 
 namespace vsl_motion_planner
 {
-
-// tesseract_common::VectorIsometry3d PuzzlePieceExample::makePuzzleToolPoses()
-// {
-//   tesseract_common::VectorIsometry3d path; // results
-//   std::ifstream indata;                    // input file
-
-//   // You could load your parts from anywhere, but we are transporting them with
-//   // the git repo
-//   std::string filename = ros::package::getPath("tesseract_ros_examples") + "/config/puzzle_bent.csv";
-
-//   // In a non-trivial app, you'll of course want to check that calls like 'open'
-//   // succeeded
-//   indata.open(filename);
-
-//   std::string line;
-//   int lnum = 0;
-//   while (std::getline(indata, line))
-//   {
-//     ++lnum;
-//     if (lnum < 3)
-//       continue;
-
-//     std::stringstream lineStream(line);
-//     std::string cell;
-//     Eigen::Matrix<double, 6, 1> xyzijk;
-//     int i = -2;
-//     while (std::getline(lineStream, cell, ','))
-//     {
-//       ++i;
-//       if (i == -1)
-//         continue;
-
-//       xyzijk(i) = std::stod(cell);
-//     }
-
-//     Eigen::Vector3d pos = xyzijk.head<3>();
-//     pos = pos / 1000.0; // Most things in ROS use meters as the unit of length.
-//                         // Our part was exported in mm.
-//     Eigen::Vector3d norm = xyzijk.tail<3>();
-//     norm.normalize();
-
-//     // This code computes two extra directions to turn the normal direction into
-//     // a full defined frame. Descartes
-//     // will search around this frame for extra poses, so the exact values do not
-//     // matter as long they are valid.
-//     Eigen::Vector3d temp_x = (-1 * pos).normalized();
-//     Eigen::Vector3d y_axis = (norm.cross(temp_x)).normalized();
-//     Eigen::Vector3d x_axis = (y_axis.cross(norm)).normalized();
-//     Eigen::Isometry3d pose;
-//     pose.matrix().col(0).head<3>() = x_axis;
-//     pose.matrix().col(1).head<3>() = y_axis;
-//     pose.matrix().col(2).head<3>() = norm;
-//     pose.matrix().col(3).head<3>() = pos;
-
-//     path.push_back(pose);
-//   }
-//   indata.close();
-
-//   return path;
-// }
+  
+VSLTrajoptPlanner::VSLTrajoptPlanner() : tesseract_(std::make_shared<tesseract::Tesseract>()) {}
+VSLTrajoptPlanner::~VSLTrajoptPlanner() {}
 
 void VSLTrajoptPlanner::initRos()
 {
   ros::NodeHandle nh;
   ros::NodeHandle ph("~");
 
-  bool plotting = true;
-  bool rviz = true;
-
-  ph.param("plotting", plotting, plotting);
-  ph.param("rviz", rviz, rviz);
-
   if (ph.getParam("group_name", config_.group_name) &&
       ph.getParam("tip_link", config_.tip_link) &&
       ph.getParam("base_link", config_.base_link) &&
-      ph.getParam("world_frame", config_.world_frame))
+      ph.getParam("world_frame", config_.world_frame) &&
+      ph.getParam("plotting", plotting_) &&
+      ph.getParam("rviz", rviz_))
   // nh.getParam("controller_joint_names", config_.joint_names))
   {
     ROS_INFO_STREAM("Loaded application parameters");
@@ -168,8 +107,10 @@ ProblemConstructionInfo VSLTrajoptPlanner::cppMethod()
     start_pos[cnt] = current_state->joints.at(j);
     ++cnt;
   }
-  
+
   pci.init_info.type = InitInfo::GIVEN_TRAJ;
+
+  // Repeats initial position given in the code n times, being that the only point of the initial trajectory
   pci.init_info.data = start_pos.transpose().replicate(pci.basic_info.n_steps, 1);
   //  pci.init_info.data.col(6) = VectorXd::LinSpaced(steps_, start_pos[6],
   //  end_pos[6]);
@@ -214,18 +155,27 @@ ProblemConstructionInfo VSLTrajoptPlanner::cppMethod()
 
   // Populate Constraints
 
-  // std::shared_ptr<trajopt::JointVelTermInfo> jv(new trajopt::JointVelTermInfo);
-  // std::vector<double> vel_lower_lim{-2.14, -2.00, -1.95, -3.12, -3.00, -3.82};
-  // std::vector<double> vel_upper_lim{2.14, 2.00, 1.95, 3.12, 3.00, 3.82};
-  // jv->coeffs = std::vector<double>(6, 50.0);
-  // jv->targets = std::vector<double>(6, 0.0);
-  // jv->lower_tols = vel_lower_lim;
-  // jv->upper_tols = vel_upper_lim;
-  // jv->term_type = (trajopt::TT_CNT | trajopt::TT_USE_TIME);
-  // jv->first_step = 0;
-  // jv->last_step = pci.basic_info.n_steps - 1;
-  // jv->name = "joint_velocity_cnt";
-  // pci.cnt_infos.push_back(jv);
+  // std::shared_ptr<trajopt::CartVelTermInfo> ee_speed(new trajopt::CartVelTermInfo);
+  // ee_speed->link = config_.tip_link;
+  // ee_speed->term_type = TT_CNT;
+  // ee_speed->first_step = 0;
+  // ee_speed->max_displacement = 0.007; //0.574/77
+  // ee_speed->last_step = pci.basic_info.n_steps - 1;
+  // ee_speed->name = "cart_velocity_cnt";
+  // pci.cnt_infos.push_back(ee_speed);
+
+  std::shared_ptr<trajopt::JointVelTermInfo> jv(new trajopt::JointVelTermInfo);
+  std::vector<double> vel_lower_lim{-2.14, -2.00, -1.95, -3.12, -3.00, -3.82};
+  std::vector<double> vel_upper_lim{2.14, 2.00, 1.95, 3.12, 3.00, 3.82};
+  jv->coeffs = std::vector<double>(6, 50.0);
+  jv->targets = std::vector<double>(6, 0.0);
+  jv->lower_tols = vel_lower_lim;
+  jv->upper_tols = vel_upper_lim;
+  jv->term_type = TT_CNT;
+  jv->first_step = 0;
+  jv->last_step = pci.basic_info.n_steps - 1;
+  jv->name = "joint_velocity_cnt";
+  pci.cnt_infos.push_back(jv);
 
   for (auto i = 0; i < pci.basic_info.n_steps; ++i)
   {
@@ -252,13 +202,12 @@ ProblemConstructionInfo VSLTrajoptPlanner::cppMethod()
 
 bool VSLTrajoptPlanner::run()
 {
-
   //////////////////
   /// ROS SETUP ///
   /////////////////
 
   // Pull ROS params
-  // initRos();
+  initRos();
 
   // Initialize the environment
   std::string urdf_xml_string, srdf_xml_string;
@@ -266,9 +215,11 @@ bool VSLTrajoptPlanner::run()
   nh_.getParam(ROBOT_SEMANTIC_PARAM, srdf_xml_string);
 
   ResourceLocator::Ptr locator = std::make_shared<tesseract_rosutils::ROSResourceLocator>();
-  if (!tesseract_->init(urdf_xml_string, srdf_xml_string, locator))
+  if (!tesseract_->init(urdf_xml_string, srdf_xml_string, locator)) 
+  {
+    ROS_ERROR_STREAM("Tesseract failed to connect to the robot files");
     return false;
-
+  }
   // Create plotting tool
   tesseract_rosutils::ROSPlottingPtr plotter =
       std::make_shared<tesseract_rosutils::ROSPlotting>(tesseract_->getEnvironment());
@@ -290,11 +241,11 @@ bool VSLTrajoptPlanner::run()
 
   // Set the initial state of the robot
   std::unordered_map<std::string, double> initial_joint_states;
-  initial_joint_states["kr210_joint_a1"] = 0.0;
-  initial_joint_states["kr210_joint_a2"] = -1.57;
-  initial_joint_states["kr210_joint_a3"] = 1.57;
+  initial_joint_states["kr210_joint_a1"] = 0.3;
+  initial_joint_states["kr210_joint_a2"] = -0.76;
+  initial_joint_states["kr210_joint_a3"] = 1.72;
   initial_joint_states["kr210_joint_a4"] = 0.0;
-  initial_joint_states["kr210_joint_a5"] = 0.0;
+  initial_joint_states["kr210_joint_a5"] = 0.6;
   initial_joint_states["kr210_joint_a6"] = 0.0;
   tesseract_->getEnvironment()->setState(initial_joint_states);
 
@@ -305,12 +256,12 @@ bool VSLTrajoptPlanner::run()
       return false;
   }
 
-  // Set Log Level
-  util::gLogLevel = util::LevelInfo;
-
   ////////////////////
   /// SETUP PROBLEM //
   ////////////////////
+
+  // Set Log Level
+  util::gLogLevel = util::LevelInfo;
 
   // Setup Problem
   ProblemConstructionInfo pci = cppMethod();
@@ -341,8 +292,8 @@ bool VSLTrajoptPlanner::run()
     opt.addCallback(PlotCallback(*prob, plotter));
   }
 
-  opt.initialize(trajToDblVec(prob->GetInitTraj()));
   ros::Time tStart = ros::Time::now();
+  opt.initialize(trajToDblVec(prob->GetInitTraj()));
   sco::OptStatus status = opt.optimize();
   ROS_INFO("Optimization Status: %s, Planning time: %.3f",
            sco::statusToString(status).c_str(),
@@ -352,12 +303,12 @@ bool VSLTrajoptPlanner::run()
     plotter->clear();
 
   collisions.clear();
-  // found = checkTrajectory(
-  //     *manager, *prob->GetEnv(), prob->GetKin()->getJointNames(), getTraj(opt.x(), prob->GetVars()), collisions);
+  found = checkTrajectory(
+      *manager, *prob->GetEnv(), prob->GetKin()->getJointNames(), getTraj(opt.x(), prob->GetVars()), collisions);
 
-  // ROS_INFO((found) ? ("Final trajectory is in collision") : ("Final trajectory is collision free"));
+  ROS_INFO((found) ? ("Final trajectory is in collision") : ("Final trajectory is collision free"));
 
-  // plotter->plotTrajectory(prob->GetKin()->getJointNames(), getTraj(opt.x(), prob->GetVars()));
+  plotter->plotTrajectory(prob->GetKin()->getJointNames(), getTraj(opt.x(), prob->GetVars()));
 
   return true;
 }

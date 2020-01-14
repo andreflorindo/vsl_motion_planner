@@ -58,8 +58,8 @@ struct VSLTrajoptPlannerConfiguration
 class VSLTrajoptPlanner
 {
 public:
-  VSLTrajoptPlanner(ros::NodeHandle nh, bool plotting, bool rviz, VSLTrajoptPlannerConfiguration config) : nh_(nh), plotting_(plotting), rviz_(rviz), config_(config), tesseract_(std::make_shared<tesseract::Tesseract>()) {}
-  ~VSLTrajoptPlanner() = default;
+  VSLTrajoptPlanner();
+  virtual ~VSLTrajoptPlanner();
 
   void initRos();
   tesseract_common::VectorIsometry3d getCourse();
