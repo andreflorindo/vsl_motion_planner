@@ -53,15 +53,13 @@ struct VSLTrajoptPlannerConfiguration
     std::string base_link;
     std::string world_frame;
     std::vector<std::string> joint_names;
-    bool plotting;
-    bool rviz;
 };
 
 class VSLTrajoptPlanner
 {
 public:
-  VSLTrajoptPlanner();
-  virtual ~VSLTrajoptPlanner();
+  VSLTrajoptPlanner(ros::NodeHandle nh, bool plotting, bool rviz, VSLTrajoptPlannerConfiguration config) : nh_(nh), plotting_(plotting), rviz_(rviz), config_(config), tesseract_(std::make_shared<tesseract::Tesseract>()) {}
+  ~VSLTrajoptPlanner() = default;
 
   void initRos();
   tesseract_common::VectorIsometry3d getCourse();
@@ -71,8 +69,10 @@ protected:
   trajopt::ProblemConstructionInfo cppMethod();
 
 private:
-  ros::NodeHandle nh_;
   VSLTrajoptPlannerConfiguration config_; 
+  ros::NodeHandle nh_;
+  bool plotting_;
+  bool rviz_;
   tesseract::Tesseract::Ptr tesseract_;     /**< @brief Tesseract Manager Class */
   ros::ServiceClient modify_env_rviz_;      /**< @brief Service for modifying tesseract environment in rviz */
   ros::ServiceClient get_env_changes_rviz_; /**< @brief Get the environment changes from rviz */
