@@ -6,6 +6,7 @@
 #include <ros/console.h>
 #include <ros/service_client.h>
 #include <vsl_msgs/PoseBuilder.h>
+#include <trajectory_msgs/JointTrajectory.h>
 
 // C++
 #include <fstream>
@@ -45,6 +46,7 @@ const std::string ROBOT_DESCRIPTION_PARAM = "robot_description";
 const std::string ROBOT_SEMANTIC_PARAM = "robot_description_semantic"; 
 const std::string GET_ENVIRONMENT_CHANGES_SERVICE = "get_tesseract_changes_rviz";
 const std::string MODIFY_ENVIRONMENT_SERVICE = "modify_tesseract_rviz";
+const std::string JOINT_TRAJECTORY_TOPIC = "joint_traj";
 
 struct VSLTrajoptPlannerConfiguration
 {
@@ -77,6 +79,9 @@ private:
   ros::ServiceClient modify_env_rviz_;      /**< @brief Service for modifying tesseract environment in rviz */
   ros::ServiceClient get_env_changes_rviz_; /**< @brief Get the environment changes from rviz */
   ros::ServiceClient pose_builder_client_;
+  ros::Publisher joint_traj_;
+
+
 
   /**
    * @brief Check rviz and make sure the rviz environment revision number is zero.

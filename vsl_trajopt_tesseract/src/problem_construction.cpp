@@ -35,6 +35,8 @@ void VSLTrajoptPlanner::initRos()
     exit(-1);
   }
 
+  joint_traj_ = nh.advertise<trajectory_msgs::JointTrajectory>(JOINT_TRAJECTORY_TOPIC, 1, true);
+
   ROS_INFO_STREAM("Task '" << __FUNCTION__ << "' completed");
 }
 
@@ -193,11 +195,62 @@ ProblemConstructionInfo VSLTrajoptPlanner::cppMethod()
     pose->xyz = current_xyz;
     pose->wxyz = current_wxyz;
     pose->pos_coeffs = Eigen::Vector3d(10, 10, 10);
-    pose->rot_coeffs = Eigen::Vector3d(10, 10, 0);
+    pose->rot_coeffs = Eigen::Vector3d(10, 10, 0); //With 10 is fully constraint
 
     pci.cnt_infos.push_back(pose);
   }
   return pci;
+}
+
+trajectory_msgs::JointTrajectory trajArrayToJointTrajectoryMsg(std::vector<std::string> joint_names,
+                                                               TrajArray traj_array,
+                                                               bool use_time,
+                                                               ros::Duration time_increment)
+{
+  // Create the joint trajectory
+  trajectory_msgs::JointTrajectory traj_msg;
+  traj_msg.header.stamp = ros::Time::now();
+  traj_msg.header.frame_id = "0";
+  traj_msg.joint_names = joint_names;
+
+  TrajArray pos_mat;
+  TrajArray time_mat;
+  if (use_time)
+  {
+    // Seperate out the time data in the last column from the joint position data
+    pos_mat = traj_array.leftCols(traj_array.cols());
+    time_mat = traj_array.rightCols(1);
+  }
+  else
+  {
+    pos_mat = traj_array;
+  }
+
+  ros::Duration time_from_start(0);
+  for (int ind = 0; ind < traj_array.rows(); ind++)
+  {
+    // Create trajectory point
+    trajectory_msgs::JointTrajectoryPoint traj_point;
+
+    // Set the position for this time step
+    auto mat = pos_mat.row(ind);
+    std::vector<double> vec(mat.data(), mat.data() + mat.rows() * mat.cols());
+    traj_point.positions = vec;
+
+    // Add the current dt to the time_from_start
+    if (use_time)
+    {
+      time_from_start += ros::Duration(time_mat(ind, time_mat.cols() - 1));
+    }
+    else
+    {
+      time_from_start += time_increment;
+    }
+    traj_point.time_from_start = time_from_start;
+
+    traj_msg.points.push_back(traj_point);
+  }
+  return traj_msg;
 }
 
 bool VSLTrajoptPlanner::run()
@@ -235,9 +288,10 @@ bool VSLTrajoptPlanner::run()
     if (!checkRviz())
       return false;
   }
-  // ///////////////////
-  // /// ROBOT SETUP ///
-  // ///////////////////
+
+  ///////////////////
+  /// ROBOT SETUP ///
+  ///////////////////
 
   // Set the initial state of the robot
   std::unordered_map<std::string, double> initial_joint_states;
@@ -256,9 +310,9 @@ bool VSLTrajoptPlanner::run()
       return false;
   }
 
-  ////////////////////
-  /// SETUP PROBLEM //
-  ////////////////////
+  ///////////////////////////////////
+  /// TRAJOPT PROBLEM CONSTRUCTION //
+  ///////////////////////////////////
 
   // Set Log Level
   util::gLogLevel = util::LevelInfo;
@@ -269,6 +323,11 @@ bool VSLTrajoptPlanner::run()
 
   // Solve Trajectory
   ROS_INFO("Trajectory is planned");
+
+
+  /////////////////////////
+  /// INITIAL TRAJECTORY //
+  /////////////////////////
 
   std::vector<ContactResultMap> collisions;
   ContinuousContactManager::Ptr manager = prob->GetEnv()->getContinuousContactManager();
@@ -285,6 +344,10 @@ bool VSLTrajoptPlanner::run()
 
   ROS_INFO((found) ? ("Initial trajectory is in collision") : ("Initial trajectory is collision free"));
 
+  ///////////////////
+  /// OPTIMIZATION //
+  ///////////////////
+
   sco::BasicTrustRegionSQP opt(prob);
   opt.setParameters(pci.opt_info);
   if (plotting_)
@@ -299,6 +362,10 @@ bool VSLTrajoptPlanner::run()
            sco::statusToString(status).c_str(),
            (ros::Time::now() - tStart).toSec());
 
+  ///////////////////////
+  /// FINAL TRAJECTORY //
+  ///////////////////////
+
   if (plotting_)
     plotter->clear();
 
@@ -310,7 +377,16 @@ bool VSLTrajoptPlanner::run()
 
   plotter->plotTrajectory(prob->GetKin()->getJointNames(), getTraj(opt.x(), prob->GetVars()));
 
+
+  trajectory_msgs::JointTrajectory traj_msg;
+  ros::Duration t1(0.25);
+  traj_msg = trajArrayToJointTrajectoryMsg(prob->GetKin()->getJointNames(), getTraj(opt.x(), prob->GetVars()), pci.basic_info.use_time, t1);
+  joint_traj_.publish(traj_msg);
+
   return true;
 }
+
+
+
 
 } // namespace vsl_motion_planner

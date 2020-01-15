@@ -8,6 +8,6 @@ int main(int argc, char **argv)
   planner.run();
 
   ROS_INFO("Done");
-  
+  ros::spin();
   return 0;
 }
