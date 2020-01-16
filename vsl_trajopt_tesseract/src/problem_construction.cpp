@@ -10,7 +10,7 @@ using namespace tesseract_rosutils;
 
 namespace vsl_motion_planner
 {
-  
+
 VSLTrajoptPlanner::VSLTrajoptPlanner() : tesseract_(std::make_shared<tesseract::Tesseract>()) {}
 VSLTrajoptPlanner::~VSLTrajoptPlanner() {}
 
@@ -36,6 +36,20 @@ void VSLTrajoptPlanner::initRos()
   }
 
   joint_traj_ = nh.advertise<trajectory_msgs::JointTrajectory>(JOINT_TRAJECTORY_TOPIC, 1, true);
+
+  typedef actionlib::SimpleActionClient<control_msgs::FollowJointTrajectoryAction> client_type;
+  follow_joint_trajectory_client_ = std::make_shared<client_type>(FOLLOW_JOINT_TRAJECTORY_ACTION, true);
+
+  // Establishing connection to server
+  if (follow_joint_trajectory_client_->waitForServer(ros::Duration(SERVER_TIMEOUT)))
+  {
+    ROS_INFO_STREAM("Connected to '" << FOLLOW_JOINT_TRAJECTORY_ACTION << "' action");
+  }
+  else
+  {
+    ROS_ERROR_STREAM("Failed to connect to '" << FOLLOW_JOINT_TRAJECTORY_ACTION << "' action");
+    exit(-1);
+  }
 
   ROS_INFO_STREAM("Task '" << __FUNCTION__ << "' completed");
 }
@@ -84,9 +98,9 @@ tesseract_common::VectorIsometry3d VSLTrajoptPlanner::getCourse()
 ProblemConstructionInfo VSLTrajoptPlanner::cppMethod()
 {
   ProblemConstructionInfo pci(tesseract_);
-  
+
   tesseract_common::VectorIsometry3d tool_poses = getCourse();
-  
+
   // Populate Basic Info
   pci.basic_info.n_steps = static_cast<int>(tool_poses.size());
   pci.basic_info.manip = "manipulator";
@@ -121,6 +135,10 @@ ProblemConstructionInfo VSLTrajoptPlanner::cppMethod()
   std::shared_ptr<JointVelTermInfo> joint_vel = std::shared_ptr<JointVelTermInfo>(new JointVelTermInfo);
   joint_vel->coeffs = std::vector<double>(6, 1.0); // 7 double with value 1
   joint_vel->targets = std::vector<double>(6, 0.0);
+  // std::vector<double> jv_lower_lim{-0.1, -0.1, -0.1, -0.1, -0.1, -0.1};
+  // std::vector<double> jv_upper_lim{0.1, 0.1, 0.1, 0.1, 0.1, 0.1};
+  // joint_vel->lower_tols = jv_lower_lim;
+  // joint_vel->upper_tols = jv_upper_lim;
   joint_vel->first_step = 0;
   joint_vel->last_step = pci.basic_info.n_steps - 1;
   joint_vel->name = "joint_vel";
@@ -166,18 +184,18 @@ ProblemConstructionInfo VSLTrajoptPlanner::cppMethod()
   // ee_speed->name = "cart_velocity_cnt";
   // pci.cnt_infos.push_back(ee_speed);
 
-  std::shared_ptr<trajopt::JointVelTermInfo> jv(new trajopt::JointVelTermInfo);
-  std::vector<double> vel_lower_lim{-2.14, -2.00, -1.95, -3.12, -3.00, -3.82};
-  std::vector<double> vel_upper_lim{2.14, 2.00, 1.95, 3.12, 3.00, 3.82};
-  jv->coeffs = std::vector<double>(6, 50.0);
-  jv->targets = std::vector<double>(6, 0.0);
-  jv->lower_tols = vel_lower_lim;
-  jv->upper_tols = vel_upper_lim;
-  jv->term_type = TT_CNT;
-  jv->first_step = 0;
-  jv->last_step = pci.basic_info.n_steps - 1;
-  jv->name = "joint_velocity_cnt";
-  pci.cnt_infos.push_back(jv);
+  // std::shared_ptr<trajopt::JointVelTermInfo> jv(new trajopt::JointVelTermInfo);
+  // std::vector<double> vel_lower_lim{-2.14, -2.00, -1.95, -3.12, -3.00, -3.82};
+  // std::vector<double> vel_upper_lim{2.14, 2.00, 1.95, 3.12, 3.00, 3.82};
+  // jv->coeffs = std::vector<double>(6, 50.0);
+  // jv->targets = std::vector<double>(6, 0.0);
+  // jv->lower_tols = vel_lower_lim;
+  // jv->upper_tols = vel_upper_lim;
+  // jv->term_type = TT_CNT;
+  // jv->first_step = 0;
+  // jv->last_step = pci.basic_info.n_steps - 1;
+  // jv->name = "joint_velocity_cnt";
+  // pci.cnt_infos.push_back(jv);
 
   for (auto i = 0; i < pci.basic_info.n_steps; ++i)
   {
@@ -202,7 +220,7 @@ ProblemConstructionInfo VSLTrajoptPlanner::cppMethod()
   return pci;
 }
 
-trajectory_msgs::JointTrajectory trajArrayToJointTrajectoryMsg(std::vector<std::string> joint_names,
+trajectory_msgs::JointTrajectory VSLTrajoptPlanner::trajArrayToJointTrajectoryMsg(std::vector<std::string> joint_names,
                                                                TrajArray traj_array,
                                                                bool use_time,
                                                                ros::Duration time_increment)
@@ -252,141 +270,4 @@ trajectory_msgs::JointTrajectory trajArrayToJointTrajectoryMsg(std::vector<std::
   }
   return traj_msg;
 }
-
-bool VSLTrajoptPlanner::run()
-{
-  //////////////////
-  /// ROS SETUP ///
-  /////////////////
-
-  // Pull ROS params
-  initRos();
-
-  // Initialize the environment
-  std::string urdf_xml_string, srdf_xml_string;
-  nh_.getParam(ROBOT_DESCRIPTION_PARAM, urdf_xml_string);
-  nh_.getParam(ROBOT_SEMANTIC_PARAM, srdf_xml_string);
-
-  ResourceLocator::Ptr locator = std::make_shared<tesseract_rosutils::ROSResourceLocator>();
-  if (!tesseract_->init(urdf_xml_string, srdf_xml_string, locator)) 
-  {
-    ROS_ERROR_STREAM("Tesseract failed to connect to the robot files");
-    return false;
-  }
-  // Create plotting tool
-  tesseract_rosutils::ROSPlottingPtr plotter =
-      std::make_shared<tesseract_rosutils::ROSPlotting>(tesseract_->getEnvironment());
-
-  if (rviz_)
-  {
-    // These are used to keep visualization updated
-    modify_env_rviz_ = nh_.serviceClient<tesseract_msgs::ModifyEnvironment>(MODIFY_ENVIRONMENT_SERVICE, false);
-    get_env_changes_rviz_ =
-        nh_.serviceClient<tesseract_msgs::GetEnvironmentChanges>(GET_ENVIRONMENT_CHANGES_SERVICE, false);
-
-    // Check RViz to make sure nothing has changed
-    if (!checkRviz())
-      return false;
-  }
-
-  ///////////////////
-  /// ROBOT SETUP ///
-  ///////////////////
-
-  // Set the initial state of the robot
-  std::unordered_map<std::string, double> initial_joint_states;
-  initial_joint_states["kr210_joint_a1"] = 0.3;
-  initial_joint_states["kr210_joint_a2"] = -0.76;
-  initial_joint_states["kr210_joint_a3"] = 1.72;
-  initial_joint_states["kr210_joint_a4"] = 0.0;
-  initial_joint_states["kr210_joint_a5"] = 0.6;
-  initial_joint_states["kr210_joint_a6"] = 0.0;
-  tesseract_->getEnvironment()->setState(initial_joint_states);
-
-  if (rviz_)
-  {
-    // Now update rviz environment
-    if (!sendRvizChanges(0))
-      return false;
-  }
-
-  ///////////////////////////////////
-  /// TRAJOPT PROBLEM CONSTRUCTION //
-  ///////////////////////////////////
-
-  // Set Log Level
-  util::gLogLevel = util::LevelInfo;
-
-  // Setup Problem
-  ProblemConstructionInfo pci = cppMethod();
-  TrajOptProb::Ptr prob = ConstructProblem(pci);
-
-  // Solve Trajectory
-  ROS_INFO("Trajectory is planned");
-
-
-  /////////////////////////
-  /// INITIAL TRAJECTORY //
-  /////////////////////////
-
-  std::vector<ContactResultMap> collisions;
-  ContinuousContactManager::Ptr manager = prob->GetEnv()->getContinuousContactManager();
-  AdjacencyMap::Ptr adjacency_map =
-      std::make_shared<tesseract_environment::AdjacencyMap>(prob->GetEnv()->getSceneGraph(),
-                                                            prob->GetKin()->getActiveLinkNames(),
-                                                            prob->GetEnv()->getCurrentState()->transforms);
-
-  manager->setActiveCollisionObjects(adjacency_map->getActiveLinkNames());
-  manager->setContactDistanceThreshold(0);
-  collisions.clear();
-  bool found =
-      checkTrajectory(*manager, *prob->GetEnv(), prob->GetKin()->getJointNames(), prob->GetInitTraj(), collisions);
-
-  ROS_INFO((found) ? ("Initial trajectory is in collision") : ("Initial trajectory is collision free"));
-
-  ///////////////////
-  /// OPTIMIZATION //
-  ///////////////////
-
-  sco::BasicTrustRegionSQP opt(prob);
-  opt.setParameters(pci.opt_info);
-  if (plotting_)
-  {
-    opt.addCallback(PlotCallback(*prob, plotter));
-  }
-
-  ros::Time tStart = ros::Time::now();
-  opt.initialize(trajToDblVec(prob->GetInitTraj()));
-  sco::OptStatus status = opt.optimize();
-  ROS_INFO("Optimization Status: %s, Planning time: %.3f",
-           sco::statusToString(status).c_str(),
-           (ros::Time::now() - tStart).toSec());
-
-  ///////////////////////
-  /// FINAL TRAJECTORY //
-  ///////////////////////
-
-  if (plotting_)
-    plotter->clear();
-
-  collisions.clear();
-  found = checkTrajectory(
-      *manager, *prob->GetEnv(), prob->GetKin()->getJointNames(), getTraj(opt.x(), prob->GetVars()), collisions);
-
-  ROS_INFO((found) ? ("Final trajectory is in collision") : ("Final trajectory is collision free"));
-
-  plotter->plotTrajectory(prob->GetKin()->getJointNames(), getTraj(opt.x(), prob->GetVars()));
-
-
-  trajectory_msgs::JointTrajectory traj_msg;
-  ros::Duration t1(0.25);
-  traj_msg = trajArrayToJointTrajectoryMsg(prob->GetKin()->getJointNames(), getTraj(opt.x(), prob->GetVars()), pci.basic_info.use_time, t1);
-  joint_traj_.publish(traj_msg);
-
-  return true;
-}
-
-
-
-
 } // namespace vsl_motion_planner

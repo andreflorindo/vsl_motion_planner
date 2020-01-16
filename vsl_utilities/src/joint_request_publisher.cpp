@@ -12,8 +12,18 @@ void JointRequestPublisher::initTopic()
 {
     ros::NodeHandle nh;
     ros::NodeHandle ph("~");
+    bool sim;
 
-    joint_path_subscriber_ = nh.subscribe("joint_path_command", 1000, &JointRequestPublisher::subscriberCallback, this);
+    if (ph.getParam("sim", sim))
+    {
+        ROS_INFO_STREAM("ee_request_publisher: Loaded Topic parameters");
+    }
+
+    if (sim)
+        joint_path_subscriber_ = nh.subscribe("joint_path_command", 1000, &JointRequestPublisher::subscriberCallback, this);
+    else
+        joint_path_subscriber_ = nh.subscribe("position_trajectory_controller/command", 1000, &JointRequestPublisher::subscriberCallback, this);
+
 
     joint_request_publisher_ = nh.advertise<vsl_msgs::JointRequest>("joint_request", 1000, true);
 

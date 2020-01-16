@@ -15,6 +15,7 @@
   <depend>roslib</depend>
   <depend>eigen_conversions</depend>
   <depend>vsl_msgs</depend>
+  <depend>tf</depend>
   
   <export>
   </export>

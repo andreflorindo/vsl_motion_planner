@@ -7,6 +7,8 @@
 #include <ros/service_client.h>
 #include <vsl_msgs/PoseBuilder.h>
 #include <trajectory_msgs/JointTrajectory.h>
+#include <actionlib/client/simple_action_client.h>
+#include <control_msgs/FollowJointTrajectoryAction.h>
 
 // C++
 #include <fstream>
@@ -47,6 +49,8 @@ const std::string ROBOT_SEMANTIC_PARAM = "robot_description_semantic";
 const std::string GET_ENVIRONMENT_CHANGES_SERVICE = "get_tesseract_changes_rviz";
 const std::string MODIFY_ENVIRONMENT_SERVICE = "modify_tesseract_rviz";
 const std::string JOINT_TRAJECTORY_TOPIC = "joint_traj";
+const std::string FOLLOW_JOINT_TRAJECTORY_ACTION = "joint_trajectory_action";
+// const std::string FOLLOW_JOINT_TRAJECTORY_ACTION = "position_trajectory_controller/follow_joint_trajectory";
 
 struct VSLTrajoptPlannerConfiguration
 {
@@ -65,6 +69,7 @@ public:
 
   void initRos();
   tesseract_common::VectorIsometry3d getCourse();
+  trajectory_msgs::JointTrajectory trajArrayToJointTrajectoryMsg(std::vector<std::string> joint_names, trajopt::TrajArray traj_array,bool use_time,ros::Duration time_increment);
   bool run();
 
 protected:
@@ -80,8 +85,7 @@ private:
   ros::ServiceClient get_env_changes_rviz_; /**< @brief Get the environment changes from rviz */
   ros::ServiceClient pose_builder_client_;
   ros::Publisher joint_traj_;
-
-
+  std::shared_ptr<actionlib::SimpleActionClient<control_msgs::FollowJointTrajectoryAction>> follow_joint_trajectory_client_;
 
   /**
    * @brief Check rviz and make sure the rviz environment revision number is zero.

@@ -14,6 +14,7 @@ find_package(catkin REQUIRED COMPONENTS
   octomap_ros
   pcl_conversions
   vsl_msgs
+  control_msgs
 )
 
 ## System dependencies are found with CMake's conventions
@@ -36,6 +37,7 @@ catkin_package(
    octomap_ros
    pcl_conversions
    vsl_msgs
+   control_msgs
 )
 
 ###########
@@ -49,8 +51,48 @@ include_directories(
   ${catkin_INCLUDE_DIRS}
 )
 
-## Declare a C++ library
+# ## Declare a C++ library
+# add_library(problem_construction src/problem_construction.cpp)
+
+# target_link_libraries(problem_construction tesseract::tesseract tesseract::tesseract_motion_planners_trajopt ${catkin_LIBRARIES})
+# target_link_libraries(vsl_trajopt_main problem_construction ${catkin_LIBRARIES})
+
+# tesseract_target_compile_options(problem_construction PUBLIC)
+# target_include_directories(problem_construction PUBLIC
+#     "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>"
+#     "$<INSTALL_INTERFACE:include>")
+# target_include_directories(problem_construction SYSTEM PUBLIC
+#     ${catkin_INCLUDE_DIRS})
+
+# add_library(run_trajopt src/run_trajopt.cpp)
+
+# target_link_libraries(run_trajopt tesseract::tesseract tesseract::tesseract_motion_planners_trajopt ${catkin_LIBRARIES})
+# target_link_libraries(vsl_trajopt_main run_trajopt ${catkin_LIBRARIES})
+
+# tesseract_target_compile_options(run_trajopt PUBLIC)
+# target_include_directories(run_trajopt PUBLIC
+#     "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>"
+#     "$<INSTALL_INTERFACE:include>")
+# target_include_directories(run_trajopt SYSTEM PUBLIC
+#     ${catkin_INCLUDE_DIRS})
+
+
+# ## Declare a Executable
+
+# add_executable(vsl_trajopt_main src/vsl_trajopt_main.cpp)
+
+# add_dependencies(vsl_trajopt_main vsl_msgs_generate_messages_cpp ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+
+# tesseract_target_compile_options(vsl_trajopt_main PRIVATE)
+# target_include_directories(vsl_trajopt_main PRIVATE
+#     "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>"
+#     "$<INSTALL_INTERFACE:include>")
+# target_include_directories(vsl_trajopt_main SYSTEM PRIVATE
+#     ${catkin_INCLUDE_DIRS})
+
+
 add_library(problem_construction src/problem_construction.cpp)
+add_library(run_trajopt src/run_trajopt.cpp)
 
 add_executable(vsl_trajopt_main src/vsl_trajopt_main.cpp)
 
@@ -59,6 +101,9 @@ add_dependencies(vsl_trajopt_main vsl_msgs_generate_messages_cpp ${${PROJECT_NAM
 target_link_libraries(problem_construction tesseract::tesseract tesseract::tesseract_motion_planners_trajopt ${catkin_LIBRARIES})
 target_link_libraries(vsl_trajopt_main problem_construction ${catkin_LIBRARIES})
 
+target_link_libraries(run_trajopt tesseract::tesseract tesseract::tesseract_motion_planners_trajopt ${catkin_LIBRARIES})
+target_link_libraries(vsl_trajopt_main run_trajopt ${catkin_LIBRARIES})
+
 tesseract_target_compile_options(problem_construction PUBLIC)
 target_include_directories(problem_construction PUBLIC
     "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>"
@@ -66,12 +111,19 @@ target_include_directories(problem_construction PUBLIC
 target_include_directories(problem_construction SYSTEM PUBLIC
     ${catkin_INCLUDE_DIRS})
 
+tesseract_target_compile_options(run_trajopt PUBLIC)
+target_include_directories(run_trajopt PUBLIC
+    "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>"
+    "$<INSTALL_INTERFACE:include>")
+target_include_directories(run_trajopt SYSTEM PUBLIC
+    ${catkin_INCLUDE_DIRS})
+
 tesseract_target_compile_options(vsl_trajopt_main PRIVATE)
 target_include_directories(vsl_trajopt_main PRIVATE
     "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>"
     "$<INSTALL_INTERFACE:include>")
 target_include_directories(vsl_trajopt_main SYSTEM PRIVATE
-    ${catkin_INCLUDE_DIRS})
+    ${catkin_INCLUDE_DIRS})    
 
 #############
 ## Install ##
@@ -91,6 +143,7 @@ target_include_directories(vsl_trajopt_main SYSTEM PRIVATE
 install(
   TARGETS
     problem_construction
+    run_trajopt
     vsl_trajopt_main
   ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
   LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
