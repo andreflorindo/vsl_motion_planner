@@ -76,7 +76,7 @@ bool VSLTrajoptPlanner::run()
     util::gLogLevel = util::LevelInfo;
 
     // Setup Problem
-    ProblemConstructionInfo pci = cppMethod();
+    ProblemConstructionInfo pci = trajoptPCI();
     TrajOptProb::Ptr prob = ConstructProblem(pci);
 
     // Solve Trajectory

@@ -31,7 +31,6 @@ TESSERACT_COMMON_IGNORE_WARNINGS_PUSH
 #include <tesseract_msgs/GetEnvironmentChanges.h>
 #include <tesseract_rosutils/conversions.h>
 TESSERACT_COMMON_IGNORE_WARNINGS_POP
-// #include <tesseract_environment/core/utils.h>
 
 // Trajopt
 #include <trajopt/file_write_callback.hpp>
@@ -73,7 +72,7 @@ public:
   bool run();
 
 protected:
-  trajopt::ProblemConstructionInfo cppMethod();
+  trajopt::ProblemConstructionInfo trajoptPCI();
 
 private:
   VSLTrajoptPlannerConfiguration config_; 

@@ -95,7 +95,7 @@ tesseract_common::VectorIsometry3d VSLTrajoptPlanner::getCourse()
   return poses;
 }
 
-ProblemConstructionInfo VSLTrajoptPlanner::cppMethod()
+ProblemConstructionInfo VSLTrajoptPlanner::trajoptPCI()
 {
   ProblemConstructionInfo pci(tesseract_);
 
