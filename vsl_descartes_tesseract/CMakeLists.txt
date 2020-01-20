@@ -58,10 +58,10 @@ add_executable(vsl_descartes_tesseract_main src/vsl_descartes_tesseract_main.cpp
 
 add_dependencies(vsl_descartes_tesseract_main vsl_msgs_generate_messages_cpp ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 
-target_link_libraries(descartes_problem_construction tesseract::tesseract tesseract::tesseract_motion_planners_descartes ${catkin_LIBRARIES})
+target_link_libraries(descartes_problem_construction descartes::descartes_light descartes::descartes_samplers descartes::descartes_opw ${catkin_LIBRARIES})
 target_link_libraries(vsl_descartes_tesseract_main descartes_problem_construction ${catkin_LIBRARIES})
 
-target_link_libraries(run_descartes tesseract::tesseract tesseract::tesseract_motion_planners_descartes ${catkin_LIBRARIES})
+target_link_libraries(run_descartes descartes::descartes_light descartes::descartes_samplers descartes::descartes_opw ${catkin_LIBRARIES})
 target_link_libraries(vsl_descartes_tesseract_main run_descartes ${catkin_LIBRARIES})
 
 tesseract_target_compile_options(descartes_problem_construction PUBLIC)

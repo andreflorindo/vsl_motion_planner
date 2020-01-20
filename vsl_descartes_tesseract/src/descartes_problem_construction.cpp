@@ -1,13 +1,15 @@
 #include <vsl_descartes_tesseract_planner.h>
 
-using namespace trajopt;
 using namespace tesseract;
 using namespace tesseract_environment;
-using namespace tesseract_kinematics;
 using namespace tesseract_scene_graph;
 using namespace tesseract_collision;
-using namespace tesseract_rosutils;
 using namespace tesseract_motion_planners;
+using namespace tesseract_kinematics;
+using namespace opw_kinematics;
+using namespace descartes_light;
+using namespace descartes_core;
+using namespace tesseract_rosutils;
 
 namespace vsl_motion_planner
 {
