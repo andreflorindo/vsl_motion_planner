@@ -28,7 +28,6 @@ void VSLDescartesTesseractPlanner::initRos()
         ph.getParam("world_frame", config_.world_frame) &&
         ph.getParam("plotting", plotting_) &&
         ph.getParam("rviz", rviz_))
-    // nh.getParam("controller_joint_names", config_.joint_names))
     {
         ROS_INFO_STREAM("Loaded application parameters");
     }
@@ -91,7 +90,7 @@ std::vector<Waypoint::Ptr> VSLDescartesTesseractPlanner::getCourse()
     for (unsigned int i = 0; i < srv.response.single_course_poses.poses.size(); i++)
     {
         tf::poseMsgToEigen(srv.response.single_course_poses.poses[i], single_pose);
-        waypoint = std::make_shared<CartesianWaypoint>(single_pose);
+        waypoint = std::make_shared<CartesianWaypoint>(single_pose, config_.base_link);
         waypoint->setIsCritical(true);
         Eigen::VectorXd c(6);
         c << 1, 1, 1, 1, 1, AXIAL_SYMMETRIC_MOTION;
@@ -104,17 +103,18 @@ std::vector<Waypoint::Ptr> VSLDescartesTesseractPlanner::getCourse()
     return waypoints;
 }
 
-DescartesMotionPlannerConfigD createDescartesPlannerConfig(const Tesseract::ConstPtr &tesseract_ptr,
-                                                           const std::string & /*manip*/,
-                                                           const InverseKinematics::ConstPtr &kin,
-                                                           const Eigen::Isometry3d &tcp,
-                                                           const double robot_reach,
-                                                           const EnvState::ConstPtr &current_state,
-                                                           const std::vector<Waypoint::Ptr> &waypoints,
-                                                           bool use_collision_edge_evaluator = false)
+DescartesMotionPlannerConfigD VSLDescartesTesseractPlanner::createDescartesPlannerConfig(const Tesseract::ConstPtr &tesseract_ptr,
+                                                                                         const std::string & /*manip*/,
+                                                                                         const InverseKinematics::ConstPtr &kin,
+                                                                                         const double robot_reach,
+                                                                                         const EnvState::ConstPtr &current_state,
+                                                                                         const std::vector<Waypoint::Ptr> &waypoints,
+                                                                                         bool use_collision_edge_evaluator)
 {
     const std::vector<std::string> &joint_names = kin->getJointNames();
     const std::vector<std::string> &active_link_names = kin->getActiveLinkNames();
+    Eigen::Isometry3d tcp = current_state->transforms.at(kin->getTipLinkName());
+    // Eigen::Isometry3d tcp = Eigen::Isometry3d::Identity();
 
     tesseract_environment::AdjacencyMap::Ptr adjacency_map = std::make_shared<tesseract_environment::AdjacencyMap>(
         tesseract_ptr->getEnvironmentConst()->getSceneGraph(), active_link_names, current_state->transforms);
@@ -149,4 +149,57 @@ DescartesMotionPlannerConfigD createDescartesPlannerConfig(const Tesseract::Cons
 
     return DescartesMotionPlannerConfigD(tesseract_ptr, adjacency_map->getActiveLinkNames(), joint_names, edge_computer, timing, position_samplers, waypoints);
 }
+
+trajectory_msgs::JointTrajectory VSLDescartesTesseractPlanner::trajArrayToJointTrajectoryMsg(std::vector<std::string> joint_names,
+                                                                                             tesseract_common::TrajArray traj_array,
+                                                                                             bool use_time,
+                                                                                             ros::Duration time_increment)
+{
+    // Create the joint trajectory
+    trajectory_msgs::JointTrajectory traj_msg;
+    traj_msg.header.stamp = ros::Time::now();
+    traj_msg.header.frame_id = "0";
+    traj_msg.joint_names = joint_names;
+
+    tesseract_common::TrajArray pos_mat;
+    tesseract_common::TrajArray time_mat;
+
+    if (use_time)
+    {
+        // Seperate out the time data in the last column from the joint position data
+        pos_mat = traj_array.leftCols(traj_array.cols());
+        time_mat = traj_array.rightCols(1);
+    }
+    else
+    {
+        pos_mat = traj_array;
+    }
+
+    ros::Duration time_from_start(0);
+    for (int ind = 0; ind < traj_array.rows(); ind++)
+    {
+        // Create trajectory point
+        trajectory_msgs::JointTrajectoryPoint traj_point;
+
+        // Set the position for this time step
+        auto mat = pos_mat.row(ind);
+        std::vector<double> vec(mat.data(), mat.data() + mat.rows() * mat.cols());
+        traj_point.positions = vec;
+
+        // Add the current dt to the time_from_start
+        if (use_time)
+        {
+            time_from_start += ros::Duration(time_mat(ind, time_mat.cols() - 1));
+        }
+        else
+        {
+            time_from_start += time_increment;
+        }
+        traj_point.time_from_start = time_from_start;
+
+        traj_msg.points.push_back(traj_point);
+    }
+    return traj_msg;
 }
+
+} // namespace vsl_motion_planner

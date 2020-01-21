@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 2.8.3)
+cmake_minimum_required(VERSION 3.5.0)
 project(vsl_trajopt_tesseract)
 
 ## Compile as C++11, supported in ROS Kinetic and newer
@@ -52,45 +52,6 @@ include_directories(
 )
 
 # ## Declare a C++ library
-# add_library(problem_construction src/problem_construction.cpp)
-
-# target_link_libraries(problem_construction tesseract::tesseract tesseract::tesseract_motion_planners_trajopt ${catkin_LIBRARIES})
-# target_link_libraries(vsl_trajopt_main problem_construction ${catkin_LIBRARIES})
-
-# tesseract_target_compile_options(problem_construction PUBLIC)
-# target_include_directories(problem_construction PUBLIC
-#     "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>"
-#     "$<INSTALL_INTERFACE:include>")
-# target_include_directories(problem_construction SYSTEM PUBLIC
-#     ${catkin_INCLUDE_DIRS})
-
-# add_library(run_trajopt src/run_trajopt.cpp)
-
-# target_link_libraries(run_trajopt tesseract::tesseract tesseract::tesseract_motion_planners_trajopt ${catkin_LIBRARIES})
-# target_link_libraries(vsl_trajopt_main run_trajopt ${catkin_LIBRARIES})
-
-# tesseract_target_compile_options(run_trajopt PUBLIC)
-# target_include_directories(run_trajopt PUBLIC
-#     "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>"
-#     "$<INSTALL_INTERFACE:include>")
-# target_include_directories(run_trajopt SYSTEM PUBLIC
-#     ${catkin_INCLUDE_DIRS})
-
-
-# ## Declare a Executable
-
-# add_executable(vsl_trajopt_main src/vsl_trajopt_main.cpp)
-
-# add_dependencies(vsl_trajopt_main vsl_msgs_generate_messages_cpp ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
-
-# tesseract_target_compile_options(vsl_trajopt_main PRIVATE)
-# target_include_directories(vsl_trajopt_main PRIVATE
-#     "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>"
-#     "$<INSTALL_INTERFACE:include>")
-# target_include_directories(vsl_trajopt_main SYSTEM PRIVATE
-#     ${catkin_INCLUDE_DIRS})
-
-
 add_library(problem_construction src/problem_construction.cpp)
 add_library(run_trajopt src/run_trajopt.cpp)
 

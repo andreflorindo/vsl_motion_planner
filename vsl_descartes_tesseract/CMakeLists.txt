@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 2.8.3)
+cmake_minimum_required(VERSION 3.5.0)
 project(vsl_descartes_tesseract)
 
 ## Compile as C++11, supported in ROS Kinetic and newer
@@ -19,7 +19,9 @@ find_package(catkin REQUIRED COMPONENTS
 
 ## System dependencies are found with CMake's conventions
 # find_package(Boost REQUIRED COMPONENTS system)
-find_package(trajopt REQUIRED)
+find_package(descartes_light REQUIRED)
+find_package(descartes_samplers REQUIRED)
+find_package(descartes_opw REQUIRED)
 find_package(tesseract REQUIRED)
 find_package(tesseract_motion_planners REQUIRED)
 find_package(tesseract_common REQUIRED)
@@ -58,10 +60,10 @@ add_executable(vsl_descartes_tesseract_main src/vsl_descartes_tesseract_main.cpp
 
 add_dependencies(vsl_descartes_tesseract_main vsl_msgs_generate_messages_cpp ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 
-target_link_libraries(descartes_problem_construction descartes::descartes_light descartes::descartes_samplers descartes::descartes_opw ${catkin_LIBRARIES})
+target_link_libraries(descartes_problem_construction tesseract::tesseract tesseract::tesseract_motion_planners_descartes tesseract::tesseract_kinematics_opw ${catkin_LIBRARIES})
 target_link_libraries(vsl_descartes_tesseract_main descartes_problem_construction ${catkin_LIBRARIES})
 
-target_link_libraries(run_descartes descartes::descartes_light descartes::descartes_samplers descartes::descartes_opw ${catkin_LIBRARIES})
+target_link_libraries(run_descartes tesseract::tesseract tesseract::tesseract_motion_planners_descartes ${catkin_LIBRARIES})
 target_link_libraries(vsl_descartes_tesseract_main run_descartes ${catkin_LIBRARIES})
 
 tesseract_target_compile_options(descartes_problem_construction PUBLIC)

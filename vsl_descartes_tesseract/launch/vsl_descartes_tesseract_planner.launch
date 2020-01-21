@@ -66,7 +66,7 @@
   </node> -->
 
     <!-- If needed, broadcast static tf for robot root -->
-  <node name="vsl_descartes_tesseract_main" pkg="vsl_trajopt_tesseract" type="vsl_trajopt_main" output="screen">
+  <node name="vsl_descartes_tesseract_main" pkg="vsl_descartes_tesseract" type="vsl_descartes_tesseract_main" output="screen">
     <param name="plotting" type="bool" value="$(arg plotting)"/>
     <param name="rviz" type="bool" value="$(arg rviz)"/>
     <param name="group_name" value="manipulator"/>
@@ -81,7 +81,7 @@
         args="-d $(find vsl_trajopt_tesseract)/config/examples.rviz" /> -->
   <!-- <node if="$(arg rviz)" pkg="rviz" type="rviz" name=" vsl_tesseract_rviz"
     args="-d $(find vsl_trajopt_tesseract)/config/config.rviz" />  -->
-    <node name="rviz" type="rviz" pkg="rviz" args="-d $(find vsl_trajopt_tesseract)/config/config.rviz" required="true" output="screen" />
+    <node name="rviz" type="rviz" pkg="rviz" args="-d $(find vsl_descartes_tesseract)/config/config.rviz" required="true" output="screen" />
 
 </launch>
 

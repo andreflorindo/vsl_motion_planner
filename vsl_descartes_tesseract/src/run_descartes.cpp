@@ -1,20 +1,7 @@
 #include <vsl_descartes_tesseract_planner.h>
 
-using namespace tesseract;
-using namespace tesseract_environment;
-using namespace tesseract_scene_graph;
-using namespace tesseract_collision;
-using namespace tesseract_motion_planners;
-using namespace tesseract_kinematics;
-using namespace opw_kinematics;
-using namespace descartes_light;
-using namespace descartes_core;
-using namespace tesseract_rosutils;
-
-
 namespace vsl_motion_planner
 {
-
 bool VSLDescartesTesseractPlanner::run()
 {
     //////////////////
@@ -29,7 +16,7 @@ bool VSLDescartesTesseractPlanner::run()
     nh_.getParam(ROBOT_DESCRIPTION_PARAM, urdf_xml_string);
     nh_.getParam(ROBOT_SEMANTIC_PARAM, srdf_xml_string);
 
-    ResourceLocator::Ptr locator = std::make_shared<tesseract_rosutils::ROSResourceLocator>();
+    tesseract_scene_graph::ResourceLocator::Ptr locator = std::make_shared<tesseract_rosutils::ROSResourceLocator>();
     if (!tesseract_->init(urdf_xml_string, srdf_xml_string, locator))
     {
         ROS_ERROR_STREAM("Tesseract failed to connect to the robot files");
@@ -51,30 +38,35 @@ bool VSLDescartesTesseractPlanner::run()
             return false;
     }
 
+    ROS_INFO_STREAM("ROS SETUP completed");
+
     ///////////////////
     /// ROBOT SETUP ///
     ///////////////////
 
-    opw_params_.a1 = (0.350);
-    opw_params_.a2 = (0.041);
-    opw_params_.b = (0.000);
-    opw_params_.c1 = (0.675);
-    opw_params_.c2 = (1.150);
-    opw_params_.c3 = (1.200);
-    opw_params_.c4 = (0.215);
+    opw_kinematics::Parameters<double> opw_params;
+    opw_params.a1 = (0.350);
+    opw_params.a2 = (0.041);
+    opw_params.b = (0.000);
+    opw_params.c1 = (0.675);
+    opw_params.c2 = (1.150);
+    opw_params.c3 = (1.200);
+    opw_params.c4 = (0.215);
+    opw_params.offsets[1] = M_PI / 2.0;
+    opw_params.sign_corrections[0] = -1;
+    opw_params.sign_corrections[3] = -1;
+    opw_params.sign_corrections[5] = -1;
 
-    opw_params_.offsets[2] = -M_PI / 2.0;
-
-    auto robot_kin = tesseract_->getFwdKinematicsManagerConst()->getFwdKinematicSolver("manipulator");
-    auto opw_kin = std::make_shared<OPWInvKin>();
+    tesseract_kinematics::ForwardKinematics::Ptr robot_kin_fk = tesseract_->getFwdKinematicsManagerConst()->getFwdKinematicSolver("manipulator");
+    std::shared_ptr<tesseract_kinematics::OPWInvKin> opw_kin = std::make_shared<tesseract_kinematics::OPWInvKin>();
     opw_kin->init("manipulator",
-                  opw_params_,
-                  robot_kin->getBaseLinkName(),
-                  robot_kin->getTipLinkName(),
-                  robot_kin->getJointNames(),
-                  robot_kin->getLinkNames(),
-                  robot_kin->getActiveLinkNames(),
-                  robot_kin->getLimits());
+                  opw_params,
+                  robot_kin_fk->getBaseLinkName(),
+                  robot_kin_fk->getTipLinkName(),
+                  robot_kin_fk->getJointNames(),
+                  robot_kin_fk->getLinkNames(),
+                  robot_kin_fk->getActiveLinkNames(),
+                  robot_kin_fk->getLimits());
 
     tesseract_->getInvKinematicsManager()->addInvKinematicSolver(opw_kin);
 
@@ -95,30 +87,27 @@ bool VSLDescartesTesseractPlanner::run()
             return false;
     }
 
+    ROS_INFO_STREAM("ROBOT SETUP completed");
+
     /////////////////////////////////////
     /// DESCARTES PROBLEM CONSTRUCTION //
     /////////////////////////////////////
 
     // These specify the series of points to be optimized
-    std::vector<Waypoint::Ptr> waypoints = getCourse();
+    std::vector<tesseract_motion_planners::Waypoint::Ptr> waypoints = getCourse();
 
-    // Set Log Level
-    //util::gLogLevel = util::LevelInfo;
+    tesseract_kinematics::InverseKinematics::Ptr robot_kin_ik = tesseract_->getInvKinematicsManagerConst()->getInvKinematicSolver("manipulator", "OPWInvKin");
+    tesseract_environment::EnvState::ConstPtr current_state = tesseract_->getEnvironmentConst()->getCurrentState();
 
-    auto robot_kin_ik = tesseract_->getInvKinematicsManagerConst()->getInvKinematicSolver("manipulator", "OPWInvKin");
-    auto current_state = tesseract_->getEnvironmentConst()->getCurrentState();
-
-    DescartesMotionPlannerConfigD config = createDescartesPlannerConfig(
-        tesseract_, "manipulator", robot_kin_ik, Eigen::Isometry3d::Identity(), 1.5, current_state, waypoints, true);
+    tesseract_motion_planners::DescartesMotionPlannerConfigD config = createDescartesPlannerConfig(
+        tesseract_, "manipulator", robot_kin_ik, 2.7, current_state, waypoints, false);
 
     // config.num_threads = 1;
 
-    DescartesMotionPlanner<double> single_descartes_planner;
-    PlannerResponse single_planner_response;
+    tesseract_motion_planners::DescartesMotionPlanner<double> single_descartes_planner;
+    tesseract_motion_planners::PlannerResponse single_planner_response;
     single_descartes_planner.setConfiguration(config);
-    auto single_status = single_descartes_planner.solve(single_planner_response, true);
-
-    // Solve Trajectory
+    tesseract_common::StatusCode single_status = single_descartes_planner.solve(single_planner_response, true);
     ROS_INFO("Trajectory is planned");
 
     // tesseract_planning::DescartesTrajOptArrayPlanner descartes_trajopt_planner;
@@ -129,39 +118,37 @@ bool VSLDescartesTesseractPlanner::run()
     // // /// FINAL TRAJECTORY //
     // // ///////////////////////
 
-    // // getTraj() - To get trajectory of type trajopt::TrajArray
-
     if (plotting_)
         plotter->clear();
 
-    // plotter->plotTrajectory(robot_kin->getJointNames(), single_planner_response.trajectory.leftCols(robot_kin->getJointNames().size()));
+    plotter->plotTrajectory(robot_kin_ik->getJointNames(), single_planner_response.joint_trajectory.trajectory.leftCols(robot_kin_ik->getJointNames().size()));
 
     // //////////////
     // /// EXECUTE //
     // //////////////
 
-    // trajectory_msgs::JointTrajectory traj_msg;
-    // ros::Duration t1(0.10);
-    // traj_msg = trajArrayToJointTrajectoryMsg(prob->GetKin()->getJointNames(), getTraj(opt.x(), prob->GetVars()), pci.basic_info.use_time, t1);
-    // joint_traj_.publish(traj_msg);
+    trajectory_msgs::JointTrajectory traj_msg;
+    ros::Duration t1(0.10);
+    traj_msg = trajArrayToJointTrajectoryMsg(robot_kin_ik->getJointNames(), single_planner_response.joint_trajectory.trajectory, false, t1);
+    joint_traj_.publish(traj_msg);
 
-    // // Create action message
-    // control_msgs::FollowJointTrajectoryGoal goal;
-    // goal.trajectory = traj_msg;
+    // Create action message
+    control_msgs::FollowJointTrajectoryGoal goal;
+    goal.trajectory = traj_msg;
 
-    // ROS_INFO_STREAM("Robot path sent for execution");
+    ROS_INFO_STREAM("Robot path sent for execution");
 
-    // if (follow_joint_trajectory_client_->sendGoalAndWait(goal) == actionlib::SimpleClientGoalState::SUCCEEDED)
-    // {
-    //     ROS_INFO_STREAM("Robot path execution completed");
-    // }
-    // else
-    // {
-    //     ROS_ERROR_STREAM("Failed to run robot path with error " << *follow_joint_trajectory_client_->getResult());
-    //     exit(-1);
-    // }
+    if (follow_joint_trajectory_client_->sendGoalAndWait(goal) == actionlib::SimpleClientGoalState::SUCCEEDED)
+    {
+        ROS_INFO_STREAM("Robot path execution completed");
+    }
+    else
+    {
+        ROS_ERROR_STREAM("Failed to run robot path with error " << *follow_joint_trajectory_client_->getResult());
+        exit(-1);
+    }
 
-    // ROS_INFO_STREAM("Task '" << __FUNCTION__ << "' completed");
+    ROS_INFO_STREAM("Task '" << __FUNCTION__ << "' completed");
 
     return true;
 }

@@ -33,7 +33,7 @@ TESSERACT_COMMON_IGNORE_WARNINGS_PUSH
 #include <tesseract_motion_planners/descartes/descartes_collision_edge_evaluator.h>
 #include <tesseract_motion_planners/descartes/descartes_collision.h>
 #include <tesseract_motion_planners/descartes/utils.h>
-#include <tesseract_motion_planners/hybrid/descartes_trajopt_array_planner.h>
+// #include <tesseract_motion_planners/hybrid/descartes_trajopt_array_planner.h>
 #include <tesseract_motion_planners/core/types.h>
 #include <tesseract_motion_planners/core/utils.h>
 TESSERACT_COMMON_IGNORE_WARNINGS_POP
@@ -80,15 +80,17 @@ protected:
   tesseract_motion_planners::DescartesMotionPlannerConfigD createDescartesPlannerConfig(const tesseract::Tesseract::ConstPtr &tesseract_ptr,
                                                                                         const std::string & /*manip*/,
                                                                                         const tesseract_kinematics::InverseKinematics::ConstPtr &kin,
-                                                                                        const Eigen::Isometry3d &tcp,
                                                                                         const double robot_reach,
                                                                                         const tesseract_environment::EnvState::ConstPtr &current_state,
                                                                                         const std::vector<tesseract_motion_planners::Waypoint::Ptr> &waypoints,
                                                                                         bool use_collision_edge_evaluator = false);
+  trajectory_msgs::JointTrajectory trajArrayToJointTrajectoryMsg(std::vector<std::string> joint_names,
+                                                                 tesseract_common::TrajArray traj_array,
+                                                                 bool use_time,
+                                                                 ros::Duration time_increment);
 
 private:
   VSLDescartesTesseractPlannerConfiguration config_;
-  opw_kinematics::Parameters<double> opw_params_;
   ros::NodeHandle nh_;
   bool plotting_;
   bool rviz_;
