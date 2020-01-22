@@ -53,11 +53,17 @@ bool VSLTrajoptPlanner::run()
 
     // Set the initial state of the robot
     std::unordered_map<std::string, double> initial_joint_states;
-    initial_joint_states["kr210_joint_a1"] = 0.3;
-    initial_joint_states["kr210_joint_a2"] = -0.76;
-    initial_joint_states["kr210_joint_a3"] = 1.72;
+    // initial_joint_states["kr210_joint_a1"] = 0.3;
+    // initial_joint_states["kr210_joint_a2"] = -0.76;
+    // initial_joint_states["kr210_joint_a3"] = 1.72;
+    // initial_joint_states["kr210_joint_a4"] = 0.0;
+    // initial_joint_states["kr210_joint_a5"] = 0.6;
+    // initial_joint_states["kr210_joint_a6"] = 0.0;
+    initial_joint_states["kr210_joint_a1"] = 1.57;
+    initial_joint_states["kr210_joint_a2"] = -1.04;
+    initial_joint_states["kr210_joint_a3"] = 1.04;
     initial_joint_states["kr210_joint_a4"] = 0.0;
-    initial_joint_states["kr210_joint_a5"] = 0.6;
+    initial_joint_states["kr210_joint_a5"] = 1.57;
     initial_joint_states["kr210_joint_a6"] = 0.0;
     tesseract_->getEnvironment()->setState(initial_joint_states);
 
@@ -76,7 +82,7 @@ bool VSLTrajoptPlanner::run()
     util::gLogLevel = util::LevelInfo;
 
     // Setup Problem
-    ProblemConstructionInfo pci = cppMethod();
+    ProblemConstructionInfo pci = trajoptPCI();
     TrajOptProb::Ptr prob = ConstructProblem(pci);
 
     // Solve Trajectory
@@ -87,6 +93,7 @@ bool VSLTrajoptPlanner::run()
     /////////////////////////
 
     std::vector<ContactResultMap> collisions;
+    tesseract_environment::StateSolver::Ptr state_solver = prob->GetEnv()->getStateSolver();
     ContinuousContactManager::Ptr manager = prob->GetEnv()->getContinuousContactManager();
     AdjacencyMap::Ptr adjacency_map =
         std::make_shared<tesseract_environment::AdjacencyMap>(prob->GetEnv()->getSceneGraph(),
@@ -97,7 +104,7 @@ bool VSLTrajoptPlanner::run()
     manager->setContactDistanceThreshold(0);
     collisions.clear();
     bool found =
-        checkTrajectory(*manager, *prob->GetEnv(), prob->GetKin()->getJointNames(), prob->GetInitTraj(), collisions);
+        checkTrajectory(collisions, *manager, *state_solver, prob->GetKin()->getJointNames(), prob->GetInitTraj());
 
     ROS_INFO((found) ? ("Initial trajectory is in collision") : ("Initial trajectory is collision free"));
 
@@ -130,7 +137,7 @@ bool VSLTrajoptPlanner::run()
 
     collisions.clear();
     found = checkTrajectory(
-        *manager, *prob->GetEnv(), prob->GetKin()->getJointNames(), getTraj(opt.x(), prob->GetVars()), collisions);
+        collisions, *manager, *state_solver, prob->GetKin()->getJointNames(), getTraj(opt.x(), prob->GetVars()));
 
     ROS_INFO((found) ? ("Final trajectory is in collision") : ("Final trajectory is collision free"));
 
