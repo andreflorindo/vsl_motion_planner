@@ -95,7 +95,7 @@ tesseract_common::VectorIsometry3d VSLTrajoptPlanner::getCourse()
   return poses;
 }
 
-ProblemConstructionInfo VSLTrajoptPlanner::cppMethod()
+ProblemConstructionInfo VSLTrajoptPlanner::trajoptPCI()
 {
   ProblemConstructionInfo pci(tesseract_);
 
@@ -105,7 +105,7 @@ ProblemConstructionInfo VSLTrajoptPlanner::cppMethod()
   pci.basic_info.n_steps = static_cast<int>(tool_poses.size());
   pci.basic_info.manip = "manipulator";
   pci.basic_info.start_fixed = false;
-  pci.basic_info.use_time = false;
+  pci.basic_info.use_time = true;
   pci.opt_info.max_iter = 200;
   pci.opt_info.min_approx_improve = 1e-3;
   pci.opt_info.min_trust_box_size = 1e-3;
@@ -124,12 +124,10 @@ ProblemConstructionInfo VSLTrajoptPlanner::cppMethod()
     ++cnt;
   }
 
-  pci.init_info.type = InitInfo::GIVEN_TRAJ;
-
   // Repeats initial position given in the code n times, being that the only point of the initial trajectory
+  pci.init_info.type = InitInfo::GIVEN_TRAJ;
   pci.init_info.data = start_pos.transpose().replicate(pci.basic_info.n_steps, 1);
-  //  pci.init_info.data.col(6) = VectorXd::LinSpaced(steps_, start_pos[6],
-  //  end_pos[6]);
+  // pci.init_info.data = readInitTraj("/examples/descartes_joint_request.txt");
 
   // Populate Cost Info
   std::shared_ptr<JointVelTermInfo> joint_vel = std::shared_ptr<JointVelTermInfo>(new JointVelTermInfo);
@@ -142,7 +140,7 @@ ProblemConstructionInfo VSLTrajoptPlanner::cppMethod()
   joint_vel->first_step = 0;
   joint_vel->last_step = pci.basic_info.n_steps - 1;
   joint_vel->name = "joint_vel";
-  joint_vel->term_type = TT_COST;
+  joint_vel->term_type = TT_USE_TIME;
   pci.cost_infos.push_back(joint_vel);
 
   std::shared_ptr<JointAccTermInfo> joint_acc = std::shared_ptr<JointAccTermInfo>(new JointAccTermInfo);
@@ -167,10 +165,9 @@ ProblemConstructionInfo VSLTrajoptPlanner::cppMethod()
   collision->info = createSafetyMarginDataVector(pci.basic_info.n_steps, 0.025, 20);
   collision->name = "collision";
   collision->term_type = TT_COST;
-  collision->continuous = false;
+  collision->evaluator_type = trajopt::CollisionEvaluatorType::SINGLE_TIMESTEP;
   collision->first_step = 0;
   collision->last_step = pci.basic_info.n_steps - 1;
-  collision->gap = 1;
   pci.cost_infos.push_back(collision);
 
   // Populate Constraints
@@ -221,9 +218,9 @@ ProblemConstructionInfo VSLTrajoptPlanner::cppMethod()
 }
 
 trajectory_msgs::JointTrajectory VSLTrajoptPlanner::trajArrayToJointTrajectoryMsg(std::vector<std::string> joint_names,
-                                                               TrajArray traj_array,
-                                                               bool use_time,
-                                                               ros::Duration time_increment)
+                                                                                  TrajArray traj_array,
+                                                                                  bool use_time,
+                                                                                  ros::Duration time_increment)
 {
   // Create the joint trajectory
   trajectory_msgs::JointTrajectory traj_msg;
@@ -270,4 +267,42 @@ trajectory_msgs::JointTrajectory VSLTrajoptPlanner::trajArrayToJointTrajectoryMs
   }
   return traj_msg;
 }
+
+TrajArray VSLTrajoptPlanner::readInitTraj(std::string start_filename)
+{
+  std::string filename = ros::package::getPath("vsl_msgs") + start_filename;
+  std::ifstream infile{filename, std::ios::in};
+
+  if (!infile.good())
+  {
+    ROS_ERROR_STREAM("Init trajectory has not able to be found. Trajectory generation failed");
+    exit(-1);
+  }
+
+  std::istream_iterator<double> infile_begin{infile};
+  std::istream_iterator<double> eof{};
+  std::vector<double> file_nums{infile_begin, eof};
+  infile.close();
+
+  int npoints = file_nums.size() / 6;
+
+  TrajArray init_trajectory(npoints, 6);
+  int t = 0;
+
+  for (int row = 0; row < npoints; row++)
+  {
+    for (int col = 0; col < 6; col++)
+    {
+      // ROS_INFO_STREAM(row);
+      // ROS_INFO_STREAM(col);
+      // ROS_INFO_STREAM(file_nums[t]);
+      init_trajectory(row, col) = file_nums[t];
+      t++;
+    }
+  }
+  // ROS_INFO_STREAM(init_trajectory.matrix());
+  ROS_INFO_STREAM("Task '" << __FUNCTION__ << "' completed");
+  return init_trajectory;
+}
+
 } // namespace vsl_motion_planner
