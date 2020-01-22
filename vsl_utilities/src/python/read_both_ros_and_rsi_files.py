@@ -918,6 +918,20 @@ def rsi_store_only_course_variables(index_switch, robot_state, robot_state_veloc
     adjust_time(robot_state_course_acceleration.ee_states.time)
 
 
+def write_joint_request_file(joint_request):
+    infile = open(
+        '/home/andreflorindo/workspaces/vsl_motion_planner_ws/src/vsl_descartes_moveit/trial_txt_files/03_12_2019/descartes_joint_request.txt', 'w')
+
+    for i in range(1, len(joint_request.time)):
+        infile.write("%f %f %f %f %f %f\n" % (joint_request.a1[i],
+                                              joint_request.a2[i],
+                                              joint_request.a3[i],
+                                              joint_request.a4[i],
+                                              joint_request.a5[i],
+                                              joint_request.a6[i]))
+    infile.close()
+
+
 if __name__ == "__main__":
 
     rsi_robot_state_from_file = RobotState()
@@ -988,3 +1002,5 @@ if __name__ == "__main__":
     # make_joints_plots('Joint A1', ros_robot_state.joint_request.a1, ros_robot_state.joint_request.a2, rsi_robot_state.joint_states.a1, rsi_robot_state.joint_states.a2, rsi_robot_state.joint_states.time, rsi_robot_state.joint_states.a1,
     #                   ros_robot_state_velocity.joint_request.time, ros_robot_state_velocity.joint_request.a1, ros_robot_state_velocity.joint_states.time, ros_robot_state_velocity.joint_states.a1, rsi_robot_state_velocity.joint_states.time, rsi_robot_state_velocity.joint_states.a1,
     #                   ros_robot_state_acceleration.joint_request.time, ros_robot_state_acceleration.joint_request.a1, ros_robot_state_acceleration.joint_states.time, ros_robot_state_acceleration.joint_states.a1, rsi_robot_state_acceleration.joint_states.time, rsi_robot_state_acceleration.joint_states.a1)
+
+    # write_joint_request_file(ros_robot_state_course.joint_request)

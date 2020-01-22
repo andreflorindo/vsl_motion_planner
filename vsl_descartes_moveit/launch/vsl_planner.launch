@@ -1,0 +1,42 @@
+<?xml version="1.0" ?>
+<launch>
+  <arg name="sim" default="true" />    <!--Simulation-->
+  <param name="ikfast_base_frame" type="string" value="kr210_base_link" />
+  <param name="ikfast_tool_frame" type="string" value="penholder_tool_tip" />  <!--kr210_qr_tool0-->
+
+  <node name="pose_builder" pkg="vsl_utilities" type="pose_builder" output="screen">
+    <param name="world_frame" value="kl2000_base_link"/>  <!--table_table_top-->
+  </node>
+
+  <node name="course_display" pkg="vsl_utilities" type="course_display" output="screen">
+    <param name="world_frame" value="kl2000_base_link"/>  <!--table_table_top-->
+  </node>
+
+  <node name="ee_cartesian_pose_publisher" pkg="vsl_utilities" type="ee_cartesian_pose_publisher" output="screen">
+    <param name="tip_link" value="penholder_tool_tip"/>  <!--kr210_qr_tool0-->
+    <param name="base_link" value="kr210_base_link"/>
+  </node>
+
+  <node name="joint_request_publisher" pkg="vsl_utilities" type="joint_request_publisher" output="screen">
+    <param name="sim" value="$(arg sim)"/>
+  </node>
+
+  <node name="ee_request_publisher" pkg="vsl_utilities" type="ee_request_publisher" output="screen">
+    <param name="group_name" value="manipulator"/>
+    <param name="tip_link" value="penholder_tool_tip"/>  <!--kr210_qr_tool0-->
+    <param name="base_link" value="kr210_base_link"/>
+  </node>
+
+  <node name="vsl_descartes_moveit_main" pkg="vsl_descartes_moveit" type="vsl_descartes_moveit_main" output="screen">
+    <param name="group_name" value="manipulator"/>
+    <param name="tip_link" value="penholder_tool_tip"/>  <!--kr210_qr_tool0-->
+    <param name="base_link" value="kr210_base_link"/>
+    <param name="world_frame" value="kl2000_base_link"/>  <!--table_table_top-->  
+    <!-- <param name="trajectory/time_delay" value="0.1"/> -->
+    <!-- <rosparam param="trajectory/seed_pose">[1.57, -1.57, 1.04 , 0.0, 1.57, 0.0]</rosparam> -->
+    <!-- <rosparam param="trajectory/seed_pose">[0.52, -1.57, 1.04 , 0.0, 0.52, 0.0]</rosparam> -->
+    <rosparam param="trajectory/seed_pose">[0.30, -0.76, 1.72 , 0.0, 0.60, -0.13]</rosparam>
+
+  </node>
+
+</launch>

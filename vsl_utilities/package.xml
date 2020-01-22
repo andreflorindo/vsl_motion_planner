@@ -16,6 +16,7 @@
   <depend>eigen_conversions</depend>
   <depend>vsl_msgs</depend>
   <depend>tf</depend>
+  <depend>moveit_ros_planning_interface</depend>
   
   <export>
   </export>
