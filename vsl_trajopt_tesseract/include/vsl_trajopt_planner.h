@@ -73,7 +73,8 @@ public:
   bool run();
 
 protected:
-  trajopt::ProblemConstructionInfo cppMethod();
+  trajopt::ProblemConstructionInfo trajoptPCI();
+  tesseract_common::TrajArray readInitTraj(std::string start_filename);
 
 private:
   VSLTrajoptPlannerConfiguration config_; 

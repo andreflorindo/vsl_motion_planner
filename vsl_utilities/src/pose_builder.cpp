@@ -64,7 +64,8 @@ void PoseBuilder::createCourse()
 
         Eigen::Isometry3d rot_start_table;
         rot_start_table.matrix() << -1, 0, 0, 0, 0, -1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1;
-        single_pose = rot_start_table * (Eigen::Translation3d(course.x[i], course.y[i] - TABLE_WIDTH - TABLE_WIDTH / 2, course.z[i] + TABLE_HEIGHT + APPROACH_TABLE)) * rot;
+        // single_pose = rot_start_table * (Eigen::Translation3d(course.x[i], course.y[i] - TABLE_WIDTH - TABLE_WIDTH / 2, course.z[i] + TABLE_HEIGHT + APPROACH_TABLE)) * rot;
+        single_pose = rot_start_table * (Eigen::Translation3d(course.x[i]- TABLE_WIDTH - TABLE_WIDTH / 2, course.y[i] - TABLE_WIDTH/2, course.z[i] + TABLE_HEIGHT + APPROACH_TABLE +0.7)) * rot;
 
         tf::poseEigenToMsg(single_pose, single_pose_msg);
 
