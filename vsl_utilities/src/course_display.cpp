@@ -16,16 +16,6 @@ void CourseDisplay::initTopic()
     ros::NodeHandle nh;
     ros::NodeHandle ph("~");
 
-    if (ph.getParam("world_frame", config_.world_frame))
-    {
-        ROS_INFO_STREAM("course_display: Loaded Topic parameters");
-    }
-    else
-    {
-        ROS_ERROR_STREAM("course_display: Failed to load Topic parameters");
-        exit(-1);
-    }
-
     if (ros::service::waitForService(POSE_BUILDER_SERVICE, ros::Duration(SERVER_TIMEOUT)))
     {
         ROS_INFO_STREAM("Connected to '" << POSE_BUILDER_SERVICE << "' service");
@@ -46,8 +36,8 @@ void CourseDisplay::getPoseArray(geometry_msgs::PoseArray &course_poses)
     
     pose_builder_client_ = nh_.serviceClient<vsl_msgs::PoseBuilder>(POSE_BUILDER_SERVICE);
     vsl_msgs::PoseBuilder srv;
-    // srv.request.num_layer = num_layer;
-    // srv.request.num_course = num_course;
+    // srv.request.num_layer = 1;
+    // srv.request.num_course = 1;
     // ROS_INFO_STREAM("Requesting pose in base frame: " << num_layer);
     if (!pose_builder_client_.call(srv))
     {
@@ -58,6 +48,13 @@ void CourseDisplay::getPoseArray(geometry_msgs::PoseArray &course_poses)
     ROS_INFO_STREAM("course_display: Service Posebuilder localized");
 
     course_poses = srv.response.single_course_poses;
+
+    if(course_poses.header.frame_id.empty())
+    {
+        ROS_ERROR("course_display: Service Posebuilder does not specify Frame ID");
+        exit(-1);
+    }
+
 }
 
 void CourseDisplay::publishPosesMarkers(const geometry_msgs::PoseArray &course_poses)
@@ -69,7 +66,7 @@ void CourseDisplay::publishPosesMarkers(const geometry_msgs::PoseArray &course_p
     z_axes.ns = y_axes.ns = x_axes.ns = "axes";
     z_axes.action = y_axes.action = x_axes.action = visualization_msgs::Marker::ADD;
     z_axes.lifetime = y_axes.lifetime = x_axes.lifetime = ros::Duration(0);
-    z_axes.header.frame_id = y_axes.header.frame_id = x_axes.header.frame_id = config_.world_frame;
+    z_axes.header.frame_id = y_axes.header.frame_id = x_axes.header.frame_id = course_poses.header.frame_id;
     z_axes.scale.x = y_axes.scale.x = x_axes.scale.x = ARROW_WIDTH;
 
     // z properties
@@ -98,7 +95,7 @@ void CourseDisplay::publishPosesMarkers(const geometry_msgs::PoseArray &course_p
     line.ns = "line";
     line.action = visualization_msgs::Marker::ADD;
     line.lifetime = ros::Duration(0);
-    line.header.frame_id = config_.world_frame;
+    line.header.frame_id = course_poses.header.frame_id;
     line.scale.x = AXIS_LINE_WIDTH;
     line.id = 0;
     line.color.r = 1;

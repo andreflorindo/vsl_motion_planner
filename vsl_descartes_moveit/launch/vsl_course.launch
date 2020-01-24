@@ -1,0 +1,14 @@
+<?xml version="1.0" ?>
+<launch> 
+  <node name="pose_builder" pkg="vsl_utilities" type="pose_builder.py" output="screen">
+    <param name="world_frame" value="kl2000_base_link"/>
+    <param name="course_filename" value="/examples/simplePath.txt"/>
+    <param name="distance_waypoints" value="0.00574"/> <!-- meters -->
+    <param name="add_x_distance" value="0.4"/> <!-- meters. Positive goes to the back, closer to the base-->
+    <param name="add_y_distance" value="2.0"/> <!-- meters. Positives goes to the right-->
+    <param name="add_z_distance" value="0.7"/> <!-- meters. Positive goes above -->
+    <param name="tow_width" value="0.25"/>   <!-- inches -->
+  </node>
+
+  <node name="course_display" pkg="vsl_utilities" type="course_display" output="screen"/>
+</launch>

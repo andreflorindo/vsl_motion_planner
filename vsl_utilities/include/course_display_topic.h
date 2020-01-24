@@ -16,14 +16,9 @@
 namespace vsl_motion_planning
 {
 const std::string VISUALIZE_TRAJECTORY_TOPIC = "visualize_trajectory_curve";
-const double ARROW_LENGHT = 0.02; //0.02
+const double ARROW_LENGHT = 0.005; //0.02
 const double ARROW_WIDTH  = 0.003;
 const double AXIS_LINE_WIDTH = 0.01; //0.01
-
-struct CourseDisplayConfiguration
-{
-    std::string world_frame;
-};
 
 class CourseDisplay
 {
@@ -37,7 +32,6 @@ public:
     void publishPosesMarkers(const geometry_msgs::PoseArray &course_poses);
 
 protected:
-    CourseDisplayConfiguration config_;
     ros::NodeHandle nh_;
     ros::ServiceClient pose_builder_client_;
     ros::Publisher marker_publisher_;

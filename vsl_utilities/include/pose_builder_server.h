@@ -36,7 +36,6 @@ const double XY_RAISE_DISTANCE = 0.05; //meters
 const double ANGLE_RAISE = 10; //degrees
 const double Z_RAISE_DISTANCE= XY_RAISE_DISTANCE*tan(ANGLE_RAISE*M_PI/180);
 const double SERVER_TIMEOUT = 5.0f; // seconds
-
 const std::string POSE_BUILDER_SERVICE = "single_course";
 
 struct PoseBuilderConfiguration

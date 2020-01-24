@@ -41,6 +41,7 @@
                 "/home/andreflorindo/workspaces/tesseract_vsl_motion_planner_ws/src/trajopt/trajopt_sco/include/**",
                 "/home/andreflorindo/workspaces/tesseract_vsl_motion_planner_ws/src/trajopt/trajopt_utils/include/**",
                 "/home/andreflorindo/workspaces/tesseract_vsl_motion_planner_ws/src/trajopt/trajopt_ext/vhacd/include/**",
+                "/home/andreflorindo/workspaces/tesseract_vsl_motion_planner_ws/src/vsl_motion_planner/vsl_descartes_moveit/include/**",
                 "/home/andreflorindo/workspaces/tesseract_vsl_motion_planner_ws/src/vsl_motion_planner/vsl_trajopt_tesseract/include/**",
                 "/home/andreflorindo/workspaces/tesseract_vsl_motion_planner_ws/src/vsl_motion_planner/vsl_utilities/include/**",
                 "/usr/include/**"

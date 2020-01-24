@@ -17,7 +17,7 @@ class CourseClass:
 
 def read_path():
     input = np.loadtxt(
-        "/home/andreflorindo/workspaces/vsl_motion_planner_ws/src/vsl_utilities/examples/simplePath.txt", dtype='f')
+        "/home/andreflorindo/workspaces/tesseract_vsl_motion_planner_ws/src/vsl_motion_planner/vsl_msgs/examples/simplePath.txt", dtype='f')
     x = []
     y = []
     z = []
@@ -208,7 +208,7 @@ if __name__ == "__main__":
         else:
             u.append(1)
 
-    parameter = np.linspace(0, 1, num=500)
+    parameter = np.linspace(0, 1, num=100000)
 
     bspline_course = bspline3D(parameter, u, course, k)
     position = recognize_position(course, bspline_course)

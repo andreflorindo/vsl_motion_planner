@@ -4,13 +4,22 @@
   <param name="ikfast_base_frame" type="string" value="kr210_base_link" />
   <param name="ikfast_tool_frame" type="string" value="penholder_tool_tip" />  <!--kr210_qr_tool0-->
 
-  <node name="pose_builder" pkg="vsl_utilities" type="pose_builder" output="screen">
-    <param name="world_frame" value="kl2000_base_link"/>  <!--table_table_top-->
+  <!-- <node name="pose_builder" pkg="vsl_utilities" type="pose_builder" output="screen">
+    <param name="world_frame" value="kl2000_base_link"/> 
+  </node> -->
+
+  <node name="pose_builder" pkg="vsl_utilities" type="pose_builder.py" output="screen">
+    <param name="world_frame" value="kl2000_base_link"/>
+    <param name="course_filename" value="/examples/simplePath.txt"/>   <!--Put inside the vsl_msgs folder-->
+    <param name="distance_waypoints" value="0.00574"/>
+    <param name="add_x_distance" value="0.0"/> <!-- meters. Positive goes to the back, closer to the base-->
+    <param name="add_y_distance" value="0.0"/> <!-- meters. Positives goes to the right-->
+    <param name="add_z_distance" value="0.7"/> <!-- meters. Positive goes above -->
+    <param name="tow_width" value="0.25"/>   <!-- inches -->
+    <param name="tow_thickness" value="0.001"/>   <!-- inches -->
   </node>
 
-  <node name="course_display" pkg="vsl_utilities" type="course_display" output="screen">
-    <param name="world_frame" value="kl2000_base_link"/>  <!--table_table_top-->
-  </node>
+  <node name="course_display" pkg="vsl_utilities" type="course_display" output="screen"/>
 
   <node name="ee_cartesian_pose_publisher" pkg="vsl_utilities" type="ee_cartesian_pose_publisher" output="screen">
     <param name="tip_link" value="penholder_tool_tip"/>  <!--kr210_qr_tool0-->
