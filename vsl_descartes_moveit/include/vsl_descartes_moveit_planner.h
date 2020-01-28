@@ -41,7 +41,6 @@ const double ORIENTATION_INCREMENT = 0.2f;
 const std::string PLANNER_ID = "RRTConnectkConfigDefault";
 const std::string HOME_POSITION_NAME = "above-table";
 const std::string JOINT_POSE_TOPIC = "joint_pose";
-const double MAX_VELOCITY_SCALING = 0.05f; //0.05
 const double VELOCITY_DESCARTES = 0.1f;
 const std::string POSE_BUILDER_SERVICE = "single_course";
 const double SERVER_TIMEOUT = 5.0f; // seconds
@@ -52,9 +51,10 @@ struct VSLDescartesMoveitPlannerConfiguration
     std::string tip_link;
     std::string base_link;
     std::string world_frame;
-    // double time_delay; /* Time step between consecutive points in the robot path */
     std::vector<double> seed_pose; /* Joint values close to the desired start of the robot path */
     std::vector<std::string> joint_names;
+    double max_joint_speed_scaling_between_traj;
+    double ee_speed;
 };
 
 class VSLDescartesMoveitPlanner

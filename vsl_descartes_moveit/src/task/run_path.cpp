@@ -18,7 +18,7 @@ void VSLDescartesMoveitPlanner::runPath(const std::vector<descartes_core::Trajec
   moveit::planning_interface::MoveGroupInterface move_group(config_.group_name);
   move_group.setPlannerId(PLANNER_ID); //RRTConnect
   move_group.setPlanningTime(10.0f);
-  move_group.setMaxVelocityScalingFactor(MAX_VELOCITY_SCALING);
+  move_group.setMaxVelocityScalingFactor(config_.max_joint_speed_scaling_between_traj);
 
   // setting above-table position as target
   if (!move_group.setNamedTarget(HOME_POSITION_NAME))
@@ -155,7 +155,7 @@ void VSLDescartesMoveitPlanner::addTimeParameterizationToDescartes(moveit_msgs::
   //time_parameterization_.computeTimeStamps(robot_trajectory, 0.05, 1);
   
   vsl_motion_planning::ConstEESpeedTimeParameterization designed_time_parameterization;
-  designed_time_parameterization.computeTimeStamps(robot_trajectory, config_.tip_link, 0.10, 1, 1);
+  designed_time_parameterization.computeTimeStamps(robot_trajectory, config_.tip_link, config_.ee_speed, 1, 1);
 
   robot_trajectory.getRobotTrajectoryMsg(traj);
 }

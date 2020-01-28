@@ -240,9 +240,10 @@ if __name__ == "__main__":
     # np.savetxt("/home/andreflorindo/workspaces/vsl_motion_planner_ws/src/vsl_utilities/examples/binormal_simplePath.txt", binormal, fmt='%.6f')
 
     # plot_course(bspline_course)
-    plot_both_courses2d(course, bspline_course)
-    radius = compute_radius2D(deriv1_bspline_position,deriv2_bspline_position)
-    print(radius)
+    # plot_both_courses2d(course, bspline_course)
+    # radius = compute_radius2D(deriv1_bspline_position,deriv2_bspline_position)
+    # print(radius)
 
-    #deriv_bspline_course = deriv_bspline3D(1,parameter, u, course, k)
-    # plot_course(deriv_bspline_course)
+    # deriv_bspline_course = deriv_bspline3D(1,parameter, u, course, k)
+    # deriv2_bspline_course = deriv_bspline3D(2,parameter, u, course, k)
+    # plot_both_courses2d(deriv_bspline_course, deriv2_bspline_course)

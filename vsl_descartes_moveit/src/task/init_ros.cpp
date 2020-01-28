@@ -23,6 +23,8 @@ void VSLDescartesMoveitPlanner::initRos()
         ph.getParam("base_link", config_.base_link) &&
         ph.getParam("world_frame", config_.world_frame) &&
         ph.getParam("trajectory/seed_pose", config_.seed_pose) &&
+        ph.getParam("max_joint_speed_scaling_between_traj", config_.max_joint_speed_scaling_between_traj) &&
+        ph.getParam("ee_speed", config_.ee_speed) &&
         nh.getParam("controller_joint_names", config_.joint_names))
     {
         ROS_INFO_STREAM("Loaded application parameters");
