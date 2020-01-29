@@ -155,12 +155,14 @@ class PoseBuilderPython:
             u, k, parameter, 2)
         tangent = self.buildVectorNormfromClass(
             deriv1_bspline_course_extrapolated)
-        normal = self.buildVectorNormfromClass(
+        aux_normal = self.buildVectorNormfromClass(
             deriv2_bspline_course_extrapolated)
+
+        normal = CourseClass()
         binormal = CourseClass()
         for i in range(0, len(tangent.x)):
             binormal_vector = np.cross([tangent.x[i], tangent.y[i], tangent.z[i]], [
-                                       normal.x[i], normal.y[i], normal.z[i]])
+                                       aux_normal.x[i], aux_normal.y[i], aux_normal.z[i]])
             binormal_class = self.buildVectorNorm(
                 binormal_vector[0], binormal_vector[1], binormal_vector[2])
             # Enforce a binormal with a positive sign in the z direction (pointing upwards)
@@ -171,6 +173,16 @@ class PoseBuilderPython:
             binormal.x.append(binormal_class.x[0])
             binormal.y.append(binormal_class.y[0])
             binormal.z.append(binormal_class.z[0])
+
+        for i in range(0, len(tangent.x)):
+            normal_vector = np.cross([tangent.x[i], tangent.y[i], tangent.z[i]], [
+                                     binormal.x[i], binormal.y[i], binormal.z[i]])
+            normal_class = self.buildVectorNorm(
+                normal_vector[0], normal_vector[1], normal_vector[2])
+            normal.x.append(normal_class.x[0])
+            normal.y.append(normal_class.y[0])
+            normal.z.append(normal_class.z[0])
+
         return tangent, normal, binormal
 
     def getParallelTransportVectors(self, u, k, parameter):
@@ -316,9 +328,9 @@ class PoseBuilderPython:
         bspline_course_extrapolated = self.buildBSpline(u, k, parameter)
 
         # Compute tangent, normal and binormal using the definition of Frenet Serret or Parallel Transport
-        # tangent, normal, binormal = self.getFrenetSerretVectors(u, k, parameter)
-        tangent, normal, binormal = self.getParallelTransportVectors(
-            u, k, parameter)
+        tangent, normal, binormal = self.getFrenetSerretVectors(u, k, parameter)
+        # tangent, normal, binormal = self.getParallelTransportVectors(
+        #     u, k, parameter)
 
         # Construct transformation matrix and store in a geometry_msgs type
         self.course_poses.header.frame_id = self.config.world_frame
