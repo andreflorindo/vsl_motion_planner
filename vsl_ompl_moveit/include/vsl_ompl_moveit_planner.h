@@ -51,6 +51,8 @@ struct VSLOMPLMoveitPlannerConfiguration
     std::string planner_id;
     double max_joint_speed_scaling_between_traj;
     double ee_speed;
+    int layer;
+    int course;
 };
 
 class VSLOMPLMoveitPlanner
@@ -69,7 +71,7 @@ protected:
     VSLOMPLMoveitPlannerConfiguration config_;
     ros::NodeHandle nh_;
     ros::ServiceClient pose_builder_client_;
-
+    ros::Publisher course_publisher_;
     robot_model_loader::RobotModelLoaderPtr robot_model_loader_;
     mutable robot_state::RobotStatePtr kinematic_state_;
     const robot_model::JointModelGroup *joint_model_group_;

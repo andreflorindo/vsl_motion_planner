@@ -1,11 +1,9 @@
-#include <vsl_descartes_moveit_planner.h>
+/* Author: Andre Florindo*/
 
-/* MOVE HOME
-  Goal:
-  - Translate the result into a type that ROS understands
-    - Move the robot to from its current location to the first point in the robot path.
-    - Execute the robot path.
+/* Goal: Creates a RobotTrajectory with Descartes Trajectory and executes path
 */
+
+#include <vsl_descartes_moveit_planner.h>
 
 namespace vsl_motion_planning
 {
@@ -45,10 +43,7 @@ void VSLDescartesMoveitPlanner::runPath(const std::vector<descartes_core::Trajec
   descartes_core::TrajectoryPtPtr first_point_ptr = path[0];
   first_point_ptr->getNominalJointPose(seed_pose, *robot_model_ptr_, start_pose);
 
-  // moving arm to joint goal by using another planner, for example RRT
   move_group.setJointValueTarget(start_pose);
-
-  // addTimeParameterizationToDescartes(move_group.Plan.trajectory_); TODO Have to create a plan first
 
   result = move_group.move();
   if (result.val != result.SUCCESS)
@@ -68,7 +63,7 @@ void VSLDescartesMoveitPlanner::runPath(const std::vector<descartes_core::Trajec
   /////////////////////////////////////Time parameterization Descartes ///////////////////////////////
   ////////////////////////////////////////////////////////////////////////////////////////////////////
 
-  addTimeParameterizationToDescartes(moveit_traj);
+  // addTimeParameterizationToDescartes(moveit_traj);
   
   moveit_msgs::ExecuteTrajectoryGoal goal;
   goal.trajectory = moveit_traj;

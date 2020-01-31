@@ -15,6 +15,8 @@ void VSLOMPLMoveitPlanner::initOmpl()
         ph.getParam("trajectory/seed_pose", config_.seed_pose) &&
         nh.getParam("controller_joint_names", config_.joint_names) &&
         ph.getParam("planner_id", config_.planner_id) &&
+        ph.getParam("layer", config_.layer) &&
+        ph.getParam("course", config_.course) &&
         ph.getParam("max_joint_speed_scaling_between_traj", config_.max_joint_speed_scaling_between_traj) &&
         ph.getParam("ee_speed", config_.ee_speed))
     {
@@ -27,6 +29,8 @@ void VSLOMPLMoveitPlanner::initOmpl()
     }
 
     loadRobotModel();
+
+    course_publisher_ = nh.advertise<geometry_msgs::PoseArray>("single_course_poses", 1, true);
 
     ROS_INFO_STREAM("Task '" << __FUNCTION__ << "' completed");
 }
@@ -60,6 +64,8 @@ void VSLOMPLMoveitPlanner::getCourse(std::vector<geometry_msgs::Pose> &poses)
 
     pose_builder_client_ = nh_.serviceClient<vsl_msgs::PoseBuilder>(POSE_BUILDER_SERVICE);
     vsl_msgs::PoseBuilder srv;
+    srv.request.num_layer = config_.layer;
+    srv.request.num_course = config_.course;
 
     if (!pose_builder_client_.call(srv))
     {
@@ -72,6 +78,8 @@ void VSLOMPLMoveitPlanner::getCourse(std::vector<geometry_msgs::Pose> &poses)
         geometry_msgs::Pose single_pose = srv.response.single_course_poses.poses[i];
         poses.emplace_back(single_pose);
     }
+
+    course_publisher_.publish(srv.response.single_course_poses); 
 
     ROS_INFO_STREAM("Task '" << __FUNCTION__ << "' completed");
 }

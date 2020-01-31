@@ -1,4 +1,5 @@
-/* Author: Andre Florindo*/
+/* Author: Ken Anderson, Andre Florindo*/
+
 #ifndef CONST_EE_VELOCITY_TIME_PARAMETERIZATION_H
 #define CONST_EE_VELOCITY_TIME_PARAMETERIZATION_H
 

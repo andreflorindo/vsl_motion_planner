@@ -1,5 +1,10 @@
 /* Author: Ken Anderson, Andre Florindo*/
 
+/* Goal: Moveit IPTP with a small addition, a cartesian speed can be requested. 
+        First computes the minimum time between waypoints to get the requested cartesian speed
+        Only then checks if the max velocity and max acceleration of the joints are acceptable, if not replaces them
+*/
+
 #include <const_ee_speed_time_parameterization.h>
 
 namespace vsl_motion_planning
@@ -412,15 +417,17 @@ void ConstEESpeedTimeParameterization::applyConstEESpeed(robot_trajectory::Robot
 
         // Enforce a trapezoidal ee velocity profile. Keep line after else if not needed
 
-        if (i == 0 || i == num_points - 2)
-            t_min = ee_dist / (0.15 * ee_speed_request);
-        else if (i == 1 || i == num_points - 3)
-            t_min = ee_dist / (0.25 * ee_speed_request); 
-        else if (i == 2 || i == num_points - 4)
-            t_min = ee_dist / (0.90 * ee_speed_request);
-        else
-            t_min = ee_dist / ee_speed_request;
-
+        // if (i == 0 || i == num_points - 2)
+        //     t_min = ee_dist / (0.15 * ee_speed_request);
+        // else if (i == 1 || i == num_points - 3)
+        //     t_min = ee_dist / (0.25 * ee_speed_request); 
+        // else if (i == 2 || i == num_points - 4)
+        //     t_min = ee_dist / (0.90 * ee_speed_request);
+        // else
+        //     t_min = ee_dist / ee_speed_request;
+        
+        t_min = ee_dist / ee_speed_request;
+    
         time_diff[i] = t_min;
     }
 }

@@ -25,16 +25,16 @@ class CourseDisplay
 public:
     CourseDisplay();
     virtual ~CourseDisplay();
-    visualization_msgs::MarkerArray markers_msg;
+    visualization_msgs::MarkerArray markers_msg_;
 
     void initTopic();
-    void getPoseArray(geometry_msgs::PoseArray &course_poses);
     void publishPosesMarkers(const geometry_msgs::PoseArray &course_poses);
+    void subscriberCallback(const geometry_msgs::PoseArray &msg);
 
 protected:
     ros::NodeHandle nh_;
-    ros::ServiceClient pose_builder_client_;
     ros::Publisher marker_publisher_;
+    ros::Subscriber course_subscriber_;
 };
 
 } // namespace vsl_motion_planning

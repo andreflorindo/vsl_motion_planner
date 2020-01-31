@@ -1,3 +1,9 @@
+/* Author: Andre Florindo*/
+
+/* Goal: Send request to the server and receives the course path.
+        Also converts the PoseArray message to a tranformation matrix
+*/
+
 #include <vsl_descartes_moveit_planner.h>
 
 namespace vsl_motion_planning
@@ -17,9 +23,8 @@ bool VSLDescartesMoveitPlanner::getCourse(EigenSTL::vector_Isometry3d &poses)
 
     pose_builder_client_ = nh_.serviceClient<vsl_msgs::PoseBuilder>(POSE_BUILDER_SERVICE);
     vsl_msgs::PoseBuilder srv;
-    // srv.request.num_layer = num_layer;
-    // srv.request.num_course = num_course;
-    // ROS_INFO_STREAM("Requesting pose in base frame: " << num_layer);
+    srv.request.num_layer = config_.layer;
+    srv.request.num_course = config_.course;
 
     if (!pose_builder_client_.call(srv))
     {
@@ -36,8 +41,13 @@ bool VSLDescartesMoveitPlanner::getCourse(EigenSTL::vector_Isometry3d &poses)
         tf::poseMsgToEigen(srv.response.single_course_poses.poses[i], single_pose);
         poses.emplace_back(single_pose);
     }
+
+    // Publish the response course in order to send it to Rviz
+    course_publisher_.publish(srv.response.single_course_poses); 
     
     ROS_INFO_STREAM("Task '" << __FUNCTION__ << "' completed");
+
+
 }
 } // namespace vsl_motion_planning
 

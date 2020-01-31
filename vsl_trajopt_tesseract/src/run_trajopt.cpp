@@ -148,9 +148,8 @@ bool VSLTrajoptPlanner::run()
     //////////////
 
     trajectory_msgs::JointTrajectory traj_msg;
-    ros::Duration t1(0.10);
+    ros::Duration t1(0.00574/0.1);
     traj_msg = trajArrayToJointTrajectoryMsg(prob->GetKin()->getJointNames(), getTraj(opt.x(), prob->GetVars()), pci.basic_info.use_time, t1);
-    joint_traj_.publish(traj_msg);
 
     // Create action message
     control_msgs::FollowJointTrajectoryGoal goal;

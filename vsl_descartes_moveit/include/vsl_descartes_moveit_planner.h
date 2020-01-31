@@ -55,6 +55,8 @@ struct VSLDescartesMoveitPlannerConfiguration
     std::vector<std::string> joint_names;
     double max_joint_speed_scaling_between_traj;
     double ee_speed;
+    int layer;
+    int course;
 };
 
 class VSLDescartesMoveitPlanner
@@ -84,6 +86,7 @@ protected:
     ros::NodeHandle nh_;
     std::shared_ptr<actionlib::SimpleActionClient<moveit_msgs::ExecuteTrajectoryAction>> moveit_run_path_client_ptr_; /* Sends a robot trajectory to moveit for execution */
     ros::ServiceClient pose_builder_client_;
+    ros::Publisher course_publisher_;
 
     //Descartes
     descartes_core::RobotModelPtr robot_model_ptr_;

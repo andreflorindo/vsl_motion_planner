@@ -1,11 +1,10 @@
-#include <vsl_descartes_moveit_planner.h>
+/* Author: Andre Florindo*/
 
-/* INIT ROS
-  Goal:
-    - Load missing application parameters from the ros parameter server.
-    - Use a private NodeHandle in order to load parameters defined in the node's namespace.
-    - Create a ros service client that will be used to send a robot path for execution.
+/* Goal: Load parameters from the ros parameter server.
+        Start Moveit execute_trajectory action client and a publisher of the cartesian poses
 */
+
+#include <vsl_descartes_moveit_planner.h>
 
 namespace vsl_motion_planning
 {
@@ -25,6 +24,8 @@ void VSLDescartesMoveitPlanner::initRos()
         ph.getParam("trajectory/seed_pose", config_.seed_pose) &&
         ph.getParam("max_joint_speed_scaling_between_traj", config_.max_joint_speed_scaling_between_traj) &&
         ph.getParam("ee_speed", config_.ee_speed) &&
+        ph.getParam("layer", config_.layer) &&
+        ph.getParam("course", config_.course) &&
         nh.getParam("controller_joint_names", config_.joint_names))
     {
         ROS_INFO_STREAM("Loaded application parameters");
@@ -48,6 +49,8 @@ void VSLDescartesMoveitPlanner::initRos()
         ROS_ERROR_STREAM("Failed to connect to '" << EXECUTE_TRAJECTORY_ACTION << "' action");
         exit(-1);
     }
+
+    course_publisher_ = nh.advertise<geometry_msgs::PoseArray>("single_course_poses", 1, true);
 
     ROS_INFO_STREAM("Task '" << __FUNCTION__ << "' completed");
 }

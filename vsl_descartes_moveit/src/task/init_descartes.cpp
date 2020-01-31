@@ -1,12 +1,12 @@
-#include <vsl_descartes_moveit_planner.h>
+/* Author: Andre Florindo*/
 
-/* INIT DESCARTES
-  Goal:
-    - Initialize a Descartes RobotModel object for carrying out various robot related tasks.
-    - Initialize a Descartes Path Planner for planning a robot path from a trajectory.
-    - Use the moveit MoveGroup interface to move the arm to a pre-recorded positions saved in the moveit config package.
-    - Verify that the arm reached the target.
+/* Goal: Initialize Descartes Kinematics, RobotModel and PathPlanner objects
+        Also initializes Moveit Kinematics and RobotModel, as it will be necesssary to build the RobotTrajectory object 
+        for the time parameterization 
 */
+
+
+#include <vsl_descartes_moveit_planner.h>
 
 namespace vsl_motion_planning
 {

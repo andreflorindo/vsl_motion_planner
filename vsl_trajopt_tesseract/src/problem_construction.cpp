@@ -23,6 +23,8 @@ void VSLTrajoptPlanner::initRos()
       ph.getParam("tip_link", config_.tip_link) &&
       ph.getParam("base_link", config_.base_link) &&
       ph.getParam("world_frame", config_.world_frame) &&
+      ph.getParam("layer", config_.layer) &&
+      ph.getParam("course", config_.course) &&
       ph.getParam("plotting", plotting_) &&
       ph.getParam("rviz", rviz_))
   // nh.getParam("controller_joint_names", config_.joint_names))
@@ -35,8 +37,8 @@ void VSLTrajoptPlanner::initRos()
     exit(-1);
   }
 
-  joint_traj_ = nh.advertise<trajectory_msgs::JointTrajectory>(JOINT_TRAJECTORY_TOPIC, 1, true);
-
+  course_publisher_ = nh.advertise<geometry_msgs::PoseArray>("single_course_poses", 1, true);
+  
   typedef actionlib::SimpleActionClient<control_msgs::FollowJointTrajectoryAction> client_type;
   follow_joint_trajectory_client_ = std::make_shared<client_type>(FOLLOW_JOINT_TRAJECTORY_ACTION, true);
 
@@ -69,8 +71,8 @@ tesseract_common::VectorIsometry3d VSLTrajoptPlanner::getCourse()
 
   pose_builder_client_ = nh_.serviceClient<vsl_msgs::PoseBuilder>(POSE_BUILDER_SERVICE);
   vsl_msgs::PoseBuilder srv;
-  // srv.request.num_layer = num_layer;
-  // srv.request.num_course = num_course;
+  srv.request.num_layer = config_.layer;
+  srv.request.num_course = config_.course;
   // ROS_INFO_STREAM("Requesting pose in base frame: " << num_layer);
 
   if (!pose_builder_client_.call(srv))
@@ -90,6 +92,8 @@ tesseract_common::VectorIsometry3d VSLTrajoptPlanner::getCourse()
     poses.emplace_back(single_pose);
   }
 
+  course_publisher_.publish(srv.response.single_course_poses); 
+
   ROS_INFO_STREAM("Task '" << __FUNCTION__ << "' completed");
 
   return poses;
@@ -105,7 +109,7 @@ ProblemConstructionInfo VSLTrajoptPlanner::trajoptPCI()
   pci.basic_info.n_steps = static_cast<int>(tool_poses.size());
   pci.basic_info.manip = "manipulator";
   pci.basic_info.start_fixed = false;
-  pci.basic_info.use_time = true;
+  pci.basic_info.use_time = false;
   pci.opt_info.max_iter = 200;
   pci.opt_info.min_approx_improve = 1e-3;
   pci.opt_info.min_trust_box_size = 1e-3;
@@ -140,7 +144,7 @@ ProblemConstructionInfo VSLTrajoptPlanner::trajoptPCI()
   joint_vel->first_step = 0;
   joint_vel->last_step = pci.basic_info.n_steps - 1;
   joint_vel->name = "joint_vel";
-  joint_vel->term_type = TT_USE_TIME;
+  joint_vel->term_type = TT_COST;
   pci.cost_infos.push_back(joint_vel);
 
   std::shared_ptr<JointAccTermInfo> joint_acc = std::shared_ptr<JointAccTermInfo>(new JointAccTermInfo);
@@ -172,7 +176,7 @@ ProblemConstructionInfo VSLTrajoptPlanner::trajoptPCI()
 
   // Populate Constraints
 
-  // std::shared_ptr<trajopt::CartVelTermInfo> ee_speed(new trajopt::CartVelTermInfo);
+  // std::shared_ptr<CartVelTermInfo> ee_speed = std::shared_ptr<CartVelTermInfo>(new CartVelTermInfo);
   // ee_speed->link = config_.tip_link;
   // ee_speed->term_type = TT_CNT;
   // ee_speed->first_step = 0;
@@ -265,7 +269,59 @@ trajectory_msgs::JointTrajectory VSLTrajoptPlanner::trajArrayToJointTrajectoryMs
 
     traj_msg.points.push_back(traj_point);
   }
+
+  //addVel(traj_msg);
+  // addAcc(traj_msg);
+
   return traj_msg;
+}
+
+
+void VSLTrajoptPlanner::addVel(trajectory_msgs::JointTrajectory &traj) //Velocity of the joints
+{
+  if (traj.points.size() < 3)
+    return;
+
+  auto n_joints = traj.points.front().positions.size();
+
+  for (auto i = 0; i < n_joints; ++i)
+  {
+    traj.points[0].velocities[i] = 0.0f;
+    traj.points[traj.points.size() - 1].velocities[i] = 0.0f;
+    for (auto j = 1; j < traj.points.size() - 1; j++)
+    {
+      // For each point in a given joint
+      //Finite difference, first order, central. Gives the average velocity, not conservative
+      double delta_theta = -traj.points[j - 1].positions[i] + traj.points[j + 1].positions[i];
+      double delta_time = -traj.points[j - 1].time_from_start.toSec() + traj.points[j + 1].time_from_start.toSec();
+      double v = delta_theta / delta_time;
+      traj.points[j].velocities[i] = v;
+    }
+  }
+}
+
+void VSLTrajoptPlanner::addAcc(trajectory_msgs::JointTrajectory &traj) //Velocity of the joints
+{
+    if (traj.points.size() < 3)
+        return;
+
+    auto n_joints = traj.points.front().positions.size();
+
+    for (auto i = 0; i < n_joints; ++i)
+    {
+        traj.points[0].accelerations[i] = 0.0f;      // <- Incorrect!!!! TODO
+        traj.points[traj.points.size() - 1].accelerations[i] = 0.0f;
+
+        for (auto j = 1; j < traj.points.size()-1; j++)
+        {
+            // For each point in a given joint
+            //Finite difference, first order, central. Gives the average velocity, not conservative
+            double delta_velocity = -traj.points[j - 1].velocities[i] + traj.points[j + 1].velocities[i];
+            double delta_time = -traj.points[j - 1].time_from_start.toSec() + traj.points[j + 1].time_from_start.toSec();
+            double a = delta_velocity / delta_time;
+            traj.points[j].accelerations[i] = a;
+        }
+    }
 }
 
 TrajArray VSLTrajoptPlanner::readInitTraj(std::string start_filename)

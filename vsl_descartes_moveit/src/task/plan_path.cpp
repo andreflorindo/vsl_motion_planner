@@ -1,13 +1,10 @@
-#include <vsl_descartes_moveit_planner.h>
+/* Author: Andre Florindo*/
 
-/* PLAN AND RUN
-  Goal:
-    - Plan a robot path from a trajectory using the path planner
-    - Observe how to modify the start and end points in the trajectory so that
-      unique joint poses at those points are used instead.  Skipping this step would cause planning
-      for multiple path possibilities (multiple combinations of start and end), which
-      could take a very long time.
+/* Goal: With the cartesian trajectory execute Descartes planning algoritm (PlanPath) and 
+        obtain the respective joint space trajectory (GetPath)
 */
+
+#include <vsl_descartes_moveit_planner.h>
 
 namespace vsl_motion_planning
 {
@@ -30,7 +27,9 @@ void VSLDescartesMoveitPlanner::planPath(std::vector<descartes_core::TrajectoryP
     descartes_core::TrajectoryPtPtr end_joint_point = descartes_core::TrajectoryPtPtr(
         new descartes_trajectory::JointTrajectoryPt(end_pose));
 
-    // Modifying start and end of the trajectory.                   <----- Check. It does seen that it replaces poses rather that add poses
+    // Modifying start and end of the trajectory, with a selected joint pose
+    // Although not necessary, it reduces the time to get a solution and unexpected outcomes
+    // With the algorith these will be later replaced
     input_traj[0] = start_joint_point;
     input_traj[input_traj.size() - 1] = end_joint_point;
   }

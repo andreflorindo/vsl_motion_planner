@@ -1,7 +1,6 @@
 /* Author: Andre Florindo*/
 
 // Add vector<CourseStruct> in case there are more courses
-// If z is not given in the file, maybe add a collumn of zeros
 
 #include <course_display_topic.h>
 
@@ -16,45 +15,24 @@ void CourseDisplay::initTopic()
     ros::NodeHandle nh;
     ros::NodeHandle ph("~");
 
-    if (ros::service::waitForService(POSE_BUILDER_SERVICE, ros::Duration(SERVER_TIMEOUT)))
-    {
-        ROS_INFO_STREAM("Connected to '" << POSE_BUILDER_SERVICE << "' service");
-    }
-    else
-    {
-        ROS_ERROR_STREAM("Failed to connect to '" << POSE_BUILDER_SERVICE << "' service");
-        exit(-1);
-    }
-
+    course_subscriber_ = nh.subscribe("single_course_poses", 1, &CourseDisplay::subscriberCallback, this); 
     marker_publisher_ = nh.advertise<visualization_msgs::MarkerArray>(VISUALIZE_TRAJECTORY_TOPIC, 1, true);
 
     ROS_INFO_STREAM("course_display: Task '" << __FUNCTION__ << "' completed");
 }
 
-void CourseDisplay::getPoseArray(geometry_msgs::PoseArray &course_poses)
+void CourseDisplay::subscriberCallback(const geometry_msgs::PoseArray &msg)
 {
-    
-    pose_builder_client_ = nh_.serviceClient<vsl_msgs::PoseBuilder>(POSE_BUILDER_SERVICE);
-    vsl_msgs::PoseBuilder srv;
-    // srv.request.num_layer = 1;
-    // srv.request.num_course = 1;
-    // ROS_INFO_STREAM("Requesting pose in base frame: " << num_layer);
-    if (!pose_builder_client_.call(srv))
+    if(msg.header.frame_id.empty())
     {
-        ROS_ERROR("course_display: Could not localize service Posebuilder");
+        ROS_ERROR("course_display: Topic single_course_poses does not specify Frame ID");
         exit(-1);
     }
-
-    ROS_INFO_STREAM("course_display: Service Posebuilder localized");
-
-    course_poses = srv.response.single_course_poses;
-
-    if(course_poses.header.frame_id.empty())
+    else
     {
-        ROS_ERROR("course_display: Service Posebuilder does not specify Frame ID");
-        exit(-1);
+        ROS_INFO_STREAM("course_display: Joint trajectory received");
     }
-
+    publishPosesMarkers(msg);
 }
 
 void CourseDisplay::publishPosesMarkers(const geometry_msgs::PoseArray &course_poses)
@@ -156,12 +134,12 @@ void CourseDisplay::publishPosesMarkers(const geometry_msgs::PoseArray &course_p
         line.points.emplace_back(p_start);
     }
 
-    markers_msg.markers.push_back(x_axes);
-    markers_msg.markers.push_back(y_axes);
-    markers_msg.markers.push_back(z_axes);
-    markers_msg.markers.push_back(line);
+    markers_msg_.markers.push_back(x_axes);
+    markers_msg_.markers.push_back(y_axes);
+    markers_msg_.markers.push_back(z_axes);
+    markers_msg_.markers.push_back(line);
 
-    marker_publisher_.publish(markers_msg);
+    marker_publisher_.publish(markers_msg_);
 }
 
 } // namespace vsl_motion_planning
@@ -171,11 +149,8 @@ int main(int argc, char **argv)
     ros::init(argc, argv, "pose_builder");
 
     vsl_motion_planning::CourseDisplay course_display;
-    geometry_msgs::PoseArray course_poses;
 
     course_display.initTopic();
-    course_display.getPoseArray(course_poses);
-    course_display.publishPosesMarkers(course_poses);
-
+    
     ros::spin();
 }

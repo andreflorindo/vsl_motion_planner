@@ -2,6 +2,18 @@
 # Author: Andre Florindo
 # Requires Python 2.7
 
+# This node read a txt file containing the course path and return the transformation of each waypoint
+# The structure of the txt file sould be the following:
+# Layer L1
+# 
+# Course C1
+# 
+# X1 Y1 Z1
+# X2 Y2 Z2
+# ...
+# 
+# Course C2
+
 # Python
 from __future__ import division
 import sys
@@ -12,6 +24,7 @@ from mpl_toolkits.mplot3d import Axes3D
 from scipy.interpolate import BSpline
 # from scipy.spatial.transform import Rotation
 from tf.transformations import quaternion_from_matrix, rotation_matrix
+import re
 
 # ROS
 import rospy
@@ -20,8 +33,7 @@ import rospkg
 # VSL
 from vsl_msgs.srv import PoseBuilder, PoseBuilderResponse
 from geometry_msgs.msg import Pose, PoseArray
-
-
+    
 class CourseClass:
     def __init__(self):
         self.x = []
@@ -39,7 +51,7 @@ class PoseBuilderConfiguration:
         self.add_z_distance = []
         self.tow_width = []
         self.tow_thickness = []
-
+        self.smooth_start = bool
 
 class PoseBuilderPython:
     TABLE_HEIGHT = 0.78
@@ -51,14 +63,19 @@ class PoseBuilderPython:
     Z_RAISE_DISTANCE = XY_RAISE_DISTANCE*math.tan(ANGLE_RAISE*math.pi/180)
     SERVER_TIMEOUT = 5.0  # seconds
     POSE_BUILDER_SERVICE = "single_course"
+    POSE_BUILDER_PUBLISHER = "single_course_poses"
 
     def __init__(self):
         self.config = PoseBuilderConfiguration()
         self.course = CourseClass()
         self.course_poses = PoseArray()
+        self.req_layer = []
+        self.req_course = []
+        self.pose_builder_server = []
+        # self.pose_builder_publisher = []
 
     def initServer(self):
-        if rospy.has_param('~course_filename') and rospy.has_param('~distance_waypoints') and rospy.has_param('~world_frame') and rospy.has_param('~add_x_distance') and rospy.has_param('~add_y_distance') and rospy.has_param('~add_z_distance') and rospy.has_param('~tow_width') and rospy.has_param('~tow_thickness'):
+        if rospy.has_param('~course_filename') and rospy.has_param('~distance_waypoints') and rospy.has_param('~world_frame') and rospy.has_param('~add_x_distance') and rospy.has_param('~add_y_distance') and rospy.has_param('~add_z_distance') and rospy.has_param('~tow_width') and rospy.has_param('~tow_thickness') and rospy.has_param('~smooth_start'):
             self.config.world_frame = rospy.get_param('~world_frame')
             self.config.course_filename = rospy.get_param('~course_filename')
             self.config.distance_waypoints = rospy.get_param(
@@ -69,28 +86,100 @@ class PoseBuilderPython:
             self.config.tow_width = rospy.get_param('~tow_width')*0.0254
             self.config.tow_thickness = rospy.get_param(
                 '~tow_thickness')*0.0254
-            rospy.loginfo('pose_builder_pyton: Loaded Server parameters')
+            self.config.smooth_start = rospy.get_param(
+                '~smooth_start')*0.0254
+            rospy.loginfo('pose_builder_python: Loaded Server parameters')
         else:
-            rospy.loginfo(
+            rospy.logerr(
                 'pose_builder_python: Failed to load Server parameters')
             sys.exit(-1)
 
         if self.config.distance_waypoints == 0.0:
-            rospy.loginfo(
-                'pose_builder_python: Parameter distance_waypoints defined as 0 or in an array.')
+            rospy.logerr(
+                'pose_builder_python: Parameter distance_waypoints defined as 0')
             sys.exit(-1)
-
+        self.pose_builder_server = rospy.Service(self.POSE_BUILDER_SERVICE, PoseBuilder, self.serviceCallback, 1)
+        # self.pose_builder_publisher = rospy.Publisher(self.POSE_BUILDER_PUBLISHER, PoseArray, queue_size=1)
         return True
 
-    def readfileContent(self, start_filename):
+    def serviceCallback(self, req):
+        self.req_layer = req.num_layer
+        self.req_course = req.num_course
+        res = PoseBuilderResponse()
+        self.createCourse()
+        res.single_course_poses = self.course_poses
+        # self.pose_builder_publisher.publish(self.course_poses)
+        return res
+
+    def countTotalNumberOfLayersAndCourses(self, start_filename):
         filename = rospkg.RosPack().get_path('vsl_msgs') + start_filename
-        input = np.loadtxt(filename, dtype='f')
+        infile = open(filename, 'r')
+        num_layers = 0
+        num_courses = []
+        file_position = -1
+        for line_layer in infile:
+            file_position += 1
+            search_layer = re.search(r'Layer', line_layer)
+            if search_layer:
+                num_layers += 1
+                num_courses.append(0)
+                for line_course in infile:
+                    file_position += 1
+                    search_course = re.search(r'Course', line_course)
+                    if search_course:    
+                        num_courses[num_layers-1] += 1
+                    search_next_layer = re.search(r'Layer', line_course)
+                    if search_next_layer:
+                        offset = file_position*12
+                        infile.seek(offset,0)
+                        break 
+        infile.close()
+        total_num_courses = 0
+        for i in range (0, num_layers):
+            total_num_courses += num_courses[i]
+
+        rospy.loginfo('pose_builder_pyton: Laminate constains %d layers and a total of %d fiber courses',
+                          num_layers, total_num_courses)
+        return num_layers, num_courses
+
+
+    def readfileContent(self, start_filename):
+        # filename = rospkg.RosPack().get_path('vsl_msgs') + start_filename
+        # input = np.loadtxt(filename, dtype='f')
+        # course = CourseClass()
+        # for i in range(0, len(input)):
+        #     course.x.append(input[i][0])
+        #     course.y.append(input[i][1])
+        #     course.z.append(input[i][2])
+        # return course
+
+        filename = rospkg.RosPack().get_path('vsl_msgs') + start_filename
         course = CourseClass()
-        for i in range(0, len(input)):
-            course.x.append(input[i][0])
-            course.y.append(input[i][1])
-            course.z.append(input[i][2])
+        infile = open(filename, 'r')
+        num_layer = 0
+        num_course = 0
+        for line_layer in infile:
+            search_layer = re.search(r'Layer', line_layer)
+            if search_layer:
+                num_layer += 1
+                if num_layer == self.req_layer:
+                    for line_course in infile:
+                        search_course = re.search(r'Course', line_course)    
+                        if search_course:
+                            num_course += 1
+                            if num_course == self.req_course:
+                                line_course = next(infile)
+                                line_course = next(infile)
+                                input = re.findall(r"-?\ *[0-9]+\.?[0-9]*(?:[Ee]\ *-?\ *[0-9]+)?", line_course)
+                                while len(input) != 0:
+                                    course.x.append(float(input[0]))
+                                    course.y.append(float(input[1]))
+                                    course.z.append(float(input[2]))
+                                    line_course = next(infile)
+                                    input = re.findall(r"-?\ *[0-9]+\.?[0-9]*(?:[Ee]\ *-?\ *[0-9]+)?", line_course)
+        infile.close()
         return course
+                        
 
     def buildBSpline(self, u, k, parameter):
         xd = BSpline(u, self.course.x, k)
@@ -287,9 +376,9 @@ class PoseBuilderPython:
                  self.TABLE_WIDTH - self.TABLE_WIDTH / 2) + self.config.add_x_distance
             single_course_pose.position.y = - \
                 (smooth_course_approximation.y[f] -
-                 self.TABLE_WIDTH / 2) + self.config.add_y_distance
+                 self.TABLE_WIDTH / 2) + self.config.tow_width*(self.req_course-1) + self.config.add_y_distance
             single_course_pose.position.z = smooth_course_approximation.z[f] + \
-                self.TABLE_HEIGHT + self.APPROACH_TABLE + self.config.add_z_distance
+                self.TABLE_HEIGHT + self.APPROACH_TABLE + self.config.tow_thickness*(self.req_layer-1) + self.config.add_z_distance
 
             if i == 0:
                 self.course_poses.poses.insert(0, single_course_pose)
@@ -299,6 +388,14 @@ class PoseBuilderPython:
 
     def createCourse(self):
         # Starts by reading the file content defined in the launch filed
+        n_layers, vector_n_courses = self.countTotalNumberOfLayersAndCourses(self.config.course_filename)
+
+        if (n_layers > self.req_layer):
+            if (vector_n_courses[self.req_layer-1]> self.req_course):
+                rospy.loginfo('pose_builder_python: Computing transformation for course %d of layer %d', self.req_course, self.req_layer)
+        else:
+            rospy.loginfo('pose_builder_python: Layer %d and respective course %d number cannot be found in the file', self.req_layer, self.req_course)
+
         self.course = self.readfileContent(self.config.course_filename)
         n_points = len(self.course.x)
 
@@ -307,7 +404,7 @@ class PoseBuilderPython:
         n_waypoints = int(arc_length // self.config.distance_waypoints)
 
         if n_waypoints < 2:
-            rospy.loginfo(
+            rospy.logerr(
                 'pose_builder_python: The distance requested between waypoint is large, cannot interpolate course')
             sys.exit(-1)
         else:
@@ -333,6 +430,7 @@ class PoseBuilderPython:
         #     u, k, parameter)
 
         # Construct transformation matrix and store in a geometry_msgs type
+        self.course_poses.header.stamp = rospy.Time.now()
         self.course_poses.header.frame_id = self.config.world_frame
 
         for i in range(0, n_waypoints):
@@ -364,24 +462,17 @@ class PoseBuilderPython:
                  self.TABLE_WIDTH - self.TABLE_WIDTH / 2) + self.config.add_x_distance
             single_course_pose.position.y = - \
                 (bspline_course_extrapolated.y[i] -
-                 self.TABLE_WIDTH / 2) + self.config.add_y_distance
+                 self.TABLE_WIDTH / 2) + self.config.tow_width*(self.req_course-1) + self.config.add_y_distance
             single_course_pose.position.z = bspline_course_extrapolated.z[i] + \
-                self.TABLE_HEIGHT + self.APPROACH_TABLE + self.config.add_z_distance
+                self.TABLE_HEIGHT + self.APPROACH_TABLE + self.config.tow_thickness*(self.req_layer-1) + self.config.add_z_distance 
             self.course_poses.poses.append(single_course_pose)
 
-        self.introduceSmoothStart(
-            0, bspline_course_extrapolated, tangent, normal, binormal)
-        self.introduceSmoothStart(
-            n_waypoints-1, bspline_course_extrapolated, tangent, normal, binormal)
-
-        pose_builder_server = rospy.Service(
-            self.POSE_BUILDER_SERVICE, PoseBuilder, self.serviceCallback, 1000)
+        if(self.config.smooth_start):
+            self.introduceSmoothStart(
+                0, bspline_course_extrapolated, tangent, normal, binormal)
+            self.introduceSmoothStart(
+                n_waypoints-1, bspline_course_extrapolated, tangent, normal, binormal)
         return True
-
-    def serviceCallback(self, req):
-        res = PoseBuilderResponse()
-        res.single_course_poses = self.course_poses
-        return res
 
 
 if __name__ == "__main__":
@@ -389,7 +480,6 @@ if __name__ == "__main__":
     try:
         ns = PoseBuilderPython()
         ns.initServer()
-        ns.createCourse()
         rospy.spin()
     except rospy.ROSInterruptException:
         pass
@@ -400,7 +490,7 @@ if __name__ == "__main__":
     #     n_waypoints = arc_length // distance_requested
 
     #     if n_waypoints < 2:
-    #         rospy.loginfo('pose_builder_python: The distance requested between waypoint is large, cannot interpolate course')
+    #         rospy.logerr('pose_builder_python: The distance requested between waypoint is large, cannot interpolate course')
     #         sys.exit(-1)
 
     #     if arc_length % distance_requested != 0.0:
