@@ -72,11 +72,11 @@ bool VSLDescartesTesseractPlanner::run()
 
     // Set the initial state of the robot
     std::unordered_map<std::string, double> initial_joint_states;
-    initial_joint_states["kr210_joint_a1"] = 0.3;
-    initial_joint_states["kr210_joint_a2"] = -0.76;
-    initial_joint_states["kr210_joint_a3"] = 1.72;
+    initial_joint_states["kr210_joint_a1"] = 1.57;
+    initial_joint_states["kr210_joint_a2"] = -1.04;
+    initial_joint_states["kr210_joint_a3"] = 1.04;
     initial_joint_states["kr210_joint_a4"] = 0.0;
-    initial_joint_states["kr210_joint_a5"] = 0.6;
+    initial_joint_states["kr210_joint_a5"] = 1.57;
     initial_joint_states["kr210_joint_a6"] = 0.0;
     tesseract_->getEnvironment()->setState(initial_joint_states);
 
@@ -130,7 +130,6 @@ bool VSLDescartesTesseractPlanner::run()
     trajectory_msgs::JointTrajectory traj_msg;
     ros::Duration t1(0.10);
     traj_msg = trajArrayToJointTrajectoryMsg(robot_kin_ik->getJointNames(), single_planner_response.joint_trajectory.trajectory, false, t1);
-    joint_traj_.publish(traj_msg);
 
     // Create action message
     control_msgs::FollowJointTrajectoryGoal goal;

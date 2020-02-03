@@ -51,7 +51,6 @@ const std::string ROBOT_DESCRIPTION_PARAM = "robot_description";
 const std::string ROBOT_SEMANTIC_PARAM = "robot_description_semantic";
 const std::string GET_ENVIRONMENT_CHANGES_SERVICE = "get_tesseract_changes_rviz";
 const std::string MODIFY_ENVIRONMENT_SERVICE = "modify_tesseract_rviz";
-const std::string JOINT_TRAJECTORY_TOPIC = "joint_traj";
 const std::string FOLLOW_JOINT_TRAJECTORY_ACTION = "joint_trajectory_action";
 const int AXIAL_SYMMETRIC_MOTION = 0; // 0 - Axial Symmetric Trajectory; 1 - Fully Constraint trajectory
 // const std::string FOLLOW_JOINT_TRAJECTORY_ACTION = "position_trajectory_controller/follow_joint_trajectory";
@@ -63,6 +62,8 @@ struct VSLDescartesTesseractPlannerConfiguration
   std::string base_link;
   std::string world_frame;
   std::vector<std::string> joint_names;
+  int layer;
+  int course;
 };
 
 class VSLDescartesTesseractPlanner
@@ -98,7 +99,7 @@ private:
   ros::ServiceClient modify_env_rviz_;      /**< @brief Service for modifying tesseract environment in rviz */
   ros::ServiceClient get_env_changes_rviz_; /**< @brief Get the environment changes from rviz */
   ros::ServiceClient pose_builder_client_;
-  ros::Publisher joint_traj_;
+  ros::Publisher course_publisher_;
   std::shared_ptr<actionlib::SimpleActionClient<control_msgs::FollowJointTrajectoryAction>> follow_joint_trajectory_client_;
 
   /**

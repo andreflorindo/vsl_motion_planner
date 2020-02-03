@@ -5,6 +5,26 @@
   <arg name="robot_description" default="robot_description"/>
   <arg name="plotting" default="false"/>
   <arg name="rviz" default="true"/>
+
+  <arg name="group_name" default="manipulator"/>
+  <arg name="world_frame" default="kl2000_base_link"/> 
+  <arg name="base_link" default="kr210_base_link"/> 
+  <arg name="tip_link" default="penholder_tool_tip"/>  
+
+  <!-- Change course position and velocities -->
+  <!-- <arg name="course_filename" value="/examples/simplePath.txt"/> -->
+  <arg name="course_filename" value="/examples/ExampleAndreFlat.txt"/>
+  <arg name="layer" default="3"/>  <!-- Ratio from max joint speed -->
+  <arg name="course" default="16"/> <!-- m/s -->
+  <arg name="distance_waypoints" default="0.00574"/> <!--0.00574--> <!-- meters -->
+  <arg name="smooth_start" default="true"/> <!-- m/s -->
+  <arg name="add_x_distance" default="0.0"/> <!-- meters. Positive goes to the front, futher from the base-->
+  <arg name="add_y_distance" default="0.0"/> <!-- meters. Positive goes to the left-->
+  <arg name="add_z_distance" default="0.7"/> <!-- meters. Positive goes higher -->
+  <arg name="tow_width" default="0.0"/>   <!-- inches -->
+  <arg name="tow_thickness" default="0.001"/>   <!-- inches -->
+  <arg name="max_velocity_scaling" default="0.2"/>  <!-- Ratio from max joint speed -->
+  <arg name="ee_speed" default="0.1"/> <!-- m/s -->
   
   <!-- Load universal robot description format (URDF) -->
   <include file="$(find kr210_pen_moveit_config)/launch/planning_context.launch">
@@ -15,7 +35,6 @@
   <rosparam command="load" file="$(find kr210_pen_moveit_config)/config/joint_names.yaml" />
 
   <group if="$(arg sim)">
-
     <include file="$(find industrial_robot_simulator)/launch/robot_interface_simulator.launch" />
     <!-- <rosparam param="initial_joint_state">[0.0, -1.57, 1.57, 0.0, 0.0, 0.0]</rosparam> -->
     <!-- <include file="$(find kr210_drivers)/launch/kr210_pen_controller_simulator.launch"/> -->
@@ -42,17 +61,27 @@
   <node name="robot_state_publisher" pkg="robot_state_publisher" type="robot_state_publisher" respawn="true" output="screen" />
 
 
-  <node name="pose_builder" pkg="vsl_utilities" type="pose_builder" output="screen">
+  <!-- <node name="pose_builder" pkg="vsl_utilities" type="pose_builder" output="screen">
     <param name="world_frame" value="kl2000_base_link"/> 
+  </node> -->
+
+  <node name="pose_builder_python" pkg="vsl_utilities" type="pose_builder.py" output="screen">
+    <param name="world_frame" value="$(arg world_frame)"/>
+    <param name="course_filename" value="$(arg course_filename)"/>  
+    <param name="distance_waypoints" value="$(arg distance_waypoints)"/> 
+    <param name="add_x_distance" value="$(arg add_x_distance)"/> 
+    <param name="add_y_distance" value="$(arg add_y_distance)"/> 
+    <param name="add_z_distance" value="$(arg add_z_distance)"/> 
+    <param name="tow_width" value="$(arg tow_width)"/>  
+    <param name="tow_thickness" value="$(arg tow_thickness)"/> 
+    <param name="smooth_start" value="$(arg smooth_start)"/>  
   </node>
 
-  <node name="course_display" pkg="vsl_utilities" type="course_display" output="screen">
-    <param name="world_frame" value="kl2000_base_link"/> 
-  </node>
+  <node name="course_display" pkg="vsl_utilities" type="course_display" output="screen"/>
 
   <node name="ee_cartesian_pose_publisher" pkg="vsl_utilities" type="ee_cartesian_pose_publisher" output="screen">
-    <param name="tip_link" value="penholder_tool_tip"/>
-    <param name="base_link" value="kr210_base_link"/>
+    <param name="tip_link" value="$(arg tip_link)"/>
+    <param name="base_link" value="$(arg base_link)"/>
   </node>
 
   <node name="joint_request_publisher" pkg="vsl_utilities" type="joint_request_publisher" output="screen">
@@ -69,10 +98,12 @@
   <node name="vsl_descartes_tesseract_main" pkg="vsl_descartes_tesseract" type="vsl_descartes_tesseract_main" output="screen">
     <param name="plotting" type="bool" value="$(arg plotting)"/>
     <param name="rviz" type="bool" value="$(arg rviz)"/>
-    <param name="group_name" value="manipulator"/>
-    <param name="tip_link" value="penholder_tool_tip"/>  <!--kr210_qr_tool0-->
-    <param name="base_link" value="kr210_base_link"/>
-    <param name="world_frame" value="kl2000_base_link"/>  <!--table_table_top-->  
+    <param name="group_name" value="$(arg group_name)"/>
+    <param name="tip_link" value="$(arg tip_link)"/>  <!--kr210_qr_tool0-->
+    <param name="base_link" value="$(arg base_link)"/>
+    <param name="world_frame" value="$(arg world_frame)"/>  <!--table_table_top--> 
+    <param name="layer" value="$(arg layer)"/>
+    <param name="course" value="$(arg course)"/>   
   </node>
 
 

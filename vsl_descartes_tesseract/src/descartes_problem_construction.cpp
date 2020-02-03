@@ -26,6 +26,8 @@ void VSLDescartesTesseractPlanner::initRos()
         ph.getParam("tip_link", config_.tip_link) &&
         ph.getParam("base_link", config_.base_link) &&
         ph.getParam("world_frame", config_.world_frame) &&
+        ph.getParam("layer", config_.layer) &&
+        ph.getParam("course", config_.course) &&
         ph.getParam("plotting", plotting_) &&
         ph.getParam("rviz", rviz_))
     {
@@ -37,7 +39,7 @@ void VSLDescartesTesseractPlanner::initRos()
         exit(-1);
     }
 
-    joint_traj_ = nh.advertise<trajectory_msgs::JointTrajectory>(JOINT_TRAJECTORY_TOPIC, 1, true);
+    course_publisher_ = nh.advertise<geometry_msgs::PoseArray>("single_course_poses", 1, true);
 
     typedef actionlib::SimpleActionClient<control_msgs::FollowJointTrajectoryAction> client_type;
     follow_joint_trajectory_client_ = std::make_shared<client_type>(FOLLOW_JOINT_TRAJECTORY_ACTION, true);
@@ -71,8 +73,8 @@ std::vector<Waypoint::Ptr> VSLDescartesTesseractPlanner::getCourse()
 
     pose_builder_client_ = nh_.serviceClient<vsl_msgs::PoseBuilder>(POSE_BUILDER_SERVICE);
     vsl_msgs::PoseBuilder srv;
-    // srv.request.num_layer = num_layer;
-    // srv.request.num_course = num_course;
+    srv.request.num_layer = config_.layer;
+    srv.request.num_course = config_.course;
     // ROS_INFO_STREAM("Requesting pose in base frame: " << num_layer);
 
     if (!pose_builder_client_.call(srv))
@@ -97,6 +99,8 @@ std::vector<Waypoint::Ptr> VSLDescartesTesseractPlanner::getCourse()
         waypoint->setCoefficients(c);
         waypoints.push_back(waypoint);
     }
+
+    course_publisher_.publish(srv.response.single_course_poses);
 
     ROS_INFO_STREAM("Task '" << __FUNCTION__ << "' completed");
 
