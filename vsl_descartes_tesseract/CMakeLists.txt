@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.5.0)
-project(vsl_trajopt_tesseract)
+project(vsl_descartes_tesseract)
 
 ## Compile as C++11, supported in ROS Kinetic and newer
 add_compile_options(-std=c++11 -Wall -Wextra)
@@ -19,7 +19,9 @@ find_package(catkin REQUIRED COMPONENTS
 
 ## System dependencies are found with CMake's conventions
 # find_package(Boost REQUIRED COMPONENTS system)
-find_package(trajopt REQUIRED)
+find_package(descartes_light REQUIRED)
+find_package(descartes_samplers REQUIRED)
+find_package(descartes_opw REQUIRED)
 find_package(tesseract REQUIRED)
 find_package(tesseract_motion_planners REQUIRED)
 find_package(tesseract_common REQUIRED)
@@ -51,40 +53,38 @@ include_directories(
   ${catkin_INCLUDE_DIRS}
 )
 
-# ## Declare a Executable
+add_library(descartes_problem_construction src/descartes_problem_construction.cpp)
+add_library(run_descartes src/run_descartes.cpp)
 
-add_library(problem_construction src/problem_construction.cpp)
-add_library(run_trajopt src/run_trajopt.cpp)
+add_executable(vsl_descartes_tesseract_main src/vsl_descartes_tesseract_main.cpp)
 
-add_executable(vsl_trajopt_main src/vsl_trajopt_main.cpp)
+add_dependencies(vsl_descartes_tesseract_main vsl_msgs_generate_messages_cpp ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 
-add_dependencies(vsl_trajopt_main vsl_msgs_generate_messages_cpp ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+target_link_libraries(descartes_problem_construction tesseract::tesseract tesseract::tesseract_motion_planners_descartes tesseract::tesseract_kinematics_opw ${catkin_LIBRARIES})
+target_link_libraries(vsl_descartes_tesseract_main descartes_problem_construction ${catkin_LIBRARIES})
 
-target_link_libraries(problem_construction tesseract::tesseract tesseract::tesseract_motion_planners_trajopt ${catkin_LIBRARIES})
-target_link_libraries(vsl_trajopt_main problem_construction ${catkin_LIBRARIES})
+target_link_libraries(run_descartes tesseract::tesseract tesseract::tesseract_motion_planners_descartes ${catkin_LIBRARIES})
+target_link_libraries(vsl_descartes_tesseract_main run_descartes ${catkin_LIBRARIES})
 
-target_link_libraries(run_trajopt tesseract::tesseract tesseract::tesseract_motion_planners_trajopt ${catkin_LIBRARIES})
-target_link_libraries(vsl_trajopt_main run_trajopt ${catkin_LIBRARIES})
-
-tesseract_target_compile_options(problem_construction PUBLIC)
-target_include_directories(problem_construction PUBLIC
+tesseract_target_compile_options(descartes_problem_construction PUBLIC)
+target_include_directories(descartes_problem_construction PUBLIC
     "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>"
     "$<INSTALL_INTERFACE:include>")
-target_include_directories(problem_construction SYSTEM PUBLIC
+target_include_directories(descartes_problem_construction SYSTEM PUBLIC
     ${catkin_INCLUDE_DIRS})
 
-tesseract_target_compile_options(run_trajopt PUBLIC)
-target_include_directories(run_trajopt PUBLIC
+tesseract_target_compile_options(run_descartes PUBLIC)
+target_include_directories(run_descartes PUBLIC
     "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>"
     "$<INSTALL_INTERFACE:include>")
-target_include_directories(run_trajopt SYSTEM PUBLIC
+target_include_directories(run_descartes SYSTEM PUBLIC
     ${catkin_INCLUDE_DIRS})
 
-tesseract_target_compile_options(vsl_trajopt_main PRIVATE)
-target_include_directories(vsl_trajopt_main PRIVATE
+tesseract_target_compile_options(vsl_descartes_tesseract_main PRIVATE)
+target_include_directories(vsl_descartes_tesseract_main PRIVATE
     "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>"
     "$<INSTALL_INTERFACE:include>")
-target_include_directories(vsl_trajopt_main SYSTEM PRIVATE
+target_include_directories(vsl_descartes_tesseract_main SYSTEM PRIVATE
     ${catkin_INCLUDE_DIRS})    
 
 #############
@@ -104,9 +104,9 @@ target_include_directories(vsl_trajopt_main SYSTEM PRIVATE
 ## Mark executables and/or libraries for installation
 install(
   TARGETS
-    problem_construction
-    run_trajopt
-    vsl_trajopt_main
+    descartes_problem_construction
+    run_descartes
+    vsl_descartes_tesseract_main
   ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
   LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
   RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
@@ -123,3 +123,16 @@ install(
   DIRECTORY config launch meshes urdf
   DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}
 )
+
+#############
+## Testing ##
+#############
+
+## Add gtest based cpp test target and link libraries
+# catkin_add_gtest(${PROJECT_NAME}-test test/test_myworkcell_core.cpp)
+# if(TARGET ${PROJECT_NAME}-test)
+#   target_link_libraries(${PROJECT_NAME}-test ${PROJECT_NAME})
+# endif()
+
+## Add folders to be run by python nosetests
+# catkin_add_nosetests(test)

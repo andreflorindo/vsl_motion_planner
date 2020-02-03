@@ -1,5 +1,5 @@
-#ifndef VSL_TRAJOPT_PLANNER_H
-#define VSL_TRAJOPT_PLANNER_H
+#ifndef VSL_DESCARTES_TESSERACT_PLANNER_H
+#define VSL_DESCARTES_TESSERACT_PLANNER_H
 
 // ROS
 #include <ros/ros.h>
@@ -11,75 +11,86 @@
 #include <control_msgs/FollowJointTrajectoryAction.h>
 
 // C++
-#include <fstream>
 #include <string>
 #include <memory>
-#include <Eigen/Geometry>
+// #include <Eigen/Geometry>
 // #include <jsoncpp/json/json.h>
+
+// Opw
+#include <opw_kinematics/opw_parameters.h>
+
+// Descartes light
+#include <descartes_samplers/evaluators/euclidean_distance_edge_evaluator.h>
 
 // Tesseract
 #include <tesseract/tesseract.h>
 #include <tesseract_common/macros.h>
 #include <tesseract_common/types.h>
 TESSERACT_COMMON_IGNORE_WARNINGS_PUSH
-#include <tesseract_motion_planners/trajopt/config/trajopt_planner_config.h>
-#include <tesseract_motion_planners/trajopt/trajopt_motion_planner.h>
+#include <tesseract_kinematics/opw/opw_inv_kin.h>
+#include <tesseract_kinematics/core/utils.h>
+#include <tesseract_motion_planners/descartes/descartes_motion_planner.h>
+#include <tesseract_motion_planners/descartes/descartes_collision_edge_evaluator.h>
+#include <tesseract_motion_planners/descartes/descartes_collision.h>
+#include <tesseract_motion_planners/descartes/utils.h>
+// #include <tesseract_motion_planners/hybrid/descartes_trajopt_array_planner.h>
+#include <tesseract_motion_planners/core/types.h>
+#include <tesseract_motion_planners/core/utils.h>
+TESSERACT_COMMON_IGNORE_WARNINGS_POP
 #include <tesseract_rosutils/plotting.h>
 #include <tesseract_rosutils/utils.h>
-#include <tesseract_environment/core/utils.h>
 #include <tesseract_msgs/ModifyEnvironment.h>
 #include <tesseract_msgs/GetEnvironmentChanges.h>
 #include <tesseract_rosutils/conversions.h>
-TESSERACT_COMMON_IGNORE_WARNINGS_POP
-
-// Trajopt
-#include <trajopt/file_write_callback.hpp>
-#include <trajopt/plot_callback.hpp>
-#include <trajopt/problem_description.hpp>
-#include <trajopt_utils/config.hpp>
-#include <trajopt_utils/logging.hpp>
 
 namespace vsl_motion_planner
 {
 const std::string POSE_BUILDER_SERVICE = "single_course";
 const double SERVER_TIMEOUT = 5.0f; // seconds
-const std::string ROBOT_DESCRIPTION_PARAM = "robot_description"; 
-const std::string ROBOT_SEMANTIC_PARAM = "robot_description_semantic"; 
+const std::string ROBOT_DESCRIPTION_PARAM = "robot_description";
+const std::string ROBOT_SEMANTIC_PARAM = "robot_description_semantic";
 const std::string GET_ENVIRONMENT_CHANGES_SERVICE = "get_tesseract_changes_rviz";
 const std::string MODIFY_ENVIRONMENT_SERVICE = "modify_tesseract_rviz";
+const std::string JOINT_TRAJECTORY_TOPIC = "joint_traj";
 const std::string FOLLOW_JOINT_TRAJECTORY_ACTION = "joint_trajectory_action";
+const int AXIAL_SYMMETRIC_MOTION = 0; // 0 - Axial Symmetric Trajectory; 1 - Fully Constraint trajectory
 // const std::string FOLLOW_JOINT_TRAJECTORY_ACTION = "position_trajectory_controller/follow_joint_trajectory";
 
-struct VSLTrajoptPlannerConfiguration
+struct VSLDescartesTesseractPlannerConfiguration
 {
-    std::string group_name;
-    std::string tip_link;
-    std::string base_link;
-    std::string world_frame;
-    std::vector<std::string> joint_names;
-    int layer;
-    int course;
+  std::string group_name;
+  std::string tip_link;
+  std::string base_link;
+  std::string world_frame;
+  std::vector<std::string> joint_names;
 };
 
-class VSLTrajoptPlanner
+class VSLDescartesTesseractPlanner
 {
 public:
-  VSLTrajoptPlanner();
-  virtual ~VSLTrajoptPlanner();
+  VSLDescartesTesseractPlanner();
+  virtual ~VSLDescartesTesseractPlanner();
 
   void initRos();
-  tesseract_common::VectorIsometry3d getCourse();
-  trajectory_msgs::JointTrajectory trajArrayToJointTrajectoryMsg(std::vector<std::string> joint_names, trajopt::TrajArray traj_array,bool use_time,ros::Duration time_increment);
+  std::vector<tesseract_motion_planners::Waypoint::Ptr> getCourse();
+  // trajectory_msgs::JointTrajectory trajArrayToJointTrajectoryMsg(std::vector<std::string> joint_names, trajopt::TrajArray traj_array,bool use_time,ros::Duration time_increment);
   bool run();
 
 protected:
-  trajopt::ProblemConstructionInfo trajoptPCI();
-  tesseract_common::TrajArray readInitTraj(std::string start_filename);
-  void addVel(trajectory_msgs::JointTrajectory &traj);
-  void addAcc(trajectory_msgs::JointTrajectory &traj);
+  tesseract_motion_planners::DescartesMotionPlannerConfigD createDescartesPlannerConfig(const tesseract::Tesseract::ConstPtr &tesseract_ptr,
+                                                                                        const std::string & /*manip*/,
+                                                                                        const tesseract_kinematics::InverseKinematics::ConstPtr &kin,
+                                                                                        const double robot_reach,
+                                                                                        const tesseract_environment::EnvState::ConstPtr &current_state,
+                                                                                        const std::vector<tesseract_motion_planners::Waypoint::Ptr> &waypoints,
+                                                                                        bool use_collision_edge_evaluator = false);
+  trajectory_msgs::JointTrajectory trajArrayToJointTrajectoryMsg(std::vector<std::string> joint_names,
+                                                                 tesseract_common::TrajArray traj_array,
+                                                                 bool use_time,
+                                                                 ros::Duration time_increment);
 
 private:
-  VSLTrajoptPlannerConfiguration config_; 
+  VSLDescartesTesseractPlannerConfiguration config_;
   ros::NodeHandle nh_;
   bool plotting_;
   bool rviz_;
@@ -87,7 +98,7 @@ private:
   ros::ServiceClient modify_env_rviz_;      /**< @brief Service for modifying tesseract environment in rviz */
   ros::ServiceClient get_env_changes_rviz_; /**< @brief Get the environment changes from rviz */
   ros::ServiceClient pose_builder_client_;
-  ros::Publisher course_publisher_;
+  ros::Publisher joint_traj_;
   std::shared_ptr<actionlib::SimpleActionClient<control_msgs::FollowJointTrajectoryAction>> follow_joint_trajectory_client_;
 
   /**
