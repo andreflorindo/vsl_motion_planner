@@ -137,8 +137,7 @@ class PoseBuilderPython:
         total_num_courses = 0
         for i in range (0, num_layers):
             total_num_courses += num_courses[i]
-
-        rospy.loginfo('pose_builder_pyton: Laminate constains %d layers and a total of %d fiber courses',
+        rospy.loginfo('pose_builder_pyton: Laminate contains %d layers, with and a total of %d fiber courses',
                           num_layers, total_num_courses)
         return num_layers, num_courses
 
@@ -390,11 +389,15 @@ class PoseBuilderPython:
         # Starts by reading the file content defined in the launch filed
         n_layers, vector_n_courses = self.countTotalNumberOfLayersAndCourses(self.config.course_filename)
 
-        if (n_layers > self.req_layer):
-            if (vector_n_courses[self.req_layer-1]> self.req_course):
+        if (n_layers >= self.req_layer):
+            if (vector_n_courses[self.req_layer-1]>= self.req_course):
                 rospy.loginfo('pose_builder_python: Computing transformation for course %d of layer %d', self.req_course, self.req_layer)
+            else:
+                rospy.logerr('pose_builder_python: Course %d of Layer %d cannot be found in the file', self.req_course, self.req_layer)
+                sys.exit(-1)
         else:
-            rospy.loginfo('pose_builder_python: Layer %d and respective course %d number cannot be found in the file', self.req_layer, self.req_course)
+            rospy.logerr('pose_builder_python: Layer %d cannot be found in the file', self.req_layer, self.req_course)
+            sys.exit(-1)
 
         self.course = self.readfileContent(self.config.course_filename)
         n_points = len(self.course.x)
@@ -425,9 +428,9 @@ class PoseBuilderPython:
         bspline_course_extrapolated = self.buildBSpline(u, k, parameter)
 
         # Compute tangent, normal and binormal using the definition of Frenet Serret or Parallel Transport
-        tangent, normal, binormal = self.getFrenetSerretVectors(u, k, parameter)
-        # tangent, normal, binormal = self.getParallelTransportVectors(
-        #     u, k, parameter)
+        # tangent, normal, binormal = self.getFrenetSerretVectors(u, k, parameter)
+        tangent, normal, binormal = self.getParallelTransportVectors(
+            u, k, parameter)
 
         # Construct transformation matrix and store in a geometry_msgs type
         self.course_poses.header.stamp = rospy.Time.now()

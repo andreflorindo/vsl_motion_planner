@@ -119,6 +119,7 @@ void VSLOMPLMoveitPlanner::createMotionPlanRequest(std::vector<geometry_msgs::Po
     double initial_fraction = move_group.computeCartesianPath(initial_pose, eef_step, jump_threshold, initial_point_trajectory);
 
     initial_point_plan.trajectory_ = initial_point_trajectory;
+    addTimeParameterizationToOmpl(initial_point_trajectory, 4, config_.max_joint_speed_scaling_between_traj);
     move_group.execute(initial_point_plan);
 
     moveit::planning_interface::MoveGroupInterface::Plan my_plan;
@@ -127,7 +128,7 @@ void VSLOMPLMoveitPlanner::createMotionPlanRequest(std::vector<geometry_msgs::Po
     // const double eef_step = 0.01;
     double fraction = move_group.computeCartesianPath(poses, eef_step, jump_threshold, trajectory);
 
-    addTimeParameterizationToOmpl(trajectory);
+    addTimeParameterizationToOmpl(trajectory, config_.ee_speed, 1);
     my_plan.trajectory_ = trajectory;
 
     if (move_group.execute(my_plan))
@@ -143,7 +144,7 @@ void VSLOMPLMoveitPlanner::createMotionPlanRequest(std::vector<geometry_msgs::Po
     ROS_INFO_STREAM("Task '" << __FUNCTION__ << "' completed");
 }
 
-void VSLOMPLMoveitPlanner::addTimeParameterizationToOmpl(moveit_msgs::RobotTrajectory &traj)
+void VSLOMPLMoveitPlanner::addTimeParameterizationToOmpl(moveit_msgs::RobotTrajectory &traj, double ee_speed, double max_speed_scaling)
 {
     robot_trajectory::RobotTrajectory robot_trajectory(robot_model_loader_->getModel(), config_.group_name);
 
@@ -151,7 +152,7 @@ void VSLOMPLMoveitPlanner::addTimeParameterizationToOmpl(moveit_msgs::RobotTraje
     //time_parameterization_.computeTimeStamps(robot_trajectory, 0.05, 1);
 
     vsl_motion_planning::ConstEESpeedTimeParameterization designed_time_parameterization;
-    designed_time_parameterization.computeTimeStamps(robot_trajectory, config_.tip_link, config_.ee_speed, 1, 1);
+    designed_time_parameterization.computeTimeStamps(robot_trajectory, config_.tip_link, ee_speed, max_speed_scaling, 1);
 
     robot_trajectory.getRobotTrajectoryMsg(traj);
 }

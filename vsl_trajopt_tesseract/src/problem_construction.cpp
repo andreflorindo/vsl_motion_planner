@@ -214,7 +214,7 @@ ProblemConstructionInfo VSLTrajoptPlanner::trajoptPCI()
     pose->xyz = current_xyz;
     pose->wxyz = current_wxyz;
     pose->pos_coeffs = Eigen::Vector3d(10, 10, 10);
-    pose->rot_coeffs = Eigen::Vector3d(10, 10, 0); //With 10 is fully constraint
+    pose->rot_coeffs = Eigen::Vector3d(10, 10, 10); //With 10 is fully constraint
 
     pci.cnt_infos.push_back(pose);
   }

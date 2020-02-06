@@ -432,6 +432,57 @@ void ConstEESpeedTimeParameterization::applyConstEESpeed(robot_trajectory::Robot
     }
 }
 
+bool ConstEESpeedTimeParameterization::checkEESpeed(robot_trajectory::RobotTrajectory &rob_trajectory,
+                                                         std::vector<double> &time_diff,
+                                                         const std::string end_effector_frame,
+                                                         const double ee_speed_request) const
+{
+    const robot_model::JointModelGroup *group = rob_trajectory.getGroup();
+    const std::vector<std::string> &vars = group->getVariableNames();
+    const std::vector<int> &idx = group->getVariableIndexList();
+    const robot_model::RobotModel &rmodel = group->getParentModel();
+    const int num_points = rob_trajectory.getWayPointCount();
+
+    double ee_dist, delta_time;
+    double ee_speed;
+    double percentage = 1;
+    int num_correct_speed = 0;
+
+    for (int i = 0; i < num_points - 1; ++i)
+    {
+        const robot_state::RobotStatePtr &curr_waypoint = rob_trajectory.getWayPointPtr(i);
+        Eigen::Affine3d curr_ee_waypoint = curr_waypoint->getFrameTransform(end_effector_frame);
+        const robot_state::RobotStatePtr &next_waypoint = rob_trajectory.getWayPointPtr(i + 1);
+        Eigen::Affine3d next_ee_waypoint = next_waypoint->getFrameTransform(end_effector_frame);
+
+        ee_dist = sqrt(pow(next_ee_waypoint.translation()[0] - curr_ee_waypoint.translation()[0], 2) +
+                       pow(next_ee_waypoint.translation()[1] - curr_ee_waypoint.translation()[1], 2) +
+                       pow(next_ee_waypoint.translation()[2] - curr_ee_waypoint.translation()[2], 2));
+
+        delta_time = time_diff[i];
+
+        ee_speed = ee_dist / delta_time;
+
+        if (ee_speed >= (1-percentage/100)*ee_speed_request and ee_speed <= (1+percentage/100)*ee_speed_request)
+        {
+            num_correct_speed  += 1;
+        }
+    }
+
+    if (num_correct_speed < 0.8*(num_points-1))
+    {
+        ROS_WARN_STREAM("Cartesian speed of " << ee_speed_request << " m/s cannot be reach at half of the waypoints, reducing to a smaller value");
+        return false;
+    }
+    else
+    {
+        ROS_INFO_STREAM("Trajectory will be performed with cartesian speed of " << ee_speed_request << " m/s");
+        return true;
+    }
+    
+}
+
+
 bool ConstEESpeedTimeParameterization::computeTimeStamps(robot_trajectory::RobotTrajectory &trajectory, const std::string end_effector_frame, const double ee_speed_request,
                                                          const double max_velocity_scaling_factor,
                                                          const double max_acceleration_scaling_factor) const
@@ -453,9 +504,17 @@ bool ConstEESpeedTimeParameterization::computeTimeStamps(robot_trajectory::Robot
     const int num_points = trajectory.getWayPointCount();
     std::vector<double> time_diff(num_points - 1, 0.0); // the time difference between adjacent points
 
-    applyConstEESpeed(trajectory, time_diff, end_effector_frame, ee_speed_request);
-    applyVelocityConstraints(trajectory, time_diff, max_velocity_scaling_factor);
-    applyAccelerationConstraints(trajectory, time_diff, max_acceleration_scaling_factor);
+    bool ok = false;
+    double ee_speed = ee_speed_request;
+
+    while (!ok)
+    {
+        applyConstEESpeed(trajectory, time_diff, end_effector_frame, ee_speed);
+        applyVelocityConstraints(trajectory, time_diff, max_velocity_scaling_factor);
+        applyAccelerationConstraints(trajectory, time_diff, max_acceleration_scaling_factor);
+        ok = checkEESpeed(trajectory, time_diff, end_effector_frame, ee_speed);
+        ee_speed *= 0.9;
+    }
 
     updateTrajectory(trajectory, time_diff);
     return true;

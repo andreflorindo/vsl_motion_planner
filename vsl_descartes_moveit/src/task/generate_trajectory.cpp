@@ -17,12 +17,12 @@ void VSLDescartesMoveitPlanner::generateTrajectory(EigenSTL::vector_Isometry3d &
         const Eigen::Isometry3d &single_pose = poses[i];
 
         //Trajectory with rotational freedom about the tool's z axis.
-        descartes_core::TrajectoryPtPtr pt = descartes_core::TrajectoryPtPtr(
-            new descartes_trajectory::AxialSymmetricPt(single_pose, ORIENTATION_INCREMENT, descartes_trajectory::AxialSymmetricPt::FreeAxis::Z_AXIS));
+        // descartes_core::TrajectoryPtPtr pt = descartes_core::TrajectoryPtPtr(
+        //     new descartes_trajectory::AxialSymmetricPt(single_pose, ORIENTATION_INCREMENT, descartes_trajectory::AxialSymmetricPt::FreeAxis::Z_AXIS));
 
         //Trajectory utilizing the whole six degree-of-freedom
-        // descartes_core::TrajectoryPtPtr pt = descartes_core::TrajectoryPtPtr(
-        //     new descartes_trajectory::CartTrajectoryPt(descartes_trajectory::TolerancedFrame(single_pose)));
+        descartes_core::TrajectoryPtPtr pt = descartes_core::TrajectoryPtPtr(
+            new descartes_trajectory::CartTrajectoryPt(descartes_trajectory::TolerancedFrame(single_pose)));
 
         input_traj.emplace_back(pt);
     }

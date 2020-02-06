@@ -110,7 +110,7 @@ void CourseDisplay::publishPosesMarkers(const geometry_msgs::PoseArray &course_p
 
         tf::pointEigenToMsg(pose.translation(), p_start);
 
-        if (distance > ARROW_LENGHT)
+        if (distance > ARROW_LENGHT || i == 0)
         {
             Eigen::Isometry3d moved_along_x = pose * Eigen::Translation3d(ARROW_LENGHT, 0, 0);
             tf::pointEigenToMsg(moved_along_x.translation(), p_end);

@@ -1,0 +1,99 @@
+<?xml version="1.0" ?>
+<launch>
+  <arg name="sim" default="true" />    <!--Simulation-->
+  <arg name="robot_ip" unless="$(arg sim)" />
+  <arg name="prefix" default="" />
+  <arg name="motion_planning" default="descartes" />
+
+  <arg name="group_name" default="manipulator"/>
+  <arg name="world_frame" default="kl2000_base_link"/>  <!--table_table_top--> 
+  <arg name="base_link" default="kr210_base_link"/> 
+  <arg name="tip_link" default="penholder_tool_tip"/>  <!--kr210_qr_tool0-->
+
+  <arg name="course_filename" default="/examples/ExampleAndreFlat.txt"/>
+  <arg name="layer" default="3"/>  <!-- Ratio from max joint speed -->
+  <arg name="course" default="16"/> <!-- m/s -->
+  <arg name="distance_waypoints" default="0.00574"/> <!--0.00574--> <!-- meters -->
+  <arg name="smooth_start" default="false"/> <!-- m/s -->
+  <arg name="add_x_distance" default="0.0"/> <!-- meters. Positive goes to the front, futher from the base-->
+  <arg name="add_y_distance" default="0.0"/> <!-- meters. Positive goes to the left-->
+  <arg name="add_z_distance" default="0.7"/> <!-- meters. Positive goes higher -->
+  <arg name="tow_width" default="0.0"/>   <!-- inches -->
+  <arg name="tow_thickness" default="0.001"/>   <!-- inches -->
+  <arg name="max_velocity_scaling" default="0.05"/>  <!-- Ratio from max joint speed -->
+  <arg name="ee_speed" default="0.1"/> <!-- m/s -->
+
+  <group if="$(eval arg('motion_planning') == 'ompl')"> 
+  <include file="$(find vsl_ompl_moveit)/launch/vsl_moveit_setup.launch"/>
+
+  <include file="$(find vsl_ompl_moveit)/launch/vsl_ompl_moveit_planner.launch">
+    <arg name="planner_id" default="RRTConnect" />
+    <arg name="sim" default="$(arg sim)" />  
+    <arg name="robot_ip" unless="$(arg sim)" />
+    <arg name="group_name" default="$(arg group_name)"/>
+    <arg name="world_frame" default="$(arg world_frame)"/>  
+    <arg name="base_link" default="$(arg base_link)"/> 
+    <arg name="tip_link" default="$(arg tip_link)"/>  
+    <arg name="course_filename" value="$(arg course_filename)"/>
+    <arg name="layer" default="$(arg layer)"/>  
+    <arg name="course" default="$(arg course)"/> 
+    <arg name="distance_waypoints" default="$(arg distance_waypoints)"/> 
+    <arg name="smooth_start" default="$(arg smooth_start)"/> 
+    <arg name="add_x_distance" default="$(arg add_x_distance)"/> 
+    <arg name="add_y_distance" default="$(arg add_y_distance)"/> 
+    <arg name="add_z_distance" default="$(arg add_z_distance)"/> 
+    <arg name="tow_width" default="$(arg tow_width)"/>  
+    <arg name="tow_thickness" default="$(arg tow_thickness)"/> 
+    <arg name="ee_speed" default="$(arg ee_speed)"/> 
+  </include>
+  </group>
+
+  <group if="$(eval arg('motion_planning') == 'descartes')"> 
+  <include file="$(find vsl_descartes_moveit)/launch/vsl_moveit_setup.launch"/>
+
+  <include file="$(find vsl_descartes_moveit)/launch/vsl_descartes_moveit_planner.launch">
+    <arg name="sim" default="$(arg sim)" />  
+    <arg name="robot_ip" unless="$(arg sim)" />
+    <arg name="group_name" default="$(arg group_name)"/>
+    <arg name="world_frame" default="$(arg world_frame)"/>  
+    <arg name="base_link" default="$(arg base_link)"/> 
+    <arg name="tip_link" default="$(arg tip_link)"/>  
+    <arg name="course_filename" value="$(arg course_filename)"/>
+    <arg name="layer" default="$(arg layer)"/>  
+    <arg name="course" default="$(arg course)"/> 
+    <arg name="distance_waypoints" default="$(arg distance_waypoints)"/> 
+    <arg name="smooth_start" default="$(arg smooth_start)"/> 
+    <arg name="add_x_distance" default="$(arg add_x_distance)"/> 
+    <arg name="add_y_distance" default="$(arg add_y_distance)"/> 
+    <arg name="add_z_distance" default="$(arg add_z_distance)"/> 
+    <arg name="tow_width" default="$(arg tow_width)"/>  
+    <arg name="tow_thickness" default="$(arg tow_thickness)"/> 
+    <arg name="ee_speed" default="$(arg ee_speed)"/> 
+  </include>
+  </group>
+
+  <group if="$(eval arg('motion_planning') == 'trajopt')"> 
+  <include file="$(find vsl_trajopt_tesseract)/launch/vsl_trajopt_planner.launch">
+    <arg name="sim" default="$(arg sim)" />  
+    <arg name="robot_ip" unless="$(arg sim)" />
+    <arg name="group_name" default="$(arg group_name)"/>
+    <arg name="world_frame" default="$(arg world_frame)"/>  
+    <arg name="base_link" default="$(arg base_link)"/> 
+    <arg name="tip_link" default="$(arg tip_link)"/>  
+    <arg name="course_filename" value="$(arg course_filename)"/>
+    <arg name="layer" default="$(arg layer)"/>  
+    <arg name="course" default="$(arg course)"/> 
+    <arg name="distance_waypoints" default="$(arg distance_waypoints)"/> 
+    <arg name="smooth_start" default="$(arg smooth_start)"/> 
+    <arg name="add_x_distance" default="$(arg add_x_distance)"/> 
+    <arg name="add_y_distance" default="$(arg add_y_distance)"/> 
+    <arg name="add_z_distance" default="$(arg add_z_distance)"/> 
+    <arg name="tow_width" default="$(arg tow_width)"/>  
+    <arg name="tow_thickness" default="$(arg tow_thickness)"/> 
+    <arg name="ee_speed" default="$(arg ee_speed)"/> 
+    <arg name="plotting" default="false"/>
+    <arg name="rviz" default="true"/>
+  </include>
+  </group>
+  
+</launch>

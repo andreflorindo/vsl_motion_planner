@@ -65,7 +65,7 @@ public:
 
 protected:
     void loadRobotModel();
-    void addTimeParameterizationToOmpl(moveit_msgs::RobotTrajectory &traj);
+    void addTimeParameterizationToOmpl(moveit_msgs::RobotTrajectory &traj, double ee_speed, double max_speed_scaling);
 
 protected:
     VSLOMPLMoveitPlannerConfiguration config_;

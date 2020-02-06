@@ -134,6 +134,11 @@ bool VSLTrajoptPlanner::run()
 
     if (plotting_)
         plotter->clear();
+    else
+    {
+        ROS_ERROR("Solution found! Hit enter key to move robot");
+        std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
+    }
 
     collisions.clear();
     found = checkTrajectory(

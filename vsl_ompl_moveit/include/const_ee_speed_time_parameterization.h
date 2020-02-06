@@ -32,6 +32,11 @@ private:
                          std::vector<double> &time_diff,
                          const std::string end_effector_frame,
                          const double ee_speed_request) const;
+  
+  bool checkEESpeed(robot_trajectory::RobotTrajectory &rob_trajectory,
+                         std::vector<double> &time_diff,
+                         const std::string end_effector_frame,
+                         const double ee_speed_request) const;
 
   void applyVelocityConstraints(robot_trajectory::RobotTrajectory &rob_trajectory, std::vector<double> &time_diff,
                                 const double max_velocity_scaling_factor) const;

@@ -16,7 +16,7 @@
 namespace vsl_motion_planning
 {
 const std::string VISUALIZE_TRAJECTORY_TOPIC = "visualize_trajectory_curve";
-const double ARROW_LENGHT = 0.005; //0.02
+const double ARROW_LENGHT = 0.015; //0.02
 const double ARROW_WIDTH  = 0.003;
 const double AXIS_LINE_WIDTH = 0.01; //0.01
 

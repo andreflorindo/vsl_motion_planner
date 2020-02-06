@@ -70,8 +70,8 @@ public:
     bool getCourse(EigenSTL::vector_Isometry3d &poses);
     void generateTrajectory(EigenSTL::vector_Isometry3d &poses, std::vector<descartes_core::TrajectoryPtPtr> &input_traj);
     void planPath(std::vector<descartes_core::TrajectoryPtPtr> &input_traj,
-                  std::vector<descartes_core::TrajectoryPtPtr> &output_path);
-    void runPath(const std::vector<descartes_core::TrajectoryPtPtr> &path);
+                  std::vector<descartes_core::TrajectoryPtPtr> &output_path, moveit_msgs::RobotTrajectory &moveit_traj);
+    void runPath(const std::vector<descartes_core::TrajectoryPtPtr> &path, const moveit_msgs::RobotTrajectory &moveit_traj);
     void loadRobotModel();
 
 protected:

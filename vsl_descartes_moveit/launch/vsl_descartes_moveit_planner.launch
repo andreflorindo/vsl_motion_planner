@@ -11,11 +11,12 @@
 
   <!-- Change course position and velocities -->
   <!-- <arg name="course_filename" value="/examples/simplePath.txt"/> -->
-  <arg name="course_filename" value="/examples/ExampleAndreFlat.txt"/>
+  <arg name="course_filename" default="/examples/ExampleAndreFlat.txt"/>
+  <!-- <arg name="course_filename" default="/examples/ExampleRik4.txt"/> -->
   <arg name="layer" default="3"/>  <!-- Ratio from max joint speed -->
   <arg name="course" default="16"/> <!-- m/s -->
   <arg name="distance_waypoints" default="0.00574"/> <!--0.00574--> <!-- meters -->
-  <arg name="smooth_start" default="true"/> <!-- m/s -->
+  <arg name="smooth_start" default="false"/> <!-- m/s -->
   <arg name="add_x_distance" default="0.0"/> <!-- meters. Positive goes to the front, futher from the base-->
   <arg name="add_y_distance" default="0.0"/> <!-- meters. Positive goes to the left-->
   <arg name="add_z_distance" default="0.7"/> <!-- meters. Positive goes higher -->

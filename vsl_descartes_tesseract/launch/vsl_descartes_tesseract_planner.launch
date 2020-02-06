@@ -66,7 +66,7 @@
   </node> -->
 
   <node name="pose_builder_python" pkg="vsl_utilities" type="pose_builder.py" output="screen">
-    <param name="world_frame" value="$(arg world_frame)"/>
+    <param name="world_frame" value="$(arg base_link)"/>
     <param name="course_filename" value="$(arg course_filename)"/>  
     <param name="distance_waypoints" value="$(arg distance_waypoints)"/> 
     <param name="add_x_distance" value="$(arg add_x_distance)"/> 
