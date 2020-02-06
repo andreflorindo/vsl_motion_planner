@@ -39,26 +39,36 @@ TESSERACT_COMMON_IGNORE_WARNINGS_POP
 #include <trajopt_utils/config.hpp>
 #include <trajopt_utils/logging.hpp>
 
+// Moveit
+#include <moveit/move_group_interface/move_group_interface.h>
+#include <moveit/robot_model_loader/robot_model_loader.h>
+#include <const_ee_speed_time_parameterization.h>
+
 namespace vsl_motion_planner
 {
 const std::string POSE_BUILDER_SERVICE = "single_course";
 const double SERVER_TIMEOUT = 5.0f; // seconds
-const std::string ROBOT_DESCRIPTION_PARAM = "robot_description"; 
-const std::string ROBOT_SEMANTIC_PARAM = "robot_description_semantic"; 
+const std::string ROBOT_DESCRIPTION_PARAM = "robot_description";
+const std::string ROBOT_SEMANTIC_PARAM = "robot_description_semantic";
 const std::string GET_ENVIRONMENT_CHANGES_SERVICE = "get_tesseract_changes_rviz";
 const std::string MODIFY_ENVIRONMENT_SERVICE = "modify_tesseract_rviz";
 const std::string FOLLOW_JOINT_TRAJECTORY_ACTION = "joint_trajectory_action";
 // const std::string FOLLOW_JOINT_TRAJECTORY_ACTION = "position_trajectory_controller/follow_joint_trajectory";
+const std::string PLANNER_ID = "RRTConnect";
+const std::string HOME_POSITION_NAME = "above-table";
 
 struct VSLTrajoptPlannerConfiguration
 {
-    std::string group_name;
-    std::string tip_link;
-    std::string base_link;
-    std::string world_frame;
-    std::vector<std::string> joint_names;
-    int layer;
-    int course;
+  std::string group_name;
+  std::string tip_link;
+  std::string base_link;
+  std::string world_frame;
+  std::vector<std::string> joint_names;
+  int layer;
+  int course;
+  double distance_waypoints;
+  double ee_speed;
+  double max_velocity_scaling;
 };
 
 class VSLTrajoptPlanner
@@ -69,17 +79,20 @@ public:
 
   void initRos();
   tesseract_common::VectorIsometry3d getCourse();
-  trajectory_msgs::JointTrajectory trajArrayToJointTrajectoryMsg(std::vector<std::string> joint_names, trajopt::TrajArray traj_array,bool use_time,ros::Duration time_increment);
+  trajectory_msgs::JointTrajectory trajArrayToJointTrajectoryMsg(std::vector<std::string> joint_names, trajopt::TrajArray traj_array, bool use_time, ros::Duration time_increment);
   bool run();
+  void loadRobotModel();
 
 protected:
   trajopt::ProblemConstructionInfo trajoptPCI();
   tesseract_common::TrajArray readInitTraj(std::string start_filename);
   void addVel(trajectory_msgs::JointTrajectory &traj);
   void addAcc(trajectory_msgs::JointTrajectory &traj);
+  void executeStartMotionwithMoveit(trajopt::TrajArray poses_matrix);
+  void addTimeParameterizationToTrajopt(moveit_msgs::RobotTrajectory &traj);
 
 private:
-  VSLTrajoptPlannerConfiguration config_; 
+  VSLTrajoptPlannerConfiguration config_;
   ros::NodeHandle nh_;
   bool plotting_;
   bool rviz_;
@@ -89,6 +102,12 @@ private:
   ros::ServiceClient pose_builder_client_;
   ros::Publisher course_publisher_;
   std::shared_ptr<actionlib::SimpleActionClient<control_msgs::FollowJointTrajectoryAction>> follow_joint_trajectory_client_;
+
+  // //PlanningScene
+  robot_model_loader::RobotModelLoaderPtr robot_model_loader_;
+  mutable robot_state::RobotStatePtr kinematic_state_;
+  const robot_model::JointModelGroup *joint_model_group_;
+  robot_model::RobotModelConstPtr kinematic_model_;
 
   /**
    * @brief Check rviz and make sure the rviz environment revision number is zero.

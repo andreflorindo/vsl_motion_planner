@@ -132,33 +132,40 @@ bool VSLTrajoptPlanner::run()
 
     // getTraj() - To get trajectory of type trajopt::TrajArray
 
+    trajopt::TrajArray poses_matrix = getTraj(opt.x(), prob->GetVars());
+
     if (plotting_)
         plotter->clear();
-    else
-    {
-        ROS_ERROR("Solution found! Hit enter key to move robot");
-        std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
-    }
 
     collisions.clear();
     found = checkTrajectory(
-        collisions, *manager, *state_solver, prob->GetKin()->getJointNames(), getTraj(opt.x(), prob->GetVars()));
+        collisions, *manager, *state_solver, prob->GetKin()->getJointNames(), poses_matrix);
 
     ROS_INFO((found) ? ("Final trajectory is in collision") : ("Final trajectory is collision free"));
 
-    plotter->plotTrajectory(prob->GetKin()->getJointNames(), getTraj(opt.x(), prob->GetVars()));
+    // plotter->plotTrajectory(prob->GetKin()->getJointNames(), poses_matrix);
+
+    trajectory_msgs::JointTrajectory traj_msg;
+    ros::Duration delta_time(config_.distance_waypoints / config_.ee_speed);
+    traj_msg = trajArrayToJointTrajectoryMsg(prob->GetKin()->getJointNames(), poses_matrix, pci.basic_info.use_time, delta_time);
+
+    moveit_msgs::RobotTrajectory moveit_traj;
+    moveit_traj.joint_trajectory = traj_msg;
+
+    addTimeParameterizationToTrajopt(moveit_traj);
+    
+    ROS_ERROR("Solution found! Hit enter key to move robot");
+    std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
 
     //////////////
     /// EXECUTE //
     //////////////
 
-    trajectory_msgs::JointTrajectory traj_msg;
-    ros::Duration t1(0.00574/0.1);
-    traj_msg = trajArrayToJointTrajectoryMsg(prob->GetKin()->getJointNames(), getTraj(opt.x(), prob->GetVars()), pci.basic_info.use_time, t1);
+    executeStartMotionwithMoveit(poses_matrix);
 
     // Create action message
     control_msgs::FollowJointTrajectoryGoal goal;
-    goal.trajectory = traj_msg;
+    goal.trajectory = moveit_traj.joint_trajectory;
 
     ROS_INFO_STREAM("Robot path sent for execution");
 
@@ -176,4 +183,62 @@ bool VSLTrajoptPlanner::run()
 
     return true;
 }
+
+void VSLTrajoptPlanner::executeStartMotionwithMoveit(trajopt::TrajArray poses_matrix)
+{
+    moveit::planning_interface::MoveGroupInterface move_group(config_.group_name);
+    move_group.setPlannerId(PLANNER_ID); //RRTConnect
+    move_group.setPlanningTime(10.0f);
+    move_group.setMaxVelocityScalingFactor(config_.max_velocity_scaling);
+
+    // setting above-table position as target
+    if (!move_group.setNamedTarget(HOME_POSITION_NAME))
+    {
+        ROS_ERROR_STREAM("Failed to set home '" << HOME_POSITION_NAME << "' position");
+        exit(-1);
+    }
+
+    moveit_msgs::MoveItErrorCodes result = move_group.move();
+    if (result.val != result.SUCCESS)
+    {
+        ROS_ERROR_STREAM("Failed to move to " << HOME_POSITION_NAME << " position");
+        exit(-1);
+    }
+    else
+    {
+        ROS_INFO_STREAM("Robot reached home position");
+    }
+
+    // creating goal joint pose to start of the path
+    auto init_pos_mat = poses_matrix.leftCols(poses_matrix.cols());
+    auto mat = init_pos_mat.row(0);
+    std::vector<double> start_pose(mat.data(), mat.data() + mat.rows() * mat.cols());
+
+    move_group.setJointValueTarget(start_pose);
+
+    result = move_group.move();
+    if (result.val != result.SUCCESS)
+    {
+        ROS_ERROR_STREAM("Move to start joint pose failed");
+        exit(-1);
+    }
+    else
+    {
+        ROS_INFO_STREAM("Robot reached start position");
+    }
+}
+
+void VSLTrajoptPlanner::addTimeParameterizationToTrajopt(moveit_msgs::RobotTrajectory &traj)
+{
+  robot_trajectory::RobotTrajectory robot_trajectory(robot_model_loader_->getModel(), config_.group_name);
+
+  robot_trajectory.setRobotTrajectoryMsg(*kinematic_state_,traj);
+  //time_parameterization_.computeTimeStamps(robot_trajectory, 0.05, 1);
+  
+  vsl_motion_planning::ConstEESpeedTimeParameterization designed_time_parameterization;
+  designed_time_parameterization.computeTimeStamps(robot_trajectory, config_.tip_link, config_.ee_speed, 1, 1);
+
+  robot_trajectory.getRobotTrajectoryMsg(traj);
+}
+
 } // namespace vsl_motion_planner

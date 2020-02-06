@@ -25,6 +25,9 @@ void VSLTrajoptPlanner::initRos()
       ph.getParam("world_frame", config_.world_frame) &&
       ph.getParam("layer", config_.layer) &&
       ph.getParam("course", config_.course) &&
+      ph.getParam("distance_waypoints", config_.distance_waypoints) &&
+      ph.getParam("ee_speed", config_.ee_speed) &&
+      ph.getParam("max_velocity_scaling", config_.max_velocity_scaling) &&
       ph.getParam("plotting", plotting_) &&
       ph.getParam("rviz", rviz_))
   // nh.getParam("controller_joint_names", config_.joint_names))
@@ -53,7 +56,23 @@ void VSLTrajoptPlanner::initRos()
     exit(-1);
   }
 
+  loadRobotModel();
+
   ROS_INFO_STREAM("Task '" << __FUNCTION__ << "' completed");
+}
+
+void VSLTrajoptPlanner::loadRobotModel()
+{
+    robot_model_loader_.reset(new robot_model_loader::RobotModelLoader(ROBOT_DESCRIPTION_PARAM));
+
+    kinematic_model_ = robot_model_loader_->getModel();
+    if (!kinematic_model_)
+    {
+        ROS_ERROR_STREAM("Failed to load robot model from robot description parameter:robot_description");
+        exit(-1);
+    }
+    joint_model_group_ = kinematic_model_->getJointModelGroup(config_.group_name);
+    kinematic_state_.reset(new moveit::core::RobotState(kinematic_model_));
 }
 
 tesseract_common::VectorIsometry3d VSLTrajoptPlanner::getCourse()

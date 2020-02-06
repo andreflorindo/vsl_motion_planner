@@ -15,6 +15,8 @@ find_package(catkin REQUIRED COMPONENTS
   pcl_conversions
   vsl_msgs
   control_msgs
+  moveit_ros_planning_interface
+  moveit_msgs
 )
 
 ## System dependencies are found with CMake's conventions
@@ -38,6 +40,8 @@ catkin_package(
    pcl_conversions
    vsl_msgs
    control_msgs
+   moveit_ros_planning_interface
+   moveit_msgs
 )
 
 ###########
@@ -54,6 +58,7 @@ include_directories(
 # ## Declare a Executable
 
 add_library(problem_construction src/problem_construction.cpp)
+add_library(const_ee_speed_time_parameterization src/const_ee_speed_time_parameterization.cpp)
 add_library(run_trajopt src/run_trajopt.cpp)
 
 add_executable(vsl_trajopt_main src/vsl_trajopt_main.cpp)
@@ -63,6 +68,8 @@ add_dependencies(vsl_trajopt_main vsl_msgs_generate_messages_cpp ${${PROJECT_NAM
 target_link_libraries(problem_construction tesseract::tesseract tesseract::tesseract_motion_planners_trajopt ${catkin_LIBRARIES})
 target_link_libraries(vsl_trajopt_main problem_construction ${catkin_LIBRARIES})
 
+target_link_libraries(run_trajopt const_ee_speed_time_parameterization ${catkin_LIBRARIES})
+
 target_link_libraries(run_trajopt tesseract::tesseract tesseract::tesseract_motion_planners_trajopt ${catkin_LIBRARIES})
 target_link_libraries(vsl_trajopt_main run_trajopt ${catkin_LIBRARIES})
 
@@ -71,6 +78,13 @@ target_include_directories(problem_construction PUBLIC
     "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>"
     "$<INSTALL_INTERFACE:include>")
 target_include_directories(problem_construction SYSTEM PUBLIC
+    ${catkin_INCLUDE_DIRS})
+
+tesseract_target_compile_options(const_ee_speed_time_parameterization PUBLIC)
+target_include_directories(const_ee_speed_time_parameterization PUBLIC
+    "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>"
+    "$<INSTALL_INTERFACE:include>")
+target_include_directories(const_ee_speed_time_parameterization SYSTEM PUBLIC
     ${catkin_INCLUDE_DIRS})
 
 tesseract_target_compile_options(run_trajopt PUBLIC)
@@ -104,6 +118,7 @@ target_include_directories(vsl_trajopt_main SYSTEM PRIVATE
 ## Mark executables and/or libraries for installation
 install(
   TARGETS
+    const_ee_speed_time_parameterization
     problem_construction
     run_trajopt
     vsl_trajopt_main

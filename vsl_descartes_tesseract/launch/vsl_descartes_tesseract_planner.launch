@@ -17,13 +17,13 @@
   <arg name="layer" default="3"/>  <!-- Ratio from max joint speed -->
   <arg name="course" default="16"/> <!-- m/s -->
   <arg name="distance_waypoints" default="0.00574"/> <!--0.00574--> <!-- meters -->
-  <arg name="smooth_start" default="true"/> <!-- m/s -->
+  <arg name="smooth_start" default="false"/> <!-- m/s -->
   <arg name="add_x_distance" default="0.0"/> <!-- meters. Positive goes to the front, futher from the base-->
   <arg name="add_y_distance" default="0.0"/> <!-- meters. Positive goes to the left-->
   <arg name="add_z_distance" default="0.7"/> <!-- meters. Positive goes higher -->
   <arg name="tow_width" default="0.0"/>   <!-- inches -->
   <arg name="tow_thickness" default="0.001"/>   <!-- inches -->
-  <arg name="max_velocity_scaling" default="0.2"/>  <!-- Ratio from max joint speed -->
+  <arg name="max_velocity_scaling" default="0.05"/>  <!-- Ratio from max joint speed -->
   <arg name="ee_speed" default="0.1"/> <!-- m/s -->
   
   <!-- Load universal robot description format (URDF) -->

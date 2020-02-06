@@ -6,6 +6,12 @@
   <arg name="plotting" default="false"/>
   <arg name="rviz" default="true"/>
 
+    <!-- By default, we do not start a database (it can be large) -->
+  <arg name="db" default="false" />
+
+  <!-- By default, we are not in debug mode -->
+  <arg name="debug" default="false" />
+
   <arg name="group_name" default="manipulator"/>
   <arg name="world_frame" default="kl2000_base_link"/> 
   <arg name="base_link" default="kr210_base_link"/> 
@@ -23,7 +29,7 @@
   <arg name="add_z_distance" default="0.7"/> <!-- meters. Positive goes higher -->
   <arg name="tow_width" default="0.0"/>   <!-- inches -->
   <arg name="tow_thickness" default="0.001"/>   <!-- inches -->
-  <arg name="max_velocity_scaling" default="0.2"/>  <!-- Ratio from max joint speed -->
+  <arg name="max_velocity_scaling" default="0.05"/>  <!-- Ratio from max joint speed -->
   <arg name="ee_speed" default="0.1"/> <!-- m/s -->
   
   <!-- Load universal robot description format (URDF) -->
@@ -36,7 +42,7 @@
 
   <group if="$(arg sim)">
     <include file="$(find industrial_robot_simulator)/launch/robot_interface_simulator.launch" />
-    <!-- <rosparam param="initial_joint_state">[0.0, -1.57, 1.57, 0.0, 0.0, 0.0]</rosparam> -->
+    <rosparam param="initial_joint_state">[1.57, -1.57, 1.57, 0.0, 0.0, 0.0]</rosparam>
     <!-- <include file="$(find kr210_drivers)/launch/kr210_pen_controller_simulator.launch"/> -->
   </group>
 
@@ -99,12 +105,22 @@
     <param name="plotting" type="bool" value="$(arg plotting)"/>
     <param name="rviz" type="bool" value="$(arg rviz)"/>
     <param name="group_name" value="$(arg group_name)"/>
-    <param name="tip_link" value="$(arg tip_link)"/>  <!--kr210_qr_tool0-->
+    <param name="tip_link" value="$(arg tip_link)"/> 
     <param name="base_link" value="$(arg base_link)"/>
-    <param name="world_frame" value="$(arg world_frame)"/>  <!--table_table_top-->
+    <param name="world_frame" value="$(arg world_frame)"/> 
     <param name="layer" value="$(arg layer)"/>
-    <param name="course" value="$(arg course)"/>  
+    <param name="course" value="$(arg course)"/>
+    <param name="distance_waypoints" value="$(arg distance_waypoints)"/>
+    <param name="ee_speed" value="$(arg ee_speed)"/>    
+    <param name="max_velocity_scaling" value="$(arg max_velocity_scaling)"/> 
   </node>
+
+  <include file="$(find kr210_pen_moveit_config)/launch/move_group.launch">
+    <arg name="allow_trajectory_execution" value="true"/>
+    <arg name="fake_execution" value="false"/>
+    <arg name="info" value="true"/>
+    <arg name="debug" value="$(arg debug)"/>
+  </include>
 
 
     <!-- Launch visualization -->

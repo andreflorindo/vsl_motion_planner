@@ -119,7 +119,7 @@ void VSLOMPLMoveitPlanner::createMotionPlanRequest(std::vector<geometry_msgs::Po
     double initial_fraction = move_group.computeCartesianPath(initial_pose, eef_step, jump_threshold, initial_point_trajectory);
 
     initial_point_plan.trajectory_ = initial_point_trajectory;
-    addTimeParameterizationToOmpl(initial_point_trajectory, 4, config_.max_joint_speed_scaling_between_traj);
+    // addTimeParameterizationToOmpl(initial_point_trajectory, 4, config_.max_joint_speed_scaling_between_traj);
     move_group.execute(initial_point_plan);
 
     moveit::planning_interface::MoveGroupInterface::Plan my_plan;

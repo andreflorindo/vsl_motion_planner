@@ -78,8 +78,8 @@ void VSLDescartesMoveitPlanner::fromDescartesToMoveitTrajectory(const std::vecto
   traj.joint_names = config_.joint_names;
 
   descartes_utilities::toRosJointPoints(*robot_model_ptr_, input_traj, VELOCITY_DESCARTES, traj.points);
-  addVel(traj);
-  addAcc(traj);
+  // addVel(traj);
+  // addAcc(traj);
 }
 
 void VSLDescartesMoveitPlanner::addVel(trajectory_msgs::JointTrajectory &traj) //Velocity of the joints

@@ -3,11 +3,12 @@
 int main(int argc, char **argv)
 {
   ros::init(argc, argv, "vsl_trajopt_main");
+  ros::AsyncSpinner spinner(1);
+  spinner.start();
 
   vsl_motion_planner::VSLTrajoptPlanner planner;
   planner.run();
-
-  ROS_INFO("Done");
-  ros::spin();
+  
+  spinner.stop();
   return 0;
 }
