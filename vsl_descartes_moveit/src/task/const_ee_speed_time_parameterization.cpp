@@ -506,6 +506,7 @@ bool ConstEESpeedTimeParameterization::computeTimeStamps(robot_trajectory::Robot
 
     bool ok = false;
     double ee_speed = ee_speed_request;
+    int iteration = 0;
 
     while (!ok)
     {
@@ -514,7 +515,14 @@ bool ConstEESpeedTimeParameterization::computeTimeStamps(robot_trajectory::Robot
         applyAccelerationConstraints(trajectory, time_diff, max_acceleration_scaling_factor);
         ok = checkEESpeed(trajectory, time_diff, end_effector_frame, ee_speed);
         ee_speed *= 0.9;
+        iteration++;
+        if (iteration == 16)
+        {
+            ROS_ERROR_STREAM("Constant End-effector speed cannot be obtained withput using very small values");
+            exit(-1);
+        }   
     }
+
 
     updateTrajectory(trajectory, time_diff);
     return true;

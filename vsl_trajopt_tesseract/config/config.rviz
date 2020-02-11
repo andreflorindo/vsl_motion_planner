@@ -139,12 +139,12 @@ Visualization Manager:
           Alpha: 1
           Show Axes: false
           Show Trail: false
-        penholder_base_link:
+        atl_tool_base_link:
           Alpha: 1
           Show Axes: false
           Show Trail: false
           Value: true
-        penholder_tool_tip:
+        atl_tool_tool_tip:
           Alpha: 1
           Show Axes: false
           Show Trail: false
@@ -250,12 +250,12 @@ Visualization Manager:
           Alpha: 1
           Show Axes: false
           Show Trail: false
-        penholder_base_link:
+        atl_tool_base_link:
           Alpha: 1
           Show Axes: false
           Show Trail: false
           Value: true
-        penholder_tool_tip:
+        atl_tool_tool_tip:
           Alpha: 1
           Show Axes: false
           Show Trail: false

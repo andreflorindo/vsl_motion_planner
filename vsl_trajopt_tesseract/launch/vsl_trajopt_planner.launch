@@ -15,7 +15,7 @@
   <arg name="group_name" default="manipulator"/>
   <arg name="world_frame" default="kl2000_base_link"/> 
   <arg name="base_link" default="kr210_base_link"/> 
-  <arg name="tip_link" default="penholder_tool_tip"/>  
+  <arg name="tip_link" default="atl_tool_tool_tip"/>  
 
   <!-- Change course position and velocities -->
   <!-- <arg name="course_filename" value="/examples/simplePath.txt"/> -->
@@ -33,17 +33,17 @@
   <arg name="ee_speed" default="0.1"/> <!-- m/s -->
   
   <!-- Load universal robot description format (URDF) -->
-  <include file="$(find kr210_pen_moveit_config)/launch/planning_context.launch">
+  <include file="$(find kr210_atl_moveit_config)/launch/planning_context.launch">
     <arg name="load_robot_description" value="true"/>
   </include>
 
   <!-- Non-standard joint names -->
-  <rosparam command="load" file="$(find kr210_pen_moveit_config)/config/joint_names.yaml" />
+  <rosparam command="load" file="$(find kr210_atl_moveit_config)/config/joint_names.yaml" />
 
   <group if="$(arg sim)">
     <include file="$(find industrial_robot_simulator)/launch/robot_interface_simulator.launch" />
     <rosparam param="initial_joint_state">[1.57, -1.57, 1.57, 0.0, 0.0, 0.0]</rosparam>
-    <!-- <include file="$(find kr210_drivers)/launch/kr210_pen_controller_simulator.launch"/> -->
+    <!-- <include file="$(find kr210_drivers)/launch/kr210_atl_controller_simulator.launch"/> -->
   </group>
 
   <group unless="$(arg sim)"> 
@@ -57,7 +57,7 @@
     <remap from="/position_trajectory_controller/state" to="/feedback_states" />
     <remap from="/position_trajectory_controller/command" to="/joint_path_command"/>
 
-    <include file="$(find kr210_drivers)/launch/kr210_pen_controller_bringup.launch" />
+    <include file="$(find kr210_drivers)/launch/kr210_atl_controller_bringup.launch" />
 
     <node pkg="tf2_ros" type="buffer_server" name="tf2_buffer_server" output="screen">
       <param name="buffer_size" value="120.0"/>
@@ -115,7 +115,7 @@
     <param name="max_velocity_scaling" value="$(arg max_velocity_scaling)"/> 
   </node>
 
-  <include file="$(find kr210_pen_moveit_config)/launch/move_group.launch">
+  <include file="$(find kr210_atl_moveit_config)/launch/move_group.launch">
     <arg name="allow_trajectory_execution" value="true"/>
     <arg name="fake_execution" value="false"/>
     <arg name="info" value="true"/>

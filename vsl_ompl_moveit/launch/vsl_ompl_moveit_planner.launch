@@ -4,7 +4,7 @@
   <arg name="group_name" default="manipulator"/>
   <arg name="world_frame" default="kl2000_base_link"/>  <!--table_table_top--> 
   <arg name="base_link" default="kr210_base_link"/> 
-  <arg name="tip_link" default="penholder_tool_tip"/>  <!--kr210_qr_tool0-->
+  <arg name="tip_link" default="atl_tool_tool_tip"/>  <!--kr210_qr_tool0-->
   <arg name="planner_id" default="RRTConnect"/>
 
   <param name="ikfast_base_frame" type="string" value="$(arg base_link)" />

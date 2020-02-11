@@ -8,7 +8,7 @@
   <arg name="group_name" default="manipulator"/>
   <arg name="world_frame" default="kl2000_base_link"/>  <!--table_table_top--> 
   <arg name="base_link" default="kr210_base_link"/> 
-  <arg name="tip_link" default="penholder_tool_tip"/>  <!--kr210_qr_tool0-->
+  <arg name="tip_link" default="atl_tool_tool_tip"/>  <!--kr210_qr_tool0-->
 
   <arg name="course_filename" default="/examples/ExampleAndreFlat.txt"/>
   <!-- <arg name="course_filename" default="/examples/ExampleRik4.txt"/> -->
@@ -44,7 +44,8 @@
     <arg name="add_y_distance" value="$(arg add_y_distance)"/> 
     <arg name="add_z_distance" value="$(arg add_z_distance)"/> 
     <arg name="tow_width" value="$(arg tow_width)"/>  
-    <arg name="tow_thickness" value="$(arg tow_thickness)"/> 
+    <arg name="tow_thickness" value="$(arg tow_thickness)"/>
+    <arg name="max_velocity_scaling" value="$(arg max_velocity_scaling)"/>  
     <arg name="ee_speed" value="$(arg ee_speed)"/> 
   </include>
   </group>
@@ -69,6 +70,7 @@
     <arg name="add_z_distance" value="$(arg add_z_distance)"/> 
     <arg name="tow_width" value="$(arg tow_width)"/>  
     <arg name="tow_thickness" value="$(arg tow_thickness)"/> 
+    <arg name="max_velocity_scaling" value="$(arg max_velocity_scaling)"/>  
     <arg name="ee_speed" value="$(arg ee_speed)"/> 
   </include>
   </group>
@@ -90,7 +92,8 @@
     <arg name="add_y_distance" value="$(arg add_y_distance)"/> 
     <arg name="add_z_distance" value="$(arg add_z_distance)"/> 
     <arg name="tow_width" value="$(arg tow_width)"/>  
-    <arg name="tow_thickness" value="$(arg tow_thickness)"/> 
+    <arg name="tow_thickness" value="$(arg tow_thickness)"/>
+    <arg name="max_velocity_scaling" value="$(arg max_velocity_scaling)"/>   
     <arg name="ee_speed" value="$(arg ee_speed)"/> 
     <arg name="plotting" value="false"/>
     <arg name="rviz" value="true"/>
