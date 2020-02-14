@@ -35,8 +35,9 @@
   <rosparam command="load" file="$(find kr210_atl_moveit_config)/config/joint_names.yaml" />
 
   <group if="$(arg sim)">
+    <node name="robot_state_publisher" pkg="robot_state_publisher" type="robot_state_publisher" respawn="true" output="screen" />
     <include file="$(find industrial_robot_simulator)/launch/robot_interface_simulator.launch" />
-    <!-- <rosparam param="initial_joint_state">[0.0, -1.57, 1.57, 0.0, 0.0, 0.0]</rosparam> -->
+    <!-- <rosparam param="initial_joint_state">[0.0, -1.57, 1.57, 0.0, 1.57, 0.0]</rosparam> -->
     <!-- <include file="$(find kr210_drivers)/launch/kr210_atl_controller_simulator.launch"/> -->
   </group>
 
@@ -57,9 +58,6 @@
       <param name="buffer_size" value="120.0"/>
     </node>    
   </group>
-
-  <node name="robot_state_publisher" pkg="robot_state_publisher" type="robot_state_publisher" respawn="true" output="screen" />
-
 
   <!-- <node name="pose_builder" pkg="vsl_utilities" type="pose_builder" output="screen">
     <param name="world_frame" value="kl2000_base_link"/> 
