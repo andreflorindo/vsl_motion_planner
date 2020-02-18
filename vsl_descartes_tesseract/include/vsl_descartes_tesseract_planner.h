@@ -52,7 +52,7 @@ const std::string ROBOT_SEMANTIC_PARAM = "robot_description_semantic";
 const std::string GET_ENVIRONMENT_CHANGES_SERVICE = "get_tesseract_changes_rviz";
 const std::string MODIFY_ENVIRONMENT_SERVICE = "modify_tesseract_rviz";
 const std::string FOLLOW_JOINT_TRAJECTORY_ACTION = "joint_trajectory_action";
-const int AXIAL_SYMMETRIC_MOTION = 0; // 0 - Axial Symmetric Trajectory; 1 - Fully Constraint trajectory
+const int AXIAL_SYMMETRIC_MOTION = 1; // 0 - Axial Symmetric Trajectory; 1 - Fully Constraint trajectory
 // const std::string FOLLOW_JOINT_TRAJECTORY_ACTION = "position_trajectory_controller/follow_joint_trajectory";
 
 struct VSLDescartesTesseractPlannerConfiguration
