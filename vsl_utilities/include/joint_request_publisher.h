@@ -27,7 +27,8 @@ public:
     virtual ~JointRequestPublisher();
 
     void initTopic();
-    void subscriberCallback(const trajectory_msgs::JointTrajectory &msg);
+    void subscriberCallbackSim(const trajectory_msgs::JointTrajectory &msg);
+    void subscriberCallbackReal(const trajectory_msgs::JointTrajectoryPoint &msg);
     void checkJointPathCommand();
     void publishJointRequest();
 

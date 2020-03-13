@@ -47,7 +47,7 @@ class RobotState:
 
 def ros_read_path(robot_state_from_file, robot_state_from_file_velocity, robot_state_from_file_acceleration):
     infile = open(
-        '/home/andreflorindo/workspaces/vsl_motion_planner_ws/src/vsl_utilities/trial_txt_files/03_12_2019/sim_ee_request.txt', 'r')
+        '/home/andreflorindo/workspaces/vsl_motion_planner_ws/src/vsl_utilities/trial_txt_files/13_03_2020/sim_ee_request.txt', 'r')
     # '/home/andre/workspaces/vsl_msc_project_ws/src/vsl_utilities/trial_txt_files/simulated_ee_request_01_11.txt', 'r')
     next(infile)
     for line in infile:
@@ -101,7 +101,7 @@ def ros_read_path(robot_state_from_file, robot_state_from_file_velocity, robot_s
     adjust_ee_poses(robot_state_from_file.ee_request)
 
     infile = open(
-        '/home/andreflorindo/workspaces/vsl_motion_planner_ws/src/vsl_utilities/trial_txt_files/03_12_2019/sim_joint_request.txt', 'r')
+        '/home/andreflorindo/workspaces/vsl_motion_planner_ws/src/vsl_utilities/trial_txt_files/13_03_2020/sim_joint_request.txt', 'r')
     # '/home/andre/workspaces/vsl_msc_project_ws/src/vsl_utilities/trial_txt_files/simulated_joint_request_01_11.txt', 'r')
     next(infile)
     for line in infile:

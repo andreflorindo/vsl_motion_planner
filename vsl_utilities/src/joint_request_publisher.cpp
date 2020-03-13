@@ -20,9 +20,9 @@ void JointRequestPublisher::initTopic()
     }
 
     if (sim)
-        joint_path_subscriber_ = nh.subscribe("joint_path_command", 1000, &JointRequestPublisher::subscriberCallback, this);
+        joint_path_subscriber_ = nh.subscribe("joint_path_command", 1000, &JointRequestPublisher::subscriberCallbackSim, this);
     else
-        joint_path_subscriber_ = nh.subscribe("position_trajectory_controller/command", 1000, &JointRequestPublisher::subscriberCallback, this);
+        joint_path_subscriber_ = nh.subscribe("feedback_states/desired", 1000, &JointRequestPublisher::subscriberCallbackReal, this);
 
 
     joint_request_publisher_ = nh.advertise<vsl_msgs::JointRequest>("joint_request", 1000, true);
@@ -30,7 +30,7 @@ void JointRequestPublisher::initTopic()
     ROS_INFO_STREAM("joint_request_publisher: Task '" << __FUNCTION__ << "' completed");
 }
 
-void JointRequestPublisher::subscriberCallback(const trajectory_msgs::JointTrajectory &msg)
+void JointRequestPublisher::subscriberCallbackSim(const trajectory_msgs::JointTrajectory &msg)
 {
     seq++;
     time_point = ros::Time::now();
@@ -38,6 +38,16 @@ void JointRequestPublisher::subscriberCallback(const trajectory_msgs::JointTraje
     ROS_INFO("joint_request_publisher: Joint trajectory %d received", seq);
     checkJointPathCommand();
     publishJointRequest();
+}
+
+void JointRequestPublisher::subscriberCallbackReal(const trajectory_msgs::JointTrajectoryPoint &msg)
+{
+    vsl_msgs::JointRequest joint_request;
+    joint_request.header.stamp = ros::Time::now();
+    joint_request.position = msg.positions;
+    joint_request.velocity = msg.velocities;
+    joint_request.acceleration = msg.accelerations;
+    joint_request_publisher_.publish(joint_request);
 }
 
 void JointRequestPublisher::checkJointPathCommand()
