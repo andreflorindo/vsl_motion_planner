@@ -60,7 +60,7 @@ class PoseBuilderPython:
     TABLE_WIDTH = 1.2
     APPROACH_TABLE = 0.002
     XY_EXTENSION_DISTANCE = 0.02  # meters
-    XY_RAISE_DISTANCE = 0.05  # meters
+    XY_RAISE_DISTANCE = 0.10  # meters
     ANGLE_RAISE = 10  # degrees
     Z_RAISE_DISTANCE = XY_RAISE_DISTANCE*math.tan(ANGLE_RAISE*math.pi/180)
     SERVER_TIMEOUT = 5.0  # seconds

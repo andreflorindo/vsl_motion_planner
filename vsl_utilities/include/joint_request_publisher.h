@@ -8,6 +8,7 @@
 //msg
 #include <vsl_msgs/JointRequest.h>
 #include <trajectory_msgs/JointTrajectory.h>
+#include <control_msgs/FollowJointTrajectoryFeedback.h>
 
 namespace vsl_motion_planning
 {
@@ -28,7 +29,7 @@ public:
 
     void initTopic();
     void subscriberCallbackSim(const trajectory_msgs::JointTrajectory &msg);
-    void subscriberCallbackReal(const trajectory_msgs::JointTrajectoryPoint &msg);
+    void subscriberCallbackReal(const control_msgs::FollowJointTrajectoryFeedback &msg);
     void checkJointPathCommand();
     void publishJointRequest();
 
