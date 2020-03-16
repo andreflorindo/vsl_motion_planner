@@ -17,7 +17,8 @@ class CourseClass:
 
 def read_path():
     input = np.loadtxt(
-        "/home/andreflorindo/workspaces/tesseract_vsl_motion_planner_ws/src/vsl_motion_planner/vsl_msgs/examples/simplePath.txt", dtype='f')
+        #"/home/andreflorindo/workspaces/tesseract_vsl_motion_planner_ws/src/vsl_motion_planner/vsl_msgs/examples/simplePath.txt", dtype='f')
+        "/home/andre/workspaces/tesseract_ws/src/vsl_motion_planner/vsl_msgs/examples/simplePath.txt", dtype='f')
     x = []
     y = []
     z = []
@@ -208,7 +209,7 @@ if __name__ == "__main__":
         else:
             u.append(1)
 
-    parameter = np.linspace(0, 1, num=100000)
+    parameter = np.linspace(0, 1, num=1000)
 
     bspline_course = bspline3D(parameter, u, course, k)
     position = recognize_position(course, bspline_course)
@@ -235,12 +236,12 @@ if __name__ == "__main__":
     # for i in range(0,len(tangent)):
     #     binormal.append([0,0,1])
 
-    # np.savetxt("/home/andreflorindo/workspaces/vsl_motion_planner_ws/src/vsl_utilities/examples/tangent_simplePath.txt", tangent, fmt='%.6f')
-    # np.savetxt("/home/andreflorindo/workspaces/vsl_motion_planner_ws/src/vsl_utilities/examples/normal_simplePath.txt", normal, fmt='%.6f')
-    # np.savetxt("/home/andreflorindo/workspaces/vsl_motion_planner_ws/src/vsl_utilities/examples/binormal_simplePath.txt", binormal, fmt='%.6f')
+    np.savetxt("/home/andre/workspaces/tesseract_ws/src/vsl_motion_planner/vsl_msgs/examples/tangent_simplePath.txt", tangent, fmt='%.6f')
+    np.savetxt("/home/andre/workspaces/tesseract_ws/src/vsl_motion_planner/vsl_msgs/examples/normal_simplePath.txt", normal, fmt='%.6f')
+    np.savetxt("/home/andre/workspaces/tesseract_ws/src/vsl_motion_planner/vsl_msgs/examples/binormal_simplePath.txt", binormal, fmt='%.6f')
 
     # plot_course(bspline_course)
-    # plot_both_courses2d(course, bspline_course)
+    plot_both_courses2d(course, bspline_course)
     # radius = compute_radius2D(deriv1_bspline_position,deriv2_bspline_position)
     # print(radius)
 

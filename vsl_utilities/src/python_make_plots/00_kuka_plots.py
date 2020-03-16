@@ -6,7 +6,6 @@ import math
 import matplotlib.pyplot as plt
 import re
 
-
 class CourseClass:
     def __init__(self, x, y, z):
         self.x = x
@@ -41,8 +40,11 @@ class RobotState:
     def __init__(self):
         self.joint_request = JointStates()
         self.joint_states = JointStates()
+        self.joint_request_kuka = JointStates()
         self.ee_request = EEStates()
         self.ee_states = EEStates()
+        self.ee_request_kuka = EEStates()
+        self.e_request_kuka = EEStates()
 
 
 def ros_read_path(robot_state_from_file, robot_state_from_file_velocity, robot_state_from_file_acceleration):
@@ -151,22 +153,72 @@ def ros_read_path(robot_state_from_file, robot_state_from_file_velocity, robot_s
 
     infile = open(
         # '/home/andreflorindo/workspaces/vsl_motion_planner_ws/src/vsl_utilities/trial_txt_files/01_11_2019/simulated_joint_states_01_11.txt', 'r')
-        '/home/andre/workspaces/tesseract_ws/descartes_sim_joint_states.txt', 'r')
+        '/home/andre/workspaces/tesseract_ws/descartes_rsi_joint_request.txt', 'r')
     next(infile)
     for line in infile:
         input = re.findall(
             r"-?\ *[0-9]+\.?[0-9]*(?:[Ee]\ *-?\ *[0-9]+)?", line)
         if len(input) != 0:
-            robot_state_from_file.joint_states.time.append(
+            robot_state_from_file.joint_request_kuka.time.append(
                 float(input[2])/10**9)
-            robot_state_from_file.joint_states.a1.append(float(input[15]))
-            robot_state_from_file.joint_states.a2.append(float(input[16]))
-            robot_state_from_file.joint_states.a3.append(float(input[17]))
-            robot_state_from_file.joint_states.a4.append(float(input[18]))
-            robot_state_from_file.joint_states.a5.append(float(input[19]))
-            robot_state_from_file.joint_states.a6.append(float(input[20]))
+            robot_state_from_file.joint_request_kuka.a1.append(float(input[3]))
+            robot_state_from_file.joint_request_kuka.a2.append(float(input[4]))
+            robot_state_from_file.joint_request_kuka.a3.append(float(input[5]))
+            robot_state_from_file.joint_request_kuka.a4.append(float(input[6]))
+            robot_state_from_file.joint_request_kuka.a5.append(float(input[7]))
+            robot_state_from_file.joint_request_kuka.a6.append(float(input[8]))
+            robot_state_from_file_velocity.joint_request_kuka.time.append(
+                float(input[2])/10**9)
+            robot_state_from_file_velocity.joint_request_kuka.a1.append(
+                float(input[9]))
+            robot_state_from_file_velocity.joint_request_kuka.a2.append(
+                float(input[10]))
+            robot_state_from_file_velocity.joint_request_kuka.a3.append(
+                float(input[11]))
+            robot_state_from_file_velocity.joint_request_kuka.a4.append(
+                float(input[12]))
+            robot_state_from_file_velocity.joint_request_kuka.a5.append(
+                float(input[13]))
+            robot_state_from_file_velocity.joint_request_kuka.a6.append(
+                float(input[14]))
+            robot_state_from_file_acceleration.joint_request_kuka.time.append(
+                float(input[2])/10**9)
+            robot_state_from_file_acceleration.joint_request_kuka.a1.append(
+                float(input[15]))
+            robot_state_from_file_acceleration.joint_request_kuka.a2.append(
+                float(input[16]))
+            robot_state_from_file_acceleration.joint_request_kuka.a3.append(
+                float(input[17]))
+            robot_state_from_file_acceleration.joint_request_kuka.a4.append(
+                float(input[18]))
+            robot_state_from_file_acceleration.joint_request_kuka.a5.append(
+                float(input[19]))
+            robot_state_from_file_acceleration.joint_request_kuka.a6.append(
+                float(input[20]))
     infile.close()
-    adjust_time(robot_state_from_file.joint_states.time)
+    adjust_time(robot_state_from_file.joint_request_kuka.time)
+    adjust_time(robot_state_from_file_velocity.joint_request_kuka.time)
+    adjust_time(robot_state_from_file_acceleration.joint_request_kuka.time)
+
+    infile = open(
+        #'/home/andreflorindo/workspaces/vsl_motion_planner_ws/src/vsl_utilities/trial_txt_files/13_03_2020/sim_ee_request.txt', 'r')
+        '/home/andre/workspaces/tesseract_ws/descartes_rsi_ee_request.txt', 'r')
+    next(infile)
+    for line in infile:
+        input = re.findall(
+            r"-?\ *[0-9]+\.?[0-9]*(?:[Ee]\ *-?\ *[0-9]+)?", line)
+        if len(input) != 0:
+            robot_state_from_file.ee_request_kuka.time.append(float(input[2])/10**9)
+            robot_state_from_file.ee_request_kuka.x.append(float(input[3]))
+            robot_state_from_file.ee_request_kuka.y.append(float(input[4]))
+            robot_state_from_file.ee_request_kuka.z.append(float(input[5]))
+            robot_state_from_file.ee_request_kuka.rx.append(float(input[6]))
+            robot_state_from_file.ee_request_kuka.ry.append(float(input[7]))
+            robot_state_from_file.ee_request_kuka.rz.append(float(input[8]))
+            robot_state_from_file.ee_request_kuka.linear.append(float(input[9]))
+    infile.close()
+    adjust_time(robot_state_from_file.ee_request_kuka.time)
+    adjust_ee_poses(robot_state_from_file.ee_request_kuka)
 
 
 def rsi_read_path(robot_state_from_file):
@@ -237,45 +289,51 @@ def adjust_ee_poses(ee_pose):
 def ros_clean_path(robot_state_from_file, robot_state):
     robot_state.ee_request = robot_state_from_file.ee_request
     robot_state.joint_request = robot_state_from_file.joint_request
-    j = 0
-    for i in range(1, len(robot_state_from_file.joint_states.time)):
-        if robot_state_from_file.joint_states.a1[i] != robot_state_from_file.joint_states.a1[i-1] or j != 0:
-            robot_state.joint_states.time.append(
-                robot_state_from_file.joint_states.time[i])
-            robot_state.joint_states.a1.append(
-                robot_state_from_file.joint_states.a1[i])
-            robot_state.joint_states.a2.append(
-                robot_state_from_file.joint_states.a2[i])
-            robot_state.joint_states.a3.append(
-                robot_state_from_file.joint_states.a3[i])
-            robot_state.joint_states.a4.append(
-                robot_state_from_file.joint_states.a4[i])
-            robot_state.joint_states.a5.append(
-                robot_state_from_file.joint_states.a5[i])
-            robot_state.joint_states.a6.append(
-                robot_state_from_file.joint_states.a6[i])
-            # robot_state.ee_states.x.append(
-            #     robot_state_from_file.ee_states.x[i])
-            # robot_state.ee_states.y.append(
-            #     robot_state_from_file.ee_states.y[i])
-            # robot_state.ee_states.z.append(
-            #     robot_state_from_file.ee_states.z[i])
-            # robot_state.ee_states.a.append(
-            #     robot_state_from_file.ee_states.a[i])
-            # robot_state.ee_states.b.append(
-            #     robot_state_from_file.ee_states.b[i])
-            # robot_state.ee_states.c.append(
-            #     robot_state_from_file.ee_states.c[i])
-            j = j+1
-    adjust_time(robot_state.joint_states.time)
-    # adjust_time(robot_state.ee_states.time)
+    cut_index = 0
+    for i in range(1, len(robot_state_from_file.joint_request_kuka.time)):
+        if robot_state_from_file.joint_request_kuka.a1[i] != robot_state_from_file.joint_request_kuka.a1[i-1] or cut_index != 0:
+            if cut_index==0:
+                cut_index = i
+            robot_state.joint_request_kuka.time.append(
+                robot_state_from_file.joint_request_kuka.time[i])
+            robot_state.joint_request_kuka.a1.append(
+                robot_state_from_file.joint_request_kuka.a1[i])
+            robot_state.joint_request_kuka.a2.append(
+                robot_state_from_file.joint_request_kuka.a2[i])
+            robot_state.joint_request_kuka.a3.append(
+                robot_state_from_file.joint_request_kuka.a3[i])
+            robot_state.joint_request_kuka.a4.append(
+                robot_state_from_file.joint_request_kuka.a4[i])
+            robot_state.joint_request_kuka.a5.append(
+                robot_state_from_file.joint_request_kuka.a5[i])
+            robot_state.joint_request_kuka.a6.append(
+                robot_state_from_file.joint_request_kuka.a6[i])
+            robot_state.ee_request_kuka.time.append(
+                robot_state_from_file.ee_request_kuka.time[i])
+            robot_state.ee_request_kuka.x.append(
+                robot_state_from_file.ee_request_kuka.x[i])
+            robot_state.ee_request_kuka.y.append(
+                robot_state_from_file.ee_request_kuka.y[i])
+            robot_state.ee_request_kuka.z.append(
+                robot_state_from_file.ee_request_kuka.z[i])
+            robot_state.ee_request_kuka.rx.append(
+                robot_state_from_file.ee_request_kuka.rx[i])
+            robot_state.ee_request_kuka.ry.append(
+                robot_state_from_file.ee_request_kuka.ry[i])
+            robot_state.ee_request_kuka.rz.append(
+                robot_state_from_file.ee_request_kuka.rz[i])
+    adjust_time(robot_state.joint_request_kuka.time)
+    adjust_time(robot_state.ee_request_kuka.time)
+    return cut_index
     # add_delay_joint_request(robot_state)
 
 
 def rsi_clean_path(robot_state_from_file, robot_state):
     j = 0
     for i in range(1, len(robot_state_from_file.joint_states.time)):
-        if robot_state_from_file.joint_states.a2[i] != robot_state_from_file.joint_states.a2[i-1] or j != 0:
+        if robot_state_from_file.joint_states.a1[i] != robot_state_from_file.joint_states.a1[i-1] or j != 0:
+            if j==0:
+                print(i)
             robot_state.joint_states.time.append(0.004*j)
             robot_state.joint_states.a1.append(
                 robot_state_from_file.joint_states.a1[i])
@@ -366,39 +424,44 @@ def compute_derivative(time, variable):
     return v
 
 
-def ros_fill_derivative_class(robot_state, robot_state_velocity, robot_state_from_file_velocity):
+def ros_fill_derivative_class(robot_state, robot_state_velocity, robot_state_from_file_velocity, cut_index):
     robot_state_velocity.ee_request = robot_state_from_file_velocity.ee_request
     robot_state_velocity.joint_request = robot_state_from_file_velocity.joint_request
+    robot_state_velocity.ee_request_kuka.time = robot_state.ee_request_kuka.time
 
-    robot_state_velocity.joint_states.time = robot_state.joint_states.time
+    for i in range(cut_index, len(robot_state_from_file_velocity.joint_request_kuka.time)):
+            robot_state_velocity.joint_request_kuka.time.append(
+                robot_state_from_file_velocity.joint_request_kuka.time[i])
+            robot_state_velocity.joint_request_kuka.a1.append(
+                robot_state_from_file_velocity.joint_request_kuka.a1[i])
+            robot_state_velocity.joint_request_kuka.a2.append(
+                robot_state_from_file_velocity.joint_request_kuka.a2[i])
+            robot_state_velocity.joint_request_kuka.a3.append(
+                robot_state_from_file_velocity.joint_request_kuka.a3[i])
+            robot_state_velocity.joint_request_kuka.a4.append(
+                robot_state_from_file_velocity.joint_request_kuka.a4[i])
+            robot_state_velocity.joint_request_kuka.a5.append(
+                robot_state_from_file_velocity.joint_request_kuka.a5[i])
+            robot_state_velocity.joint_request_kuka.a6.append(
+                robot_state_from_file_velocity.joint_request_kuka.a6[i])
+    adjust_time(robot_state_velocity.joint_request_kuka.time)
 
-    # Joint States velocity
-    robot_state_velocity.joint_states.a1 = compute_derivative(
-        robot_state.joint_states.time, robot_state.joint_states.a1)
-    robot_state_velocity.joint_states.a2 = compute_derivative(
-        robot_state.joint_states.time, robot_state.joint_states.a2)
-    robot_state_velocity.joint_states.a3 = compute_derivative(
-        robot_state.joint_states.time, robot_state.joint_states.a3)
-    robot_state_velocity.joint_states.a4 = compute_derivative(
-        robot_state.joint_states.time, robot_state.joint_states.a4)
-    robot_state_velocity.joint_states.a5 = compute_derivative(
-        robot_state.joint_states.time, robot_state.joint_states.a5)
-    robot_state_velocity.joint_states.a6 = compute_derivative(
-        robot_state.joint_states.time, robot_state.joint_states.a6)
-
-    # # EE States Velocity
-    # robot_state_velocity.ee_states.x = compute_derivative(
-    #     robot_state.time, robot_state.ee_states.x)
-    # robot_state_velocity.ee_states.y = compute_derivative(
-    #     robot_state.time, robot_state.ee_states.y)
-    # robot_state_velocity.ee_states.z = compute_derivative(
-    #     robot_state.time, robot_state.ee_states.z)
-    # robot_state_velocity.ee_states.a = compute_derivative(
-    #     robot_state.time, robot_state.ee_states.a)
-    # robot_state_velocity.ee_states.b = compute_derivative(
-    #     robot_state.time, robot_state.ee_states.b)
-    # robot_state_velocity.ee_states.c = compute_derivative(
-    #     robot_state.time, robot_state.ee_states.c)
+        # EE Request kuka Velocity
+    robot_state_velocity.ee_request_kuka.x = compute_derivative(
+        robot_state.ee_request_kuka.time, robot_state.ee_request_kuka.x)
+    robot_state_velocity.ee_request_kuka.y = compute_derivative(
+        robot_state.ee_request_kuka.time, robot_state.ee_request_kuka.y)
+    robot_state_velocity.ee_request_kuka.z = compute_derivative(
+        robot_state.ee_request_kuka.time, robot_state.ee_request_kuka.z)
+    robot_state_velocity.ee_request_kuka.rx = compute_derivative(
+        robot_state.ee_request_kuka.time, robot_state.ee_request_kuka.rx)
+    robot_state_velocity.ee_request_kuka.ry = compute_derivative(
+        robot_state.ee_request_kuka.time, robot_state.ee_request_kuka.ry)
+    robot_state_velocity.ee_request_kuka.rz = compute_derivative(
+        robot_state.ee_request_kuka.time, robot_state.ee_request_kuka.rz)
+    for i in range(0, len(robot_state_velocity.ee_request_kuka.time)):
+        robot_state_velocity.ee_request_kuka.linear.append(math.sqrt(
+            robot_state_velocity.ee_request_kuka.x[i]**2 + robot_state_velocity.ee_request_kuka.y[i]**2+robot_state_velocity.ee_request_kuka.z[i]**2))
 
 
 def rsi_fill_derivative_class(robot_state, robot_state_velocity):
@@ -444,9 +507,9 @@ def make_joints_plots(joint_name, joint_request_time, joint_request, simulated_j
     plt.title(joint_name)
     plt.ylabel('Angle(rad)')
     plt.plot(joint_request_time, joint_request, 'r--.',
-             label='Simulated Joint Traj. Requested')
+             label='Joint Traj. Requested')
     plt.plot(simulated_joint_states_time, simulated_joint_states,
-             'b', label='Simulated Joint Traj. State')
+             'b', label='Joint Traj. Smoothed')
     plt.plot(real_joint_states_time, real_joint_states,
              'g', label='Real Joint Traj. State')
     plt.legend()
@@ -454,9 +517,9 @@ def make_joints_plots(joint_name, joint_request_time, joint_request, simulated_j
     plt.subplot(312)
     plt.ylabel('Speed(rad/s)')
     plt.plot(joint_request_velocity_time,
-             joint_request_velocity, 'r--.', label='Simulated Joint Traj. Requested')
+             joint_request_velocity, 'r--.', label='Joint Traj. Requested')
     plt.plot(simulated_joint_states_velocity_time,
-             simulated_joint_states_velocity, 'b', label='Simulated Joint Traj. State')
+             simulated_joint_states_velocity, 'b', label='Joint Traj. Smoothed')
     plt.plot(real_joint_states_velocity_time,
              real_joint_states_velocity, 'g', label='Real Joint Traj. State')
     plt.legend()
@@ -465,9 +528,9 @@ def make_joints_plots(joint_name, joint_request_time, joint_request, simulated_j
     plt.ylabel('Acceleration(rad/s^2)')
     plt.xlabel('Time (s)')
     plt.plot(joint_request_acceleration_time,
-             joint_request_acceleration, 'r--.', label='Simulated Joint Traj. Requested')
+             joint_request_acceleration, 'r--.', label='Joint Traj. Requested')
     plt.plot(simulated_joint_states_acceleration_time,
-             simulated_joint_states_acceleration, 'b', label='Simulated Joint Traj. State')
+             simulated_joint_states_acceleration, 'b', label='Joint Traj. Smoothed')
     plt.plot(real_joint_states_acceleration_time,
              real_joint_states_acceleration, 'g', label='Real Joint Traj. State')
     plt.legend()
@@ -475,24 +538,24 @@ def make_joints_plots(joint_name, joint_request_time, joint_request, simulated_j
 
 
 def plot_all_joint(ros_robot_state, ros_robot_state_velocity, ros_robot_state_acceleration, rsi_robot_state, rsi_robot_state_velocity, rsi_robot_state_acceleration):
-    make_joints_plots('Joint A1', ros_robot_state.joint_request.time, ros_robot_state.joint_request.a1, ros_robot_state.joint_states.time, ros_robot_state.joint_states.a1, rsi_robot_state.joint_states.time, rsi_robot_state.joint_states.a1,
-                      ros_robot_state_velocity.joint_request.time, ros_robot_state_velocity.joint_request.a1, ros_robot_state_velocity.joint_states.time, ros_robot_state_velocity.joint_states.a1, rsi_robot_state_velocity.joint_states.time, rsi_robot_state_velocity.joint_states.a1,
-                      ros_robot_state_acceleration.joint_request.time, ros_robot_state_acceleration.joint_request.a1, ros_robot_state_acceleration.joint_states.time, ros_robot_state_acceleration.joint_states.a1, rsi_robot_state_acceleration.joint_states.time, rsi_robot_state_acceleration.joint_states.a1)
-    make_joints_plots('Joint A2', ros_robot_state.joint_request.time, ros_robot_state.joint_request.a2, ros_robot_state.joint_states.time, ros_robot_state.joint_states.a2, rsi_robot_state.joint_states.time, rsi_robot_state.joint_states.a2,
-                      ros_robot_state_velocity.joint_request.time, ros_robot_state_velocity.joint_request.a2, ros_robot_state_velocity.joint_states.time, ros_robot_state_velocity.joint_states.a2, rsi_robot_state_velocity.joint_states.time, rsi_robot_state_velocity.joint_states.a2,
-                      ros_robot_state_acceleration.joint_request.time, ros_robot_state_acceleration.joint_request.a2, ros_robot_state_acceleration.joint_states.time, ros_robot_state_acceleration.joint_states.a2, rsi_robot_state_acceleration.joint_states.time, rsi_robot_state_acceleration.joint_states.a2)
-    make_joints_plots('Joint A3', ros_robot_state.joint_request.time, ros_robot_state.joint_request.a3, ros_robot_state.joint_states.time, ros_robot_state.joint_states.a3, rsi_robot_state.joint_states.time, rsi_robot_state.joint_states.a3,
-                      ros_robot_state_velocity.joint_request.time, ros_robot_state_velocity.joint_request.a3, ros_robot_state_velocity.joint_states.time, ros_robot_state_velocity.joint_states.a3, rsi_robot_state_velocity.joint_states.time, rsi_robot_state_velocity.joint_states.a3,
-                      ros_robot_state_acceleration.joint_request.time, ros_robot_state_acceleration.joint_request.a3, ros_robot_state_acceleration.joint_states.time, ros_robot_state_acceleration.joint_states.a3, rsi_robot_state_acceleration.joint_states.time, rsi_robot_state_acceleration.joint_states.a3)
-    make_joints_plots('Joint A4', ros_robot_state.joint_request.time, ros_robot_state.joint_request.a4, ros_robot_state.joint_states.time, ros_robot_state.joint_states.a4, rsi_robot_state.joint_states.time, rsi_robot_state.joint_states.a4,
-                      ros_robot_state_velocity.joint_request.time, ros_robot_state_velocity.joint_request.a4, ros_robot_state_velocity.joint_states.time, ros_robot_state_velocity.joint_states.a4, rsi_robot_state_velocity.joint_states.time, rsi_robot_state_velocity.joint_states.a4,
-                      ros_robot_state_acceleration.joint_request.time, ros_robot_state_acceleration.joint_request.a4, ros_robot_state_acceleration.joint_states.time, ros_robot_state_acceleration.joint_states.a4, rsi_robot_state_acceleration.joint_states.time, rsi_robot_state_acceleration.joint_states.a4)
-    make_joints_plots('Joint A5', ros_robot_state.joint_request.time, ros_robot_state.joint_request.a5, ros_robot_state.joint_states.time, ros_robot_state.joint_states.a5, rsi_robot_state.joint_states.time, rsi_robot_state.joint_states.a5,
-                      ros_robot_state_velocity.joint_request.time, ros_robot_state_velocity.joint_request.a5, ros_robot_state_velocity.joint_states.time, ros_robot_state_velocity.joint_states.a5, rsi_robot_state_velocity.joint_states.time, rsi_robot_state_velocity.joint_states.a5,
-                      ros_robot_state_acceleration.joint_request.time, ros_robot_state_acceleration.joint_request.a5, ros_robot_state_acceleration.joint_states.time, ros_robot_state_acceleration.joint_states.a5, rsi_robot_state_acceleration.joint_states.time, rsi_robot_state_acceleration.joint_states.a5)
-    make_joints_plots('Joint A6', ros_robot_state.joint_request.time, ros_robot_state.joint_request.a6, ros_robot_state.joint_states.time, ros_robot_state.joint_states.a6, rsi_robot_state.joint_states.time, rsi_robot_state.joint_states.a6,
-                      ros_robot_state_velocity.joint_request.time, ros_robot_state_velocity.joint_request.a6, ros_robot_state_velocity.joint_states.time, ros_robot_state_velocity.joint_states.a6, rsi_robot_state_velocity.joint_states.time, rsi_robot_state_velocity.joint_states.a6,
-                      ros_robot_state_acceleration.joint_request.time, ros_robot_state_acceleration.joint_request.a6, ros_robot_state_acceleration.joint_states.time, ros_robot_state_acceleration.joint_states.a6, rsi_robot_state_acceleration.joint_states.time, rsi_robot_state_acceleration.joint_states.a6)
+    make_joints_plots('Joint A1', ros_robot_state.joint_request.time, ros_robot_state.joint_request.a1, ros_robot_state.joint_request_kuka.time, ros_robot_state.joint_request_kuka.a1, rsi_robot_state.joint_states.time, rsi_robot_state.joint_states.a1,
+                      ros_robot_state_velocity.joint_request.time, ros_robot_state_velocity.joint_request.a1, ros_robot_state_velocity.joint_request_kuka.time, ros_robot_state_velocity.joint_request_kuka.a1, rsi_robot_state_velocity.joint_states.time, rsi_robot_state_velocity.joint_states.a1,
+                      ros_robot_state_acceleration.joint_request.time, ros_robot_state_acceleration.joint_request.a1, ros_robot_state_acceleration.joint_request_kuka.time, ros_robot_state_acceleration.joint_request_kuka.a1, rsi_robot_state_acceleration.joint_states.time, rsi_robot_state_acceleration.joint_states.a1)
+    make_joints_plots('Joint A2', ros_robot_state.joint_request.time, ros_robot_state.joint_request.a2, ros_robot_state.joint_request_kuka.time, ros_robot_state.joint_request_kuka.a2, rsi_robot_state.joint_states.time, rsi_robot_state.joint_states.a2,
+                      ros_robot_state_velocity.joint_request.time, ros_robot_state_velocity.joint_request.a2, ros_robot_state_velocity.joint_request_kuka.time, ros_robot_state_velocity.joint_request_kuka.a2, rsi_robot_state_velocity.joint_states.time, rsi_robot_state_velocity.joint_states.a2,
+                      ros_robot_state_acceleration.joint_request.time, ros_robot_state_acceleration.joint_request.a2, ros_robot_state_acceleration.joint_request_kuka.time, ros_robot_state_acceleration.joint_request_kuka.a2, rsi_robot_state_acceleration.joint_states.time, rsi_robot_state_acceleration.joint_states.a2)
+    make_joints_plots('Joint A3', ros_robot_state.joint_request.time, ros_robot_state.joint_request.a3, ros_robot_state.joint_request_kuka.time, ros_robot_state.joint_request_kuka.a3, rsi_robot_state.joint_states.time, rsi_robot_state.joint_states.a3,
+                      ros_robot_state_velocity.joint_request.time, ros_robot_state_velocity.joint_request.a3, ros_robot_state_velocity.joint_request_kuka.time, ros_robot_state_velocity.joint_request_kuka.a3, rsi_robot_state_velocity.joint_states.time, rsi_robot_state_velocity.joint_states.a3,
+                      ros_robot_state_acceleration.joint_request.time, ros_robot_state_acceleration.joint_request.a3, ros_robot_state_acceleration.joint_request_kuka.time, ros_robot_state_acceleration.joint_request_kuka.a3, rsi_robot_state_acceleration.joint_states.time, rsi_robot_state_acceleration.joint_states.a3)
+    make_joints_plots('Joint A4', ros_robot_state.joint_request.time, ros_robot_state.joint_request.a4, ros_robot_state.joint_request_kuka.time, ros_robot_state.joint_request_kuka.a4, rsi_robot_state.joint_states.time, rsi_robot_state.joint_states.a4,
+                      ros_robot_state_velocity.joint_request.time, ros_robot_state_velocity.joint_request.a4, ros_robot_state_velocity.joint_request_kuka.time, ros_robot_state_velocity.joint_request_kuka.a4, rsi_robot_state_velocity.joint_states.time, rsi_robot_state_velocity.joint_states.a4,
+                      ros_robot_state_acceleration.joint_request.time, ros_robot_state_acceleration.joint_request.a4, ros_robot_state_acceleration.joint_request_kuka.time, ros_robot_state_acceleration.joint_request_kuka.a4, rsi_robot_state_acceleration.joint_states.time, rsi_robot_state_acceleration.joint_states.a4)
+    make_joints_plots('Joint A5', ros_robot_state.joint_request.time, ros_robot_state.joint_request.a5, ros_robot_state.joint_request_kuka.time, ros_robot_state.joint_request_kuka.a5, rsi_robot_state.joint_states.time, rsi_robot_state.joint_states.a5,
+                      ros_robot_state_velocity.joint_request.time, ros_robot_state_velocity.joint_request.a5, ros_robot_state_velocity.joint_request_kuka.time, ros_robot_state_velocity.joint_request_kuka.a5, rsi_robot_state_velocity.joint_states.time, rsi_robot_state_velocity.joint_states.a5,
+                      ros_robot_state_acceleration.joint_request.time, ros_robot_state_acceleration.joint_request.a5, ros_robot_state_acceleration.joint_request_kuka.time, ros_robot_state_acceleration.joint_request_kuka.a5, rsi_robot_state_acceleration.joint_states.time, rsi_robot_state_acceleration.joint_states.a5)
+    make_joints_plots('Joint A6', ros_robot_state.joint_request.time, ros_robot_state.joint_request.a6, ros_robot_state.joint_request_kuka.time, ros_robot_state.joint_request_kuka.a6, rsi_robot_state.joint_states.time, rsi_robot_state.joint_states.a6,
+                      ros_robot_state_velocity.joint_request.time, ros_robot_state_velocity.joint_request.a6, ros_robot_state_velocity.joint_request_kuka.time, ros_robot_state_velocity.joint_request_kuka.a6, rsi_robot_state_velocity.joint_states.time, rsi_robot_state_velocity.joint_states.a6,
+                      ros_robot_state_acceleration.joint_request.time, ros_robot_state_acceleration.joint_request.a6, ros_robot_state_acceleration.joint_request_kuka.time, ros_robot_state_acceleration.joint_request_kuka.a6, rsi_robot_state_acceleration.joint_states.time, rsi_robot_state_acceleration.joint_states.a6)
 
 
 def plot_ee_state(ros_robot_state, ros_robot_state_velocity, rsi_robot_state, rsi_robot_state_velocity):
@@ -501,7 +564,9 @@ def plot_ee_state(ros_robot_state, ros_robot_state_velocity, rsi_robot_state, rs
     plt.subplot(411)
     plt.ylabel('Distance x (m)')
     plt.plot(ros_robot_state.ee_request.time, ros_robot_state.ee_request.x,
-             'r--.', label='Simulated Cart Traj. Request')
+             'r--.', label='Cart Traj. Request')
+    plt.plot(ros_robot_state.ee_request_kuka.time, ros_robot_state.ee_request_kuka.x,
+             'b', label='Cart Traj. Smoothed')
     plt.plot(rsi_robot_state.ee_states.time, rsi_robot_state.ee_states.x,
              'g', label='Real Cart Traj. Performed')
     plt.legend()
@@ -510,6 +575,8 @@ def plot_ee_state(ros_robot_state, ros_robot_state_velocity, rsi_robot_state, rs
     plt.ylabel('Distance y (m)')
     plt.plot(ros_robot_state.ee_request.time, ros_robot_state.ee_request.y,
              'r--.', label='Simulated Cart Traj. Request')
+    plt.plot(ros_robot_state.ee_request_kuka.time, ros_robot_state.ee_request_kuka.y,
+             'b', label='Cart Traj. Smoothed')
     plt.plot(rsi_robot_state.ee_states.time, rsi_robot_state.ee_states.y,
              'g', label='Real Cart Traj. Performed')
     plt.legend()
@@ -518,6 +585,8 @@ def plot_ee_state(ros_robot_state, ros_robot_state_velocity, rsi_robot_state, rs
     plt.ylabel('Distance z (m)')
     plt.plot(ros_robot_state.ee_request.time, ros_robot_state.ee_request.z,
              'r--.', label='Simulated Cart Traj. Request')
+    plt.plot(ros_robot_state.ee_request_kuka.time, ros_robot_state.ee_request_kuka.z,
+             'b', label='Cart Traj. Smoothed')
     plt.plot(rsi_robot_state.ee_states.time, rsi_robot_state.ee_states.z,
              'g', label='Real Cart Traj. Performed')
     plt.legend()
@@ -527,6 +596,8 @@ def plot_ee_state(ros_robot_state, ros_robot_state_velocity, rsi_robot_state, rs
     plt.xlabel('Time (s)')
     plt.plot(ros_robot_state_velocity.ee_request.time,
              ros_robot_state_velocity.ee_request.linear, 'r--.', label='Simulated Cart Traj. Request')
+    plt.plot(ros_robot_state_velocity.ee_request_kuka.time,
+             ros_robot_state_velocity.ee_request_kuka.linear, 'b', label='Cart Traj. Smoothed')
     plt.plot(rsi_robot_state_velocity.ee_states.time,
              rsi_robot_state_velocity.ee_states.linear, 'g', label='Real Cart Traj. Performed')
     plt.legend()
@@ -558,26 +629,26 @@ def ros_find_switch_point(robot_state_velocity):
     return index_switch
 
 
-def ros_find_switch_point_joint_states(robot_state_velocity):
+def ros_find_switch_point_joint_kuka(robot_state_velocity):
     index_switch = []
     index_switch.append(0)
     j = 0
     path_started = True
-    for i in range(1, len(robot_state_velocity.joint_states.time)-1):
-        if abs(robot_state_velocity.joint_states.a1[i-1]) == 0 and path_started == False:
-            if abs(robot_state_velocity.joint_states.a1[i]) == 0:
-                if abs(robot_state_velocity.joint_states.a1[i+1]) > 0:
+    for i in range(1, len(robot_state_velocity.joint_request_kuka.time)-1):
+        if abs(robot_state_velocity.joint_request_kuka.a1[i-1]) == 0 and path_started == False:
+            if abs(robot_state_velocity.joint_request_kuka.a1[i]) == 0:
+                if abs(robot_state_velocity.joint_request_kuka.a1[i+1]) > 0:
                     index_switch.append(i)
                     j = j+1
                     path_started = True
 
-        if abs(robot_state_velocity.joint_states.a1[i-1]) > 0 and path_started == True:
-            if abs(robot_state_velocity.joint_states.a1[i]) == 0:
-                if abs(robot_state_velocity.joint_states.a1[i+1]) == 0:
+        if abs(robot_state_velocity.joint_request_kuka.a1[i-1]) > 0 and path_started == True:
+            if abs(robot_state_velocity.joint_request_kuka.a1[i]) == 0:
+                if abs(robot_state_velocity.joint_request_kuka.a1[i+1]) == 0:
                     index_switch.append(i)
                     j = j+1
                     path_started = False
-    index_switch.append(len(robot_state_velocity.joint_states.time)-1)
+    index_switch.append(len(robot_state_velocity.joint_request_kuka.time)-1)
     return index_switch
 
 
@@ -634,96 +705,123 @@ def read_course_path():
     return course
 
 
-def plot_path(ros_robot_state, ros_index_switch, rsi_robot_state, rsi_index_switch):
-    rsi_x = []
-    rsi_y = []
-    ros_x = []
-    ros_y = []
+def plot_path(ros_robot_state,rsi_robot_state):
 
     course = read_course_path()
-
-    # Rotate ee_state by -90 degrees and make sure that it starts at same spot as the given course
-    for i in range(ros_index_switch[4], len(ros_robot_state.ee_request.y)):
-        # for i in range(index_switch[4], index_switch[5]+1):
-        # x=x_course0+(y_ee-y_ee0)
-        ros_x.append((ros_robot_state.ee_request.y[i] -
-                      ros_robot_state.ee_request.y[ros_index_switch[4]]))
-        # y=y_course0+(-x_ee+x_ee0)
-        ros_y.append((-ros_robot_state.ee_request.x[i] +
-                      ros_robot_state.ee_request.x[ros_index_switch[4]]))
-
-    # Don't forget the delay if there is
-    for i in range(rsi_index_switch[4], len(rsi_robot_state.ee_states.y)):
-        # for i in range(index_switch[4], index_switch[5]+1):
-        # x=x_course0+(y_ee-y_ee0)
-        rsi_x.append((rsi_robot_state.ee_states.y[i] -
-                      rsi_robot_state.ee_states.y[rsi_index_switch[4]]))
-        # y=y_course0+(-x_ee+x_ee0)
-        rsi_y.append((-rsi_robot_state.ee_states.x[i] +
-                      rsi_robot_state.ee_states.x[rsi_index_switch[4]]))
 
     plt.figure()
     plt.title('Path performed')
     plt.ylabel('y(m)')
     plt.xlabel('x(m)')
-    plt.plot(course.x+(ros_x[5]-course.x[0]), course.y +
-             (ros_y[5]-course.y[0]), 'r--.', label='Path requested')
-    plt.plot(ros_x, ros_y, 'b', label='Simlated Path request')
-    plt.plot(rsi_x, rsi_y, 'g', label='Real Path performed')
+    # Rotate ee_state by -90 degrees and make sure that it starts at same spot as the given course
+    # x=x_course0+(y_ee-y_ee0) y=y_course0+(-x_ee+x_ee0)
+    plt.plot((course.y-course.y[0])+ros_robot_state.ee_request.x[2], -(course.x-course.x[0])+ros_robot_state.ee_request.y[2], 'k--.', label='Path Desired')
+    plt.plot(ros_robot_state.ee_request.x, ros_robot_state.ee_request.y, 'r--.', label='Path Requested')
+    #plt.plot(ros_robot_state.ee_request_kuka.x, ros_robot_state.ee_request_kuka.y, 'b', label='Kuka Path Smoothed')
+    #plt.plot(rsi_robot_state.ee_states.x, rsi_robot_state.ee_states.y, 'g', label='Real Path performed')
+
     plt.legend()
     plt.show()
 
     plt.figure()
 
 
-def ros_store_only_course_variables(index_switch, index_switch_joint_states, robot_state, robot_state_velocity, robot_state_acceleration, robot_state_course, robot_state_course_velocity, robot_state_course_acceleration):
-    for i in range(index_switch_joint_states[4], index_switch_joint_states[5]+1):
-        # Joint States
-        robot_state_course.joint_states.time.append(
-            robot_state.joint_states.time[i])
-        robot_state_course.joint_states.a1.append(
-            robot_state.joint_states.a1[i])
-        robot_state_course.joint_states.a2.append(
-            robot_state.joint_states.a2[i])
-        robot_state_course.joint_states.a3.append(
-            robot_state.joint_states.a3[i])
-        robot_state_course.joint_states.a4.append(
-            robot_state.joint_states.a4[i])
-        robot_state_course.joint_states.a5.append(
-            robot_state.joint_states.a5[i])
-        robot_state_course.joint_states.a6.append(
-            robot_state.joint_states.a6[i])
-        robot_state_course_velocity.joint_states.time.append(
-            robot_state_velocity.joint_states.time[i])
-        robot_state_course_velocity.joint_states.a1.append(
-            robot_state_velocity.joint_states.a1[i])
-        robot_state_course_velocity.joint_states.a2.append(
-            robot_state_velocity.joint_states.a2[i])
-        robot_state_course_velocity.joint_states.a3.append(
-            robot_state_velocity.joint_states.a3[i])
-        robot_state_course_velocity.joint_states.a4.append(
-            robot_state_velocity.joint_states.a4[i])
-        robot_state_course_velocity.joint_states.a5.append(
-            robot_state_velocity.joint_states.a5[i])
-        robot_state_course_velocity.joint_states.a6.append(
-            robot_state_velocity.joint_states.a6[i])
-        robot_state_course_acceleration.joint_states.time.append(
-            robot_state_acceleration.joint_states.time[i])
-        robot_state_course_acceleration.joint_states.a1.append(
-            robot_state_acceleration.joint_states.a1[i])
-        robot_state_course_acceleration.joint_states.a2.append(
-            robot_state_acceleration.joint_states.a2[i])
-        robot_state_course_acceleration.joint_states.a3.append(
-            robot_state_acceleration.joint_states.a3[i])
-        robot_state_course_acceleration.joint_states.a4.append(
-            robot_state_acceleration.joint_states.a4[i])
-        robot_state_course_acceleration.joint_states.a5.append(
-            robot_state_acceleration.joint_states.a5[i])
-        robot_state_course_acceleration.joint_states.a6.append(
-            robot_state_acceleration.joint_states.a6[i])
-    adjust_time(robot_state_course.joint_states.time)
-    adjust_time(robot_state_course_velocity.joint_states.time)
-    adjust_time(robot_state_course_acceleration.joint_states.time)
+def ros_store_only_course_variables(index_switch, index_switch_joint_request_kuka, robot_state, robot_state_velocity, robot_state_acceleration, robot_state_course, robot_state_course_velocity, robot_state_course_acceleration):
+    for i in range(index_switch_joint_request_kuka[4], index_switch_joint_request_kuka[5]+1):
+        # Joint Request kuka
+        robot_state_course.joint_request_kuka.time.append(
+            robot_state.joint_request_kuka.time[i])
+        robot_state_course.joint_request_kuka.a1.append(
+            robot_state.joint_request_kuka.a1[i])
+        robot_state_course.joint_request_kuka.a2.append(
+            robot_state.joint_request_kuka.a2[i])
+        robot_state_course.joint_request_kuka.a3.append(
+            robot_state.joint_request_kuka.a3[i])
+        robot_state_course.joint_request_kuka.a4.append(
+            robot_state.joint_request_kuka.a4[i])
+        robot_state_course.joint_request_kuka.a5.append(
+            robot_state.joint_request_kuka.a5[i])
+        robot_state_course.joint_request_kuka.a6.append(
+            robot_state.joint_request_kuka.a6[i])
+        robot_state_course_velocity.joint_request_kuka.time.append(
+            robot_state_velocity.joint_request_kuka.time[i])
+        robot_state_course_velocity.joint_request_kuka.a1.append(
+            robot_state_velocity.joint_request_kuka.a1[i])
+        robot_state_course_velocity.joint_request_kuka.a2.append(
+            robot_state_velocity.joint_request_kuka.a2[i])
+        robot_state_course_velocity.joint_request_kuka.a3.append(
+            robot_state_velocity.joint_request_kuka.a3[i])
+        robot_state_course_velocity.joint_request_kuka.a4.append(
+            robot_state_velocity.joint_request_kuka.a4[i])
+        robot_state_course_velocity.joint_request_kuka.a5.append(
+            robot_state_velocity.joint_request_kuka.a5[i])
+        robot_state_course_velocity.joint_request_kuka.a6.append(
+            robot_state_velocity.joint_request_kuka.a6[i])
+        robot_state_course_acceleration.joint_request_kuka.time.append(
+            robot_state_acceleration.joint_request_kuka.time[i])
+        robot_state_course_acceleration.joint_request_kuka.a1.append(
+            robot_state_acceleration.joint_request_kuka.a1[i])
+        robot_state_course_acceleration.joint_request_kuka.a2.append(
+            robot_state_acceleration.joint_request_kuka.a2[i])
+        robot_state_course_acceleration.joint_request_kuka.a3.append(
+            robot_state_acceleration.joint_request_kuka.a3[i])
+        robot_state_course_acceleration.joint_request_kuka.a4.append(
+            robot_state_acceleration.joint_request_kuka.a4[i])
+        robot_state_course_acceleration.joint_request_kuka.a5.append(
+            robot_state_acceleration.joint_request_kuka.a5[i])
+        robot_state_course_acceleration.joint_request_kuka.a6.append(
+            robot_state_acceleration.joint_request_kuka.a6[i])
+
+        # EE Request Kuka
+        robot_state_course.ee_request_kuka.time.append(
+            robot_state.ee_request_kuka.time[i])
+        robot_state_course.ee_request_kuka.x.append(robot_state.ee_request_kuka.x[i])
+        robot_state_course.ee_request_kuka.y.append(robot_state.ee_request_kuka.y[i])
+        robot_state_course.ee_request_kuka.z.append(robot_state.ee_request_kuka.z[i])
+        robot_state_course.ee_request_kuka.rx.append(robot_state.ee_request_kuka.rx[i])
+        robot_state_course.ee_request_kuka.ry.append(robot_state.ee_request_kuka.ry[i])
+        robot_state_course.ee_request_kuka.rz.append(robot_state.ee_request_kuka.rz[i])
+        #robot_state_course.ee_request_kuka.linear.append(
+        #    robot_state.ee_request_kuka.linear[i])
+        robot_state_course_velocity.ee_request_kuka.time.append(
+            robot_state_velocity.ee_request_kuka.time[i])
+        robot_state_course_velocity.ee_request_kuka.x.append(
+            robot_state_velocity.ee_request_kuka.x[i])
+        robot_state_course_velocity.ee_request_kuka.y.append(
+            robot_state_velocity.ee_request_kuka.y[i])
+        robot_state_course_velocity.ee_request_kuka.z.append(
+            robot_state_velocity.ee_request_kuka.z[i])
+        robot_state_course_velocity.ee_request_kuka.rx.append(
+            robot_state_velocity.ee_request_kuka.rx[i])
+        robot_state_course_velocity.ee_request_kuka.ry.append(
+            robot_state_velocity.ee_request_kuka.ry[i])
+        robot_state_course_velocity.ee_request_kuka.rz.append(
+            robot_state_velocity.ee_request_kuka.rz[i])
+        robot_state_course_velocity.ee_request_kuka.linear.append(
+            robot_state_velocity.ee_request_kuka.linear[i])
+        robot_state_course_acceleration.ee_request_kuka.time.append(
+            robot_state_acceleration.ee_request_kuka.time[i])
+        robot_state_course_acceleration.ee_request_kuka.x.append(
+            robot_state_acceleration.ee_request_kuka.x[i])
+        robot_state_course_acceleration.ee_request_kuka.y.append(
+            robot_state_acceleration.ee_request_kuka.y[i])
+        robot_state_course_acceleration.ee_request_kuka.z.append(
+            robot_state_acceleration.ee_request_kuka.z[i])
+        robot_state_course_acceleration.ee_request_kuka.rx.append(
+            robot_state_acceleration.ee_request_kuka.rx[i])
+        robot_state_course_acceleration.ee_request_kuka.ry.append(
+            robot_state_acceleration.ee_request_kuka.ry[i])
+        robot_state_course_acceleration.ee_request_kuka.rz.append(
+            robot_state_acceleration.ee_request_kuka.rz[i])
+        robot_state_course_acceleration.ee_request_kuka.linear.append(
+            robot_state_acceleration.ee_request_kuka.linear[i])
+    adjust_time(robot_state_course.joint_request_kuka.time)
+    adjust_time(robot_state_course_velocity.joint_request_kuka.time)
+    adjust_time(robot_state_course_acceleration.joint_request_kuka.time)
+    adjust_time(robot_state_course.ee_request_kuka.time)
+    adjust_time(robot_state_course_velocity.ee_request_kuka.time)
+    adjust_time(robot_state_course_acceleration.ee_request_kuka.time)
+    adjust_ee_poses(robot_state_course.ee_request_kuka)
 
     for i in range(index_switch[4], index_switch[5]+1):
         # Joint Request
@@ -819,11 +917,12 @@ def ros_store_only_course_variables(index_switch, index_switch_joint_states, rob
     adjust_time(robot_state_course.ee_request.time)
     adjust_time(robot_state_course_velocity.ee_request.time)
     adjust_time(robot_state_course_acceleration.ee_request.time)
+    adjust_ee_poses(robot_state_course.ee_request)
 
 
 def rsi_store_only_course_variables(index_switch, robot_state, robot_state_velocity, robot_state_acceleration, robot_state_course, robot_state_course_velocity, robot_state_course_acceleration):
-    for i in range(index_switch[4], index_switch[5]+1):
-        # for i in range(index_switch[4]-10, index_switch[5]+1+4): # <------- Change here the index if required
+    #for i in range(index_switch[4], index_switch[5]+1):
+    for i in range(index_switch[4]-8, index_switch[5]+1+4): # <------- Change here the index if required DELAY
         # Joint States
         robot_state_course.joint_states.time.append(
             robot_state.joint_states.time[i])
@@ -914,6 +1013,7 @@ def rsi_store_only_course_variables(index_switch, robot_state, robot_state_veloc
     adjust_time(robot_state_course.ee_states.time)
     adjust_time(robot_state_course_velocity.ee_states.time)
     adjust_time(robot_state_course_acceleration.ee_states.time)
+    adjust_ee_poses(robot_state_course.ee_states)
 
 
 def write_joint_request_file(joint_request):
@@ -957,43 +1057,43 @@ if __name__ == "__main__":
                   ros_robot_state_from_file_acceleration)
 
     rsi_clean_path(rsi_robot_state_from_file, rsi_robot_state)
-    ros_clean_path(ros_robot_state_from_file, ros_robot_state)
+    cut_index = ros_clean_path(ros_robot_state_from_file, ros_robot_state)
 
     rsi_fill_derivative_class(rsi_robot_state, rsi_robot_state_velocity)
     rsi_fill_derivative_class(rsi_robot_state_velocity,
                               rsi_robot_state_acceleration)
 
     ros_fill_derivative_class(
-        ros_robot_state, ros_robot_state_velocity, ros_robot_state_from_file_velocity)
+        ros_robot_state, ros_robot_state_velocity, ros_robot_state_from_file_velocity, cut_index)
     ros_fill_derivative_class(
-        ros_robot_state_velocity, ros_robot_state_acceleration, ros_robot_state_from_file_acceleration)
+        ros_robot_state_velocity, ros_robot_state_acceleration, ros_robot_state_from_file_acceleration, cut_index)
 
     rsi_index_switch = rsi_find_switch_point(rsi_robot_state_velocity)
-    print(rsi_index_switch)
-    ros_index_switch_joint_states = ros_find_switch_point_joint_states(
+    ros_index_switch_joint_kuka = ros_find_switch_point_joint_kuka(
         ros_robot_state_velocity)
+    print(ros_index_switch_joint_kuka)
     ros_index_switch = ros_find_switch_point(ros_robot_state_velocity)
 
     #plot_all_joint(ros_robot_state, ros_robot_state_velocity, ros_robot_state_acceleration,
     #                rsi_robot_state, rsi_robot_state_velocity, rsi_robot_state_acceleration)
     #plot_ee_state(ros_robot_state, ros_robot_state_velocity,
     #               rsi_robot_state, rsi_robot_state_velocity)
-    plot_path(ros_robot_state, ros_index_switch,
-               rsi_robot_state, rsi_index_switch)
 
     # Only a specific path
 
-    ros_store_only_course_variables(ros_index_switch, ros_index_switch_joint_states, ros_robot_state, ros_robot_state_velocity,
+    ros_store_only_course_variables(ros_index_switch, ros_index_switch_joint_kuka, ros_robot_state, ros_robot_state_velocity,
                                     ros_robot_state_acceleration, ros_robot_state_course, ros_robot_state_course_velocity, ros_robot_state_course_acceleration)
 
     rsi_store_only_course_variables(rsi_index_switch, rsi_robot_state, rsi_robot_state_velocity, rsi_robot_state_acceleration,
                                     rsi_robot_state_course, rsi_robot_state_course_velocity, rsi_robot_state_course_acceleration)
 
-    plot_all_joint(ros_robot_state_course, ros_robot_state_course_velocity, ros_robot_state_course_acceleration,
-                   rsi_robot_state_course, rsi_robot_state_course_velocity, rsi_robot_state_course_acceleration)
+    #plot_all_joint(ros_robot_state_course, ros_robot_state_course_velocity, ros_robot_state_course_acceleration,
+    #               rsi_robot_state_course, rsi_robot_state_course_velocity, rsi_robot_state_course_acceleration)
 
     #plot_ee_state(ros_robot_state_course, ros_robot_state_course_velocity,
     #           rsi_robot_state_course, rsi_robot_state_course_velocity)
+
+    plot_path(ros_robot_state_course, rsi_robot_state_course)
 
     # Plot A1 with A2
 
