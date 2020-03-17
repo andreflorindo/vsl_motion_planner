@@ -512,7 +512,8 @@ def make_joints_plots(joint_name, joint_request_time, joint_request, simulated_j
              'b', label='Joint Traj. Smoothed')
     plt.plot(real_joint_states_time, real_joint_states,
              'g', label='Real Joint Traj. State')
-    plt.legend()
+    #plt.legend()
+    plt.legend(loc='upper center', bbox_to_anchor=(0.5, 1.00), shadow=True, ncol=3)
 
     plt.subplot(312)
     plt.ylabel('Speed(rad/s)')
@@ -522,7 +523,8 @@ def make_joints_plots(joint_name, joint_request_time, joint_request, simulated_j
              simulated_joint_states_velocity, 'b', label='Joint Traj. Smoothed')
     plt.plot(real_joint_states_velocity_time,
              real_joint_states_velocity, 'g', label='Real Joint Traj. State')
-    plt.legend()
+    #plt.legend()
+    plt.legend(loc='upper center', bbox_to_anchor=(0.5, 1.00), shadow=True, ncol=3)
 
     plt.subplot(313)
     plt.ylabel('Acceleration(rad/s^2)')
@@ -533,7 +535,8 @@ def make_joints_plots(joint_name, joint_request_time, joint_request, simulated_j
              simulated_joint_states_acceleration, 'b', label='Joint Traj. Smoothed')
     plt.plot(real_joint_states_acceleration_time,
              real_joint_states_acceleration, 'g', label='Real Joint Traj. State')
-    plt.legend()
+    #plt.legend()
+    plt.legend(loc='upper center', bbox_to_anchor=(0.5, 1.00), shadow=True, ncol=3)
     plt.show()
 
 
@@ -569,7 +572,8 @@ def plot_ee_state(ros_robot_state, ros_robot_state_velocity, rsi_robot_state, rs
              'b', label='Cart Traj. Smoothed')
     plt.plot(rsi_robot_state.ee_states.time, rsi_robot_state.ee_states.x,
              'g', label='Real Cart Traj. Performed')
-    plt.legend()
+    #plt.legend()
+    plt.legend(loc='upper center', bbox_to_anchor=(0.5, 1.00), shadow=True, ncol=3)
 
     plt.subplot(412)
     plt.ylabel('Distance y (m)')
@@ -579,7 +583,8 @@ def plot_ee_state(ros_robot_state, ros_robot_state_velocity, rsi_robot_state, rs
              'b', label='Cart Traj. Smoothed')
     plt.plot(rsi_robot_state.ee_states.time, rsi_robot_state.ee_states.y,
              'g', label='Real Cart Traj. Performed')
-    plt.legend()
+    #plt.legend()
+    plt.legend(loc='upper center', bbox_to_anchor=(0.5, 1.00), shadow=True, ncol=3)
 
     plt.subplot(413)
     plt.ylabel('Distance z (m)')
@@ -589,7 +594,8 @@ def plot_ee_state(ros_robot_state, ros_robot_state_velocity, rsi_robot_state, rs
              'b', label='Cart Traj. Smoothed')
     plt.plot(rsi_robot_state.ee_states.time, rsi_robot_state.ee_states.z,
              'g', label='Real Cart Traj. Performed')
-    plt.legend()
+    #plt.legend()
+    plt.legend(loc='upper center', bbox_to_anchor=(0.5, 1.00), shadow=True, ncol=3)
 
     plt.subplot(414)
     plt.ylabel('Laydown Speed (m/s)')
@@ -600,7 +606,8 @@ def plot_ee_state(ros_robot_state, ros_robot_state_velocity, rsi_robot_state, rs
              ros_robot_state_velocity.ee_request_kuka.linear, 'b', label='Cart Traj. Smoothed')
     plt.plot(rsi_robot_state_velocity.ee_states.time,
              rsi_robot_state_velocity.ee_states.linear, 'g', label='Real Cart Traj. Performed')
-    plt.legend()
+    #plt.legend()
+    plt.legend(loc='upper center', bbox_to_anchor=(0.5, 1.00), shadow=True, ncol=3)
     plt.show()
 
     plt.figure()
@@ -715,10 +722,10 @@ def plot_path(ros_robot_state,rsi_robot_state):
     plt.xlabel('x(m)')
     # Rotate ee_state by -90 degrees and make sure that it starts at same spot as the given course
     # x=x_course0+(y_ee-y_ee0) y=y_course0+(-x_ee+x_ee0)
-    plt.plot((course.y-course.y[0])+ros_robot_state.ee_request.x[2], -(course.x-course.x[0])+ros_robot_state.ee_request.y[2], 'k--.', label='Path Desired')
-    plt.plot(ros_robot_state.ee_request.x, ros_robot_state.ee_request.y, 'r--.', label='Path Requested')
-    #plt.plot(ros_robot_state.ee_request_kuka.x, ros_robot_state.ee_request_kuka.y, 'b', label='Kuka Path Smoothed')
-    #plt.plot(rsi_robot_state.ee_states.x, rsi_robot_state.ee_states.y, 'g', label='Real Path performed')
+    plt.plot((course.y-course.y[0])+ros_robot_state.ee_request.x[2], -(course.x-course.x[0])+ros_robot_state.ee_request.y[2], 'k*', label='Original Path')
+    plt.plot(ros_robot_state.ee_request.x, ros_robot_state.ee_request.y, 'r--.', label='Bspline Path')
+    plt.plot(ros_robot_state.ee_request_kuka.x, ros_robot_state.ee_request_kuka.y, 'b', label='Kuka Path Smoothed')
+    plt.plot(rsi_robot_state.ee_states.x, rsi_robot_state.ee_states.y, 'g', label='Real Path performed')
 
     plt.legend()
     plt.show()
@@ -1087,13 +1094,13 @@ if __name__ == "__main__":
     rsi_store_only_course_variables(rsi_index_switch, rsi_robot_state, rsi_robot_state_velocity, rsi_robot_state_acceleration,
                                     rsi_robot_state_course, rsi_robot_state_course_velocity, rsi_robot_state_course_acceleration)
 
-    #plot_all_joint(ros_robot_state_course, ros_robot_state_course_velocity, ros_robot_state_course_acceleration,
-    #               rsi_robot_state_course, rsi_robot_state_course_velocity, rsi_robot_state_course_acceleration)
+    plot_all_joint(ros_robot_state_course, ros_robot_state_course_velocity, ros_robot_state_course_acceleration,
+                   rsi_robot_state_course, rsi_robot_state_course_velocity, rsi_robot_state_course_acceleration)
 
     #plot_ee_state(ros_robot_state_course, ros_robot_state_course_velocity,
     #           rsi_robot_state_course, rsi_robot_state_course_velocity)
 
-    plot_path(ros_robot_state_course, rsi_robot_state_course)
+    #plot_path(ros_robot_state_course, rsi_robot_state_course)
 
     # Plot A1 with A2
 
