@@ -385,6 +385,7 @@ class PoseBuilderPython:
                 f / raise_course_npoints) * (tangent.y[i] / (tangent.x[i] + tangent.y[i])) * self.XY_RAISE_DISTANCE)
             smooth_course_approximation.z.append(
                 smooth_course_approximation.z[course_extension_npoints-1] + (f / raise_course_npoints) * self.Z_RAISE_DISTANCE)
+            #smooth_course_approximation.z.append(course.z[i])
 
         for f in range(0, course_extension_npoints+raise_course_npoints):
             single_course_pose = Pose()
