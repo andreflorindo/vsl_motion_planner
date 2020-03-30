@@ -5,7 +5,7 @@ import numpy as np
 import math
 import matplotlib.pyplot as pyplot
 from mpl_toolkits.mplot3d import Axes3D
-from scipy.interpolate import BSpline
+from scipy.interpolate import BSpline, make_interp_spline, splprep, splev
 
 
 class CourseClass:
@@ -18,7 +18,7 @@ class CourseClass:
 def read_path():
     input = np.loadtxt(
         #"/home/andreflorindo/workspaces/tesseract_vsl_motion_planner_ws/src/vsl_motion_planner/vsl_msgs/examples/simplePath.txt", dtype='f')
-        "/home/andre/workspaces/tesseract_ws/src/vsl_motion_planner/vsl_msgs/examples/simplePath.txt", dtype='f')
+        "/home/andre/workspaces/tesseract_ws/src/vsl_motion_planner/vsl_msgs/examples/weirdPath.txt", dtype='f')
     x = []
     y = []
     z = []
@@ -48,8 +48,6 @@ def plot_course(course):
     pyplot.show()
 
 
-
-
 def plot_both_courses2d(course, bspline):
     pyplot.figure()
     pyplot.title('Cartesian Path')
@@ -59,6 +57,21 @@ def plot_both_courses2d(course, bspline):
             color='red', linestyle='dashed', markerfacecolor='yellow')
     pyplot.plot(bspline.x, bspline.y, label='Bspline',
             color='blue', linestyle='dashed', markerfacecolor='yellow')
+    pyplot.legend()
+    pyplot.show()
+
+
+def plot_three_courses2d(course, bspline, bsplinetck):
+    pyplot.figure()
+    pyplot.title('Cartesian Path')
+    pyplot.ylabel('y(m)')
+    pyplot.xlabel('x(m)')
+    pyplot.plot(course.x, course.y, label='Course', marker='.',
+            color='red', linestyle='dashed', markerfacecolor='yellow')
+    pyplot.plot(bspline.x, bspline.y, label='Bspline',
+            color='blue', markerfacecolor='yellow')
+    pyplot.plot(bsplinetck.x, bsplinetck.y, label='3rd order Spline',
+            color='green', markerfacecolor='yellow')
     pyplot.legend()
     pyplot.show()
 
@@ -84,31 +97,59 @@ def plot_both_courses3d(course, bspline):
 
 def bspline3D(parameter, u, course, k):
 
+    #Using Bspline
     xd = BSpline(u, course.x, k)
     yd = BSpline(u, course.y, k)
     zd = BSpline(u, course.z, k)
-
     bspline_x = xd(parameter)
     bspline_y = yd(parameter)
     bspline_z = zd(parameter)
+    bspline_course = CourseClass(bspline_x, bspline_y, bspline_z)
+    return bspline_course
+
+
+def bspline3Dtck(course):
+
+    #Using make_interp_spline
+    #bspline_x = np.linspace(course.x[0], course.x[len(course.x)-1], num=88)
+    #b = make_interp_spline(course.x, course.y)
+    #bspline_y = b(bspline_x)
+    #print(np.allclose(bspline_y, course.y))
+    
+    #Another Using make_interp_spline and splprep
+    #tck, u = splprep([course.x,course.y,course.z], s=0.0, k=5, nest=-1)
+    #l, r = [(1, (0, 0, 0))], [(2, (0, 0, 0))]
+    #clamped_spline = make_interp_spline(u, np.array([course.x,course.y,course.z]).T, bc_type=(l, r))
+    #bspline_x, bspline_y, bspline_z = clamped_spline(np.linspace(0,1,100)).T
+
+    #Using splprep
+    tck, u = splprep([course.x,course.y,course.z], k=3, s=0.000001)
+    u_new = np.linspace(u.min(), u.max(), 1000)
+    bspline_x, bspline_y, bspline_z = splev(u_new, tck, der=0)
 
     bspline_course = CourseClass(bspline_x, bspline_y, bspline_z)
 
     return bspline_course
 
 
+
 def deriv_bspline3D(order, parameter, u, course, k):
-    xd = BSpline(u, course.x, k)
-    yd = BSpline(u, course.y, k)
-    zd = BSpline(u, course.z, k)
+    #xd = BSpline(u, course.x, k)
+    #yd = BSpline(u, course.y, k)
+    #zd = BSpline(u, course.z, k)
 
-    deriv_xd = xd.derivative(order)
-    deriv_yd = yd.derivative(order)
-    deriv_zd = zd.derivative(order)
+    #deriv_xd = xd.derivative(order)
+    #deriv_yd = yd.derivative(order)
+    #deriv_zd = zd.derivative(order)
 
-    deriv_bspline_x = deriv_xd(parameter)
-    deriv_bspline_y = deriv_yd(parameter)
-    deriv_bspline_z = deriv_zd(parameter)
+    #deriv_bspline_x = deriv_xd(parameter)
+    #deriv_bspline_y = deriv_yd(parameter)
+    #deriv_bspline_z = deriv_zd(parameter)
+
+
+    tck, u = splprep([course.x,course.y,course.z], s=0.0)
+    u_new = np.linspace(u.min(), u.max(), 88)
+    deriv_bspline_x, deriv_bspline_y, deriv_bspline_z = splev(u_new, tck, der=order)
 
     deriv_bspline_course = CourseClass(
         deriv_bspline_x, deriv_bspline_y, deriv_bspline_z)
@@ -209,9 +250,10 @@ if __name__ == "__main__":
         else:
             u.append(1)
 
-    parameter = np.linspace(0, 1, num=1000)
+    parameter = np.linspace(0, 1, num=100)
 
     bspline_course = bspline3D(parameter, u, course, k)
+    bspline_course_tck = bspline3Dtck(course)
     position = recognize_position(course, bspline_course)
 
     deriv1_bspline_position = deriv_bspline_position(
@@ -221,27 +263,28 @@ if __name__ == "__main__":
     tangent = build_vector(deriv1_bspline_position)
     normal = build_vector(deriv2_bspline_position)
 
-    binormal = []
-    for i in range(0, len(tangent)):
-        binormal_vector = np.cross(tangent[i], normal[i])
-        binormal_norm = math.sqrt(
-            binormal_vector[0]**2+binormal_vector[1]**2+binormal_vector[2]**2)
-        if binormal_vector[2] < 0:
-            binormal_vector[0] = -binormal_vector[0]
-            binormal_vector[1] = -binormal_vector[1]
-            binormal_vector[2] = -binormal_vector[2]
-        binormal.append(binormal_vector/binormal_norm)
+    #binormal = []
+    #for i in range(0, len(tangent)):
+    #    binormal_vector = np.cross(tangent[i], normal[i])
+    #    binormal_norm = math.sqrt(
+    #        binormal_vector[0]**2+binormal_vector[1]**2+binormal_vector[2]**2)
+    #    if binormal_vector[2] < 0:
+    #        binormal_vector[0] = -binormal_vector[0]
+    #        binormal_vector[1] = -binormal_vector[1]
+    #        binormal_vector[2] = -binormal_vector[2]
+    #    binormal.append(binormal_vector/binormal_norm)
 
     # binormal=[]
     # for i in range(0,len(tangent)):
     #     binormal.append([0,0,1])
 
-    np.savetxt("/home/andre/workspaces/tesseract_ws/src/vsl_motion_planner/vsl_msgs/examples/tangent_simplePath.txt", tangent, fmt='%.6f')
-    np.savetxt("/home/andre/workspaces/tesseract_ws/src/vsl_motion_planner/vsl_msgs/examples/normal_simplePath.txt", normal, fmt='%.6f')
-    np.savetxt("/home/andre/workspaces/tesseract_ws/src/vsl_motion_planner/vsl_msgs/examples/binormal_simplePath.txt", binormal, fmt='%.6f')
+    #np.savetxt("/home/andre/workspaces/tesseract_ws/src/vsl_motion_planner/vsl_msgs/examples/tangent_simplePath.txt", tangent, fmt='%.6f')
+    #np.savetxt("/home/andre/workspaces/tesseract_ws/src/vsl_motion_planner/vsl_msgs/examples/normal_simplePath.txt", normal, fmt='%.6f')
+    #np.savetxt("/home/andre/workspaces/tesseract_ws/src/vsl_motion_planner/vsl_msgs/examples/binormal_simplePath.txt", binormal, fmt='%.6f')
 
     # plot_course(bspline_course)
-    plot_both_courses2d(course, bspline_course)
+    #plot_both_courses2d(course, bspline_course)
+    plot_three_courses2d(course, bspline_course, bspline_course_tck)
     # radius = compute_radius2D(deriv1_bspline_position,deriv2_bspline_position)
     # print(radius)
 

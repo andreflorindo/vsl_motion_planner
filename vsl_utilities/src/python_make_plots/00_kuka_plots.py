@@ -578,7 +578,7 @@ def plot_ee_state(ros_robot_state, ros_robot_state_velocity, rsi_robot_state, rs
     plt.subplot(412)
     plt.ylabel('Distance y (m)')
     plt.plot(ros_robot_state.ee_request.time, ros_robot_state.ee_request.y,
-             'r--.', label='Simulated Cart Traj. Request')
+             'r--.', label='Cart Traj. Request')
     plt.plot(ros_robot_state.ee_request_kuka.time, ros_robot_state.ee_request_kuka.y,
              'b', label='Cart Traj. Smoothed')
     plt.plot(rsi_robot_state.ee_states.time, rsi_robot_state.ee_states.y,
@@ -589,7 +589,7 @@ def plot_ee_state(ros_robot_state, ros_robot_state_velocity, rsi_robot_state, rs
     plt.subplot(413)
     plt.ylabel('Distance z (m)')
     plt.plot(ros_robot_state.ee_request.time, ros_robot_state.ee_request.z,
-             'r--.', label='Simulated Cart Traj. Request')
+             'r--.', label='Cart Traj. Request')
     plt.plot(ros_robot_state.ee_request_kuka.time, ros_robot_state.ee_request_kuka.z,
              'b', label='Cart Traj. Smoothed')
     plt.plot(rsi_robot_state.ee_states.time, rsi_robot_state.ee_states.z,
@@ -601,7 +601,7 @@ def plot_ee_state(ros_robot_state, ros_robot_state_velocity, rsi_robot_state, rs
     plt.ylabel('Laydown Speed (m/s)')
     plt.xlabel('Time (s)')
     plt.plot(ros_robot_state_velocity.ee_request.time,
-             ros_robot_state_velocity.ee_request.linear, 'r--.', label='Simulated Cart Traj. Request')
+             ros_robot_state_velocity.ee_request.linear, 'r--.', label='Cart Traj. Request')
     plt.plot(ros_robot_state_velocity.ee_request_kuka.time,
              ros_robot_state_velocity.ee_request_kuka.linear, 'b', label='Cart Traj. Smoothed')
     plt.plot(rsi_robot_state_velocity.ee_states.time,
@@ -1094,11 +1094,11 @@ if __name__ == "__main__":
     rsi_store_only_course_variables(rsi_index_switch, rsi_robot_state, rsi_robot_state_velocity, rsi_robot_state_acceleration,
                                     rsi_robot_state_course, rsi_robot_state_course_velocity, rsi_robot_state_course_acceleration)
 
-    plot_all_joint(ros_robot_state_course, ros_robot_state_course_velocity, ros_robot_state_course_acceleration,
-                   rsi_robot_state_course, rsi_robot_state_course_velocity, rsi_robot_state_course_acceleration)
+    #plot_all_joint(ros_robot_state_course, ros_robot_state_course_velocity, ros_robot_state_course_acceleration,
+    #               rsi_robot_state_course, rsi_robot_state_course_velocity, rsi_robot_state_course_acceleration)
 
-    #plot_ee_state(ros_robot_state_course, ros_robot_state_course_velocity,
-    #           rsi_robot_state_course, rsi_robot_state_course_velocity)
+    plot_ee_state(ros_robot_state_course, ros_robot_state_course_velocity,
+               rsi_robot_state_course, rsi_robot_state_course_velocity)
 
     #plot_path(ros_robot_state_course, rsi_robot_state_course)
 

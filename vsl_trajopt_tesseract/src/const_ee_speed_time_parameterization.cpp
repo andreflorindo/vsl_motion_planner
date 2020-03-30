@@ -388,8 +388,11 @@ void ConstEESpeedTimeParameterization::applyConstEESpeed(robot_trajectory::Robot
     const std::vector<int> &idx = group->getVariableIndexList();
     const robot_model::RobotModel &rmodel = group->getParentModel();
     const int num_points = rob_trajectory.getWayPointCount();
+    const int raise_course_npoints = 10;
+    int n = 0;
 
     double ee_speed = 1.0;
+    double ee_speed_command = 1.0;
 
     if (ee_speed_request > 0.0 && ee_speed_request <= 5.0)
         ee_speed = ee_speed_request;
@@ -417,16 +420,33 @@ void ConstEESpeedTimeParameterization::applyConstEESpeed(robot_trajectory::Robot
 
         // Enforce a trapezoidal ee velocity profile. Keep line after else if not needed
 
-        // if (i == 0 || i == num_points - 2)
-        //     t_min = ee_dist / (0.15 * ee_speed_request);
+        //if (i == 0 || i == num_points - 2)
+        //     t_min = ee_dist / (0.15 * ee_speed);
         // else if (i == 1 || i == num_points - 3)
-        //     t_min = ee_dist / (0.25 * ee_speed_request); 
+        //     t_min = ee_dist / (0.25 * ee_speed); 
         // else if (i == 2 || i == num_points - 4)
-        //     t_min = ee_dist / (0.90 * ee_speed_request);
+        //     t_min = ee_dist / (0.90 * ee_speed);
         // else
-        //     t_min = ee_dist / ee_speed_request;
+        //     t_min = ee_dist / ee_speed;
+
+        // Use trigonometric functions to smooth start and end of the path
+
+        if (i < raise_course_npoints)
+        {
+            ee_speed_command = ee_speed * 0.5*(1+sin(-(M_PI /2.0) + double(i+1)/double(raise_course_npoints)*M_PI));
+        }
+        else if (i > num_points - raise_course_npoints -2)
+        {
+            ee_speed_command = ee_speed * 0.5*(1+cos(double(n)/double(raise_course_npoints)*M_PI));
+            n = n + 1;
+        }
+        else
+        {
+            ee_speed_command = ee_speed;
+        }
         
-        t_min = ee_dist / ee_speed_request;
+        t_min = ee_dist / ee_speed_command;
+    
         time_diff[i] = t_min;
     }
 }
