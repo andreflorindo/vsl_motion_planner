@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 2.8.3)
 project(vsl_descartes_moveit)
 
 ## Compile as C++11, supported in ROS Kinetic and newer
-add_compile_options(-std=c++11 -Wall -Wextra)
+add_compile_options(-std=c++14 -Wall -Wextra)
 
 ## Find catkin macros and libraries
 ## if COMPONENTS list like find_package(catkin REQUIRED COMPONENTS xyz)
@@ -61,6 +61,7 @@ include_directories(
    src/task/run_path.cpp
    src/task/get_course.cpp
    src/task/const_ee_speed_time_parameterization.cpp
+   src/task/time_optimal_trajectory_generation.cpp
  )
 
 ## Add cmake target dependencies of the library

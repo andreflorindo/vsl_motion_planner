@@ -45,8 +45,14 @@
 
   <node name="course_display" pkg="vsl_utilities" type="course_display" output="screen"/>
 
-  <node name="ee_cartesian_pose_publisher" pkg="vsl_utilities" type="ee_cartesian_pose_publisher" output="screen">
+   <!--<node name="ee_cartesian_pose_publisher" pkg="vsl_utilities" type="ee_cartesian_pose_publisher" output="screen">
     <param name="tip_link" value="$(arg tip_link)"/>  
+    <param name="base_link" value="$(arg base_link)"/>
+  </node> -->
+  
+  <node name="ee_state_publisher" pkg="vsl_utilities" type="ee_state_publisher" output="screen">
+    <param name="group_name" value="$(arg group_name)"/>
+    <param name="tip_link" value="$(arg tip_link)"/> 
     <param name="base_link" value="$(arg base_link)"/>
   </node>
 

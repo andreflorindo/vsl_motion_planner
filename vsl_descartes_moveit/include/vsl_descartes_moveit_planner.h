@@ -23,12 +23,14 @@
 // Descartes
 #include <descartes_utilities/ros_conversions.h>
 #include <descartes_moveit/ikfast_moveit_state_adapter.h>
-#include <descartes_trajectory/axial_symmetric_pt.h>
+//#include <descartes_trajectory/axial_symmetric_pt.h>
 #include <descartes_trajectory/cart_trajectory_pt.h>
 //#include <descartes_planner/sparse_planner.h>
 #include <descartes_planner/dense_planner.h>
 
 //  Time Parameterization
+#include <const_ee_speed_time_parameterization.h>
+//#include <time_optimal_trajectory_generation.h>
 //#include <moveit/trajectory_processing/iterative_time_parameterization.h>
 //#include <moveit/trajectory_processing/iterative_spline_parameterization.h>
 //#include <moveit/trajectory_processing/time_optimal_trajectory_generation.h>

@@ -5,7 +5,7 @@
         Only then checks if the max velocity and max acceleration of the joints are acceptable, if not replaces them
 */
 
-#include <const_ee_speed_time_parameterization.h>
+#include <vsl_descartes_moveit_planner.h>
 
 namespace vsl_motion_planning
 {

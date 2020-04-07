@@ -461,7 +461,7 @@ class PoseBuilderPython:
             rospy.logerr(
                 'pose_builder_python: The distance requested between waypoint is large, cannot interpolate course')
             sys.exit(-1)
-        elif self.n_waypoints > 1000:
+        elif self.n_waypoints > 10000:
             rospy.logerr(
                 'pose_builder_python: The distance requested between waypoint is small, requested to many waypoints')
             sys.exit(-1)
