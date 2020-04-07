@@ -88,10 +88,10 @@ geometry_msgs::Twist EERequestPublisher::getEEVelocity()
     geometry_msgs::Twist msg_ee_velocities;
 
     double *ptr = &joint_request_.velocity[0];
-    Eigen::Map<Eigen::VectorXd> joint_velocities(ptr, joint_request_.velocity.size());
+    Eigen::Map<Eigen::VectorXd> joints_speed(ptr, joint_request_.velocity.size());
 
     getJacobian(jacobian);
-    Eigen::VectorXd ee_velocities = jacobian * joint_velocities;
+    Eigen::VectorXd ee_velocities = jacobian * joints_speed;
     
     msg_ee_velocities.linear.x=ee_velocities[0];
     msg_ee_velocities.linear.y=ee_velocities[1];

@@ -32,7 +32,7 @@ void CartesianPosePublisher::initTopic()
 void CartesianPosePublisher::startListener()
 {
     tf::TransformListener listener;
-    ros::Rate rate(10.0);
+    ros::Rate rate(50.0);
     tf::StampedTransform transform;
     geometry_msgs::TransformStamped ee_cartesian_pose_msg;
 
@@ -48,7 +48,6 @@ void CartesianPosePublisher::startListener()
         catch (tf::TransformException ex)
         {
             ROS_ERROR("%s", ex.what());
-            ros::Duration(1.0).sleep();
         }
 
         tf::transformStampedTFToMsg(transform, ee_cartesian_pose_msg);

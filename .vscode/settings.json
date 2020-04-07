@@ -71,6 +71,7 @@
         "string": "cpp",
         "string_view": "cpp",
         "*.ipp": "cpp",
-        "regex": "cpp"
+        "regex": "cpp",
+        "core": "cpp"
     }
 }

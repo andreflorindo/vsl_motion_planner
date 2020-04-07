@@ -57,6 +57,7 @@ add_executable(course_display src/course_display.cpp)
 add_executable(ee_cartesian_pose_publisher src/ee_cartesian_pose_publisher.cpp)
 add_executable(joint_request_publisher src/joint_request_publisher.cpp)
 add_executable(ee_request_publisher src/ee_request_publisher.cpp)
+add_executable(ee_state_publisher src/ee_state_publisher.cpp)
 
 ## Add cmake target dependencies of the executable
 add_dependencies(pose_builder vsl_msgs_generate_messages_cpp ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
@@ -64,6 +65,7 @@ add_dependencies(course_display vsl_msgs_generate_messages_cpp ${${PROJECT_NAME}
 add_dependencies(ee_cartesian_pose_publisher vsl_msgs_generate_messages_cpp ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 add_dependencies(joint_request_publisher vsl_msgs_generate_messages_cpp ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 add_dependencies(ee_request_publisher vsl_msgs_generate_messages_cpp ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+add_dependencies(ee_state_publisher vsl_msgs_generate_messages_cpp ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 
 
 ## Specify libraries to link a library or executable target against
@@ -72,3 +74,4 @@ target_link_libraries(course_display ${catkin_LIBRARIES})
 target_link_libraries(ee_cartesian_pose_publisher ${catkin_LIBRARIES})
 target_link_libraries(joint_request_publisher ${catkin_LIBRARIES})
 target_link_libraries(ee_request_publisher ${catkin_LIBRARIES})
+target_link_libraries(ee_state_publisher ${catkin_LIBRARIES})
