@@ -30,7 +30,7 @@
 
 //  Time Parameterization
 #include <const_ee_speed_time_parameterization.h>
-//#include <time_optimal_trajectory_generation.h>
+#include <time_optimal_trajectory_generation.h>
 //#include <moveit/trajectory_processing/iterative_time_parameterization.h>
 //#include <moveit/trajectory_processing/iterative_spline_parameterization.h>
 //#include <moveit/trajectory_processing/time_optimal_trajectory_generation.h>

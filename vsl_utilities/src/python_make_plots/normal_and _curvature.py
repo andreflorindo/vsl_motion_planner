@@ -18,7 +18,7 @@ class CourseClass:
 def read_path():
     input = np.loadtxt(
         #"/home/andreflorindo/workspaces/tesseract_vsl_motion_planner_ws/src/vsl_motion_planner/vsl_msgs/examples/simplePath.txt", dtype='f')
-        "/home/andre/workspaces/tesseract_ws/src/vsl_motion_planner/vsl_msgs/examples/weirdPath.txt", dtype='f')
+        "/home/andre/workspaces/tesseract_ws/src/vsl_motion_planner/vsl_msgs/examples/simplePath.txt", dtype='f')
     x = []
     y = []
     z = []
@@ -124,7 +124,9 @@ def bspline3Dtck(course):
 
     #Using splprep
     tck, u = splprep([course.x,course.y,course.z], k=3, s=0.000001)
-    u_new = np.linspace(u.min(), u.max(), 1000)
+    arc_length = compute_arc_length(course)
+    n_waypoints = int(arc_length // 0.002)
+    u_new = np.linspace(u.min(), u.max(), n_waypoints)
     bspline_x, bspline_y, bspline_z = splev(u_new, tck, der=0)
 
     bspline_course = CourseClass(bspline_x, bspline_y, bspline_z)
@@ -209,7 +211,6 @@ def compute_arc_length(course):
     for i in range(1, len(course.x)):
         arc_length = arc_length + math.sqrt((course.x[i]-course.x[i-1])**2 + (
             course.y[i]-course.y[i-1])**2+(course.z[i]-course.z[i-1])**2)
-    print('Arc Length: ', arc_length)
     return arc_length
 
 
@@ -238,7 +239,7 @@ if __name__ == "__main__":
     # k curve degree
 
     course = read_path()
-    compute_arc_length(course)
+    arc_length=compute_arc_length(course)
     # plot_course(course)
 
     k = len(course.x)-1
@@ -250,7 +251,10 @@ if __name__ == "__main__":
         else:
             u.append(1)
 
-    parameter = np.linspace(0, 1, num=100)
+
+    n_waypoints = int(arc_length // 0.002)
+
+    parameter = np.linspace(0, 1, num=n_waypoints)
 
     bspline_course = bspline3D(parameter, u, course, k)
     bspline_course_tck = bspline3Dtck(course)

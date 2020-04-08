@@ -22,7 +22,7 @@
   <arg name="add_z_distance" default="0.7"/> <!-- meters. Positive goes higher -->
   <arg name="tow_width" default="0.0"/>   <!-- inches -->
   <arg name="tow_thickness" default="0.001"/>   <!-- inches -->
-  <arg name="max_velocity_scaling" default="0.05"/>  <!-- Ratio from max joint speed -->
+  <arg name="max_velocity_scaling" default="0.1"/>  <!-- Ratio from max joint speed -->
   <arg name="ee_speed" default="0.1"/> <!-- m/s -->
 
   <group if="$(eval arg('motion_planning') == 'ompl')"> 

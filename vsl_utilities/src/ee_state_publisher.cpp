@@ -44,7 +44,6 @@ void EEStatePublisher::subscriberCallback(const sensor_msgs::JointState &msg)
     {
         stateMsgToEigen(joint_states_, prev_joints_position_);
         prev_time_ = joint_states_.header.stamp.toSec();
-        std::cout<< "HELLO" <<std::endl;
     }   
     publishEEState();
     count_++;
