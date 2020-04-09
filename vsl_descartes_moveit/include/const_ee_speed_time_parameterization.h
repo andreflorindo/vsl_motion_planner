@@ -14,6 +14,7 @@ namespace vsl_motion_planning
 static const double DEFAULT_VEL_MAX = 1.0;
 static const double DEFAULT_ACCEL_MAX = 2.0;
 static const double ROUNDING_THRESHOLD = 0.01;
+static const double ACCELERATE_NUMBER_POINTS = 10;
 
 class ConstEESpeedTimeParameterization
 {

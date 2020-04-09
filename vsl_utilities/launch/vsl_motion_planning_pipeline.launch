@@ -26,12 +26,14 @@
   <arg name="ee_speed" default="0.1"/> <!-- m/s -->
 
   <group if="$(eval arg('motion_planning') == 'ompl')"> 
-  <include file="$(find vsl_ompl_moveit)/launch/vsl_moveit_setup.launch"/>
+  <include file="$(find vsl_ompl_moveit)/launch/vsl_moveit_setup.launch">
+    <arg name="sim" value="$(arg sim)" /> 
+    <arg name="robot_ip" unless="$(arg sim)" />
+  </include>
 
   <include file="$(find vsl_ompl_moveit)/launch/vsl_ompl_moveit_planner.launch">
     <arg name="planner_id" value="RRTConnect" />
     <arg name="sim" value="$(arg sim)" />  
-    <arg name="robot_ip" unless="$(arg sim)" />
     <arg name="group_name" value="$(arg group_name)"/>
     <arg name="world_frame" value="$(arg world_frame)"/>  
     <arg name="base_link" value="$(arg base_link)"/> 
@@ -53,11 +55,13 @@
   </group>
 
   <group if="$(eval arg('motion_planning') == 'descartes')"> 
-  <include file="$(find vsl_descartes_moveit)/launch/vsl_moveit_setup.launch"/>
+  <include file="$(find vsl_descartes_moveit)/launch/vsl_moveit_setup.launch">
+    <arg name="sim" value="$(arg sim)" /> 
+    <arg name="robot_ip" unless="$(arg sim)" />
+  </include>
 
   <include file="$(find vsl_descartes_moveit)/launch/vsl_descartes_moveit_planner.launch">
     <arg name="sim" value="$(arg sim)" />  
-    <arg name="robot_ip" unless="$(arg sim)" />
     <arg name="group_name" value="$(arg group_name)"/>
     <arg name="world_frame" value="$(arg world_frame)"/>  
     <arg name="base_link" value="$(arg base_link)"/> 
@@ -79,11 +83,13 @@
   </group>
 
   <group if="$(eval arg('motion_planning') == 'trajopt')"> 
-  <include file="$(find vsl_trajopt_tesseract)/launch/vsl_tesseract_setup.launch"/>
+  <include file="$(find vsl_trajopt_tesseract)/launch/vsl_tesseract_setup.launch">
+    <arg name="sim" value="$(arg sim)" /> 
+    <arg name="robot_ip" unless="$(arg sim)" />
+  </include>
 
   <include file="$(find vsl_trajopt_tesseract)/launch/vsl_trajopt_planner.launch">
     <arg name="sim" value="$(arg sim)" />  
-    <arg name="robot_ip" unless="$(arg sim)" />
     <arg name="group_name" value="$(arg group_name)"/>
     <arg name="world_frame" value="$(arg world_frame)"/>  
     <arg name="base_link" value="$(arg base_link)"/> 

@@ -388,7 +388,6 @@ void ConstEESpeedTimeParameterization::applyConstEESpeed(robot_trajectory::Robot
     const std::vector<int> &idx = group->getVariableIndexList();
     const robot_model::RobotModel &rmodel = group->getParentModel();
     const int num_points = rob_trajectory.getWayPointCount();
-    const int raise_course_npoints = 10;
     int n = 0;
 
     double ee_speed = 1.0;
@@ -419,13 +418,13 @@ void ConstEESpeedTimeParameterization::applyConstEESpeed(robot_trajectory::Robot
                        pow(next_ee_waypoint.translation()[2] - curr_ee_waypoint.translation()[2], 2));
 
         // Enforce a trapezoidal ee velocity profile. Keep line after else if not needed
-        if (i < raise_course_npoints)
+        if (i < ACCELERATE_NUMBER_POINTS)
         {
-            ee_speed_command = ee_speed *  (double(i+1)/double(raise_course_npoints));
+            ee_speed_command = ee_speed * (double(i+1)/double(ACCELERATE_NUMBER_POINTS));
         }
-        else if (i > num_points - raise_course_npoints -2)
+        else if (i > num_points - ACCELERATE_NUMBER_POINTS -2)
         {
-            ee_speed_command = ee_speed * (1-(double(n)/double(raise_course_npoints)));
+            ee_speed_command = ee_speed * (1-(double(n)/double(ACCELERATE_NUMBER_POINTS)));
             n = n + 1;
         }
         else
@@ -434,19 +433,19 @@ void ConstEESpeedTimeParameterization::applyConstEESpeed(robot_trajectory::Robot
         }
 
         // Use trigonometric functions to smooth start and end of the path
-        //if (i < raise_course_npoints)
-        //{
-        //    ee_speed_command = ee_speed * 0.5*(1+sin(-(M_PI /2.0) + double(i+1)/double(raise_course_npoints)*M_PI));
-        //}
-        //else if (i > num_points - raise_course_npoints -2)
-        //{
-        //    ee_speed_command = ee_speed * 0.5*(1+cos(double(n)/double(raise_course_npoints)*M_PI));
+        // if (i < ACCELERATE_NUMBER_POINTS)
+        // {
+        //    ee_speed_command = ee_speed * 0.5*(1+sin(-(M_PI /2.0) + double(i+1)/double(ACCELERATE_NUMBER_POINTS)*M_PI));
+        // }
+        // else if (i > num_points - ACCELERATE_NUMBER_POINTS -2)
+        // {
+        //    ee_speed_command = ee_speed * 0.5*(1+cos(double(n)/double(ACCELERATE_NUMBER_POINTS)*M_PI));
         //    n = n + 1;
-        //}
-        //else
-        //{
+        // }
+        // else
+        // {
         //    ee_speed_command = ee_speed;
-        //} 
+        // } 
 
         t_min = ee_dist / ee_speed_command;
         time_diff[i] = t_min;
@@ -469,7 +468,7 @@ bool ConstEESpeedTimeParameterization::checkEESpeed(robot_trajectory::RobotTraje
     double percentage = 1;
     int num_correct_speed = 0;
 
-    for (int i = 0; i < num_points - 1; ++i)
+    for (int i = ACCELERATE_NUMBER_POINTS-1 ; i < num_points - ACCELERATE_NUMBER_POINTS - 1; ++i)
     {
         const robot_state::RobotStatePtr &curr_waypoint = rob_trajectory.getWayPointPtr(i);
         Eigen::Affine3d curr_ee_waypoint = curr_waypoint->getFrameTransform(end_effector_frame);
@@ -490,7 +489,7 @@ bool ConstEESpeedTimeParameterization::checkEESpeed(robot_trajectory::RobotTraje
         }
     }
 
-    if (num_correct_speed < 0.8*(num_points-1))
+    if (num_correct_speed < 0.8*(num_points-2*ACCELERATE_NUMBER_POINTS))
     {
         ROS_WARN_STREAM("Cartesian speed of " << ee_speed_request << " m/s cannot be reach at half of the waypoints, reducing to a smaller value");
         return false;

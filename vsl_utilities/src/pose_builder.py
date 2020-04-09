@@ -473,7 +473,7 @@ class PoseBuilderPython:
         smooth_course_approximation = CourseClass()
         new_tangent = CourseClass()
         new_normal = CourseClass()
-        #course_extension_npoints = int(self.XY_EXTENSION_DISTANCE // self.config.distance_waypoints)
+        # course_extension_npoints = int(self.XY_EXTENSION_DISTANCE // self.config.distance_waypoints)
         # raise_course_npoints = int((self.XY_RAISE_DISTANCE/math.cos(self.ANGLE_RAISE*math.pi/180)) // self.config.distance_waypoints)
         course_extension_npoints = 1
         raise_course_npoints = 10
@@ -499,7 +499,6 @@ class PoseBuilderPython:
             diff_normal_z = normal.z[i]-normal.z[i-1]
 
         for f in range(1, raise_course_npoints+course_extension_npoints+1):
-
             new_tangent.x.append(tangent.x[i]-signal*f*diff_tangent_x)
             new_tangent.y.append(tangent.y[i]-signal*f*diff_tangent_y)
             new_tangent.z.append(tangent.z[i]-signal*f*diff_tangent_z)
@@ -706,7 +705,7 @@ class PoseBuilderPython:
             self.introduceSmoothStart(
                 self.n_waypoints-1, bspline_course_extrapolated, tangent, normal, binormal)
 
-        #if(self.config.smooth_start):
+        # if(self.config.smooth_start):
         #    self.introduceCurvedSmoothStart(
         #        0, bspline_course_extrapolated, tangent, normal, binormal)
         #    self.introduceCurvedSmoothStart(
