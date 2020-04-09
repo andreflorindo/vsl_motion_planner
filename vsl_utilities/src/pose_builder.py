@@ -23,7 +23,7 @@ import matplotlib.pyplot as pyplot
 from mpl_toolkits.mplot3d import Axes3D
 from scipy.interpolate import BSpline, splprep, splev
 # from scipy.spatial.transform import Rotation
-from tf.transformations import quaternion_from_matrix, rotation_matrix
+from tf.transformations import quaternion_from_matrix, rotation_matrix, translation_from_matrix
 import re
 
 # ROS
@@ -59,6 +59,7 @@ class PoseBuilderConfiguration:
 class PoseBuilderPython:
     TABLE_HEIGHT = 0.78
     TABLE_WIDTH = 1.2
+    TABLE_LENGTH = 2.5
     APPROACH_TABLE = 0.002
     XY_EXTENSION_DISTANCE = 0.02  # meters
     XY_RAISE_DISTANCE = 0.10  # meters
@@ -411,16 +412,29 @@ class PoseBuilderPython:
 
         for f in range(0, course_extension_npoints+raise_course_npoints):
             single_course_pose = Pose()
-            ee_x = [-tangent.x[i], -tangent.y[i], -tangent.z[i]]
-            ee_y = [-normal.x[i], -normal.y[i], -normal.z[i]]
+            ee_x = [tangent.x[i], tangent.y[i], tangent.z[i]]
+            ee_y = [normal.x[i], normal.y[i], normal.z[i]]
             ee_z = [-binormal.x[i], -binormal.y[i], -binormal.z[i]]
 
-            rot = np.array(((ee_x[0], ee_y[0],  ee_z[0], 0.0),
-                        (ee_x[1],  ee_y[1], ee_z[1], 0.0),
-                        (ee_x[2],   ee_y[2],  ee_z[2], 0.0),
-                        (0.0,  0.0,  0.0, 1.0)))
+            tf_rot = np.array(((ee_x[0], ee_y[0],  ee_z[0], 0.0),
+                            (ee_x[1],  ee_y[1], ee_z[1], 0.0),
+                            (ee_x[2],   ee_y[2],  ee_z[2], 0.0),
+                            (0.0,  0.0,  0.0, 1.0)))
 
-            q = quaternion_from_matrix(rot)
+            tf_trans = np.array(((0.0, 0.0,  0.0, smooth_course_approximation.x[f]),
+                            (0.0, 0.0, 0.0, smooth_course_approximation.y[f]),
+                            (0.0,   0.0, 0.0, smooth_course_approximation.z[f]),
+                            (0.0,  0.0,  0.0, 1.0)))
+
+            # Rotation
+            rot = rotation_matrix(-math.pi/2, (0, 0, 1))
+
+            tf_rot_final = np.dot(tf_rot,rot)
+            tf_trans_final = np.dot(rot,tf_trans)
+
+            q = quaternion_from_matrix(tf_rot_final)
+            t = translation_from_matrix(tf_trans_final)
+
             single_course_pose.orientation.x = q[0]
             single_course_pose.orientation.y = q[1]
             single_course_pose.orientation.z = q[2]
@@ -432,11 +446,11 @@ class PoseBuilderPython:
                 single_course_pose.orientation.z *= -1
                 single_course_pose.orientation.w *= -1
 
-            single_course_pose.position.x = smooth_course_approximation.x[f] + \
-                self.TABLE_WIDTH + self.config.add_x_distance
-            single_course_pose.position.y = smooth_course_approximation.y[f] + self.config.tow_width*(
+            single_course_pose.position.x = t[0] + \
+                self.TABLE_WIDTH / 1.5 + self.config.add_x_distance
+            single_course_pose.position.y = t[1] + self.TABLE_LENGTH / 3 +self.config.tow_width*(
                 self.req_course-1) + self.config.add_y_distance
-            single_course_pose.position.z = smooth_course_approximation.z[f] + self.TABLE_HEIGHT + \
+            single_course_pose.position.z = t[2] + self.TABLE_HEIGHT + \
                 self.APPROACH_TABLE + self.config.tow_thickness * \
                 (self.req_layer-1) + self.config.add_z_distance
 
@@ -511,16 +525,29 @@ class PoseBuilderPython:
 
         for f in range(0, course_extension_npoints+raise_course_npoints):
             single_course_pose = Pose()
-            ee_x = [-new_tangent.x[f], -new_tangent.y[f], -new_tangent.z[f]]
-            ee_y = [-new_normal.x[f], -new_normal.y[f], -new_normal.z[f]]
+            ee_x = [new_tangent.x[f], new_tangent.y[f], new_tangent.z[f]]
+            ee_y = [new_normal.x[f], new_normal.y[f], new_normal.z[f]]
             ee_z = [-binormal.x[i], -binormal.y[i], -binormal.z[i]]
 
-            rot = np.array(((ee_x[0], ee_y[0],  ee_z[0], 0.0),
-                        (ee_x[1],  ee_y[1], ee_z[1], 0.0),
-                        (ee_x[2],   ee_y[2],  ee_z[2], 0.0),
-                        (0.0,  0.0,  0.0, 1.0)))
+            tf_rot = np.array(((ee_x[0], ee_y[0],  ee_z[0], 0.0),
+                            (ee_x[1],  ee_y[1], ee_z[1], 0.0),
+                            (ee_x[2],   ee_y[2],  ee_z[2], 0.0),
+                            (0.0,  0.0,  0.0, 1.0)))
 
-            q = quaternion_from_matrix(rot)
+            tf_trans = np.array(((0.0, 0.0,  0.0, smooth_course_approximation.x[f]),
+                            (0.0, 0.0, 0.0, smooth_course_approximation.y[f]),
+                            (0.0,   0.0, 0.0, smooth_course_approximation.z[f]),
+                            (0.0,  0.0,  0.0, 1.0)))
+
+            # Rotation
+            rot = rotation_matrix(-math.pi/2, (0, 0, 1))
+
+            tf_rot_final = np.dot(tf_rot,rot)
+            tf_trans_final = np.dot(rot,tf_trans)
+
+            q = quaternion_from_matrix(tf_rot_final)
+            t = translation_from_matrix(tf_trans_final)
+
             single_course_pose.orientation.x = q[0]
             single_course_pose.orientation.y = q[1]
             single_course_pose.orientation.z = q[2]
@@ -532,11 +559,11 @@ class PoseBuilderPython:
                 single_course_pose.orientation.z *= -1
                 single_course_pose.orientation.w *= -1
 
-            single_course_pose.position.x = smooth_course_approximation.x[f] + \
-                self.TABLE_WIDTH + self.config.add_x_distance
-            single_course_pose.position.y = smooth_course_approximation.y[f] + self.config.tow_width*(
+            single_course_pose.position.x = t[0] + \
+                self.TABLE_WIDTH / 1.5 + self.config.add_x_distance
+            single_course_pose.position.y = t[1] + self.TABLE_LENGTH / 3 +self.config.tow_width*(
                 self.req_course-1) + self.config.add_y_distance
-            single_course_pose.position.z = smooth_course_approximation.z[f] + self.TABLE_HEIGHT + \
+            single_course_pose.position.z = t[2] + self.TABLE_HEIGHT + \
                 self.APPROACH_TABLE + self.config.tow_thickness * \
                 (self.req_layer-1) + self.config.add_z_distance
 
@@ -622,16 +649,29 @@ class PoseBuilderPython:
         for i in range(0, self.n_waypoints):
             single_course_pose = Pose()
             # Modify axes direction in relation to the base frame
-            ee_x = [-tangent.x[i], -tangent.y[i], -tangent.z[i]]
-            ee_y = [-normal.x[i], -normal.y[i], -normal.z[i]]
+            ee_x = [tangent.x[i], tangent.y[i], tangent.z[i]]
+            ee_y = [normal.x[i], normal.y[i], normal.z[i]]
             ee_z = [-binormal.x[i], -binormal.y[i], -binormal.z[i]]
 
-            rot = np.array(((ee_x[0], ee_y[0],  ee_z[0], 0.0),
+            tf_rot = np.array(((ee_x[0], ee_y[0],  ee_z[0], 0.0),
                             (ee_x[1],  ee_y[1], ee_z[1], 0.0),
                             (ee_x[2],   ee_y[2],  ee_z[2], 0.0),
                             (0.0,  0.0,  0.0, 1.0)))
 
-            q = quaternion_from_matrix(rot)
+            tf_trans = np.array(((0.0, 0.0,  0.0, bspline_course_extrapolated.x[i]),
+                            (0.0, 0.0, 0.0, bspline_course_extrapolated.y[i]),
+                            (0.0,   0.0, 0.0, bspline_course_extrapolated.z[i]),
+                            (0.0,  0.0,  0.0, 1.0)))
+
+            # Rotation
+            rot = rotation_matrix(-math.pi/2, (0, 0, 1))
+
+            tf_rot_final = np.dot(tf_rot,rot)
+            tf_trans_final = np.dot(rot,tf_trans)
+
+            q = quaternion_from_matrix(tf_rot_final)
+            t = translation_from_matrix(tf_trans_final)
+            
             single_course_pose.orientation.x = q[0]
             single_course_pose.orientation.y = q[1]
             single_course_pose.orientation.z = q[2]
@@ -643,21 +683,19 @@ class PoseBuilderPython:
                 single_course_pose.orientation.z *= -1
                 single_course_pose.orientation.w *= -1
 
-            # single_course_pose.position.x = - \
-            #     (bspline_course_extrapolated.x[i] -
-            #      self.TABLE_WIDTH - self.TABLE_WIDTH / 2) + self.config.add_x_distance
-            # single_course_pose.position.y = - \
-            #     (bspline_course_extrapolated.y[i] -
-            #      self.TABLE_WIDTH / 2) + self.config.tow_width*(self.req_course-1) + self.config.add_y_distance
-            # single_course_pose.position.z = bspline_course_extrapolated.z[i] + \
-            #     self.TABLE_HEIGHT + self.APPROACH_TABLE + self.config.tow_thickness*(self.req_layer-1) + self.config.add_z_distance
-            # self.course_poses.poses.append(single_course_pose)
+            #single_course_pose.position.x = smooth_course_approximation.x[f] + \
+            #    self.TABLE_WIDTH + self.config.add_x_distance
+            #single_course_pose.position.y = smooth_course_approximation.y[f] + self.config.tow_width*(
+            #    self.req_course-1) + self.config.add_y_distance
+            #single_course_pose.position.z = smooth_course_approximation.z[f] + self.TABLE_HEIGHT + \
+            #    self.APPROACH_TABLE + self.config.tow_thickness * \
+            #    (self.req_layer-1) + self.config.add_z_distance
 
-            single_course_pose.position.x = bspline_course_extrapolated.x[i] + \
-                self.TABLE_WIDTH + self.config.add_x_distance
-            single_course_pose.position.y = bspline_course_extrapolated.y[i] + self.config.tow_width*(
+            single_course_pose.position.x = t[0] + \
+                self.TABLE_WIDTH / 1.5 + self.config.add_x_distance
+            single_course_pose.position.y = t[1] + self.TABLE_LENGTH / 3 +self.config.tow_width*(
                 self.req_course-1) + self.config.add_y_distance
-            single_course_pose.position.z = bspline_course_extrapolated.z[i] + self.TABLE_HEIGHT + \
+            single_course_pose.position.z = t[2] + self.TABLE_HEIGHT + \
                 self.APPROACH_TABLE + self.config.tow_thickness * \
                 (self.req_layer-1) + self.config.add_z_distance
             self.course_poses.poses.append(single_course_pose)
