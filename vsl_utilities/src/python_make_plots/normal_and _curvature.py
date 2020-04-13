@@ -19,7 +19,7 @@ class CourseClass:
 def read_path():
     input = np.loadtxt(
         #"/home/andreflorindo/workspaces/tesseract_vsl_motion_planner_ws/src/vsl_motion_planner/vsl_msgs/examples/simplePath.txt", dtype='f')
-        "/home/andre/workspaces/tesseract_ws/src/vsl_motion_planner/vsl_msgs/examples/weirdPath.txt", dtype='f')
+        "/home/andre/workspaces/tesseract_ws/src/vsl_motion_planner/vsl_msgs/examples/simplePath.txt", dtype='f')
     x = []
     y = []
     z = []
@@ -150,13 +150,13 @@ def bspline3Dtck(course, degree):
 
     return bspline_course
 
-def bspline3Dtck_iterative(course, degree):
+def bspline3Dtck_iterative(course, degree,d_hz):
     smooth=0.0000001
     proceed=False
     while(proceed==False):
         tck, u = splprep([course.x,course.y,course.z], k=degree, s=smooth) #0.000001
         arc_length = compute_arc_length(course)
-        n_waypoints = int(arc_length // 0.0001)
+        n_waypoints = int(arc_length // d_hz)
         u_new = np.linspace(u.min(), u.max(), n_waypoints)
         bspline_x, bspline_y, bspline_z = splev(u_new, tck, der=0)
         deriv_bspline_x, deriv_bspline_y, deriv_bspline_z = splev(u_new, tck, der=2)
@@ -179,7 +179,7 @@ def check_smoothness(course_x):
     return proceed
 
 
-def deriv_bspline3D(order, parameter, u, course, k,degree,smooth):
+def deriv_bspline3D(order, parameter, u, course, k,degree,smooth,d_hz):
     #xd = BSpline(u, course.x, k)
     #yd = BSpline(u, course.y, k)
     #zd = BSpline(u, course.z, k)
@@ -195,7 +195,7 @@ def deriv_bspline3D(order, parameter, u, course, k,degree,smooth):
 
     tck, u = splprep([course.x,course.y,course.z], k=degree, s=smooth) #0.000001
     arc_length = compute_arc_length(course)
-    n_waypoints = int(arc_length // 0.0001)
+    n_waypoints = int(arc_length // d_hz)
     u_new = np.linspace(u.min(), u.max(), n_waypoints)
     deriv_bspline_x, deriv_bspline_y, deriv_bspline_z = splev(u_new, tck, der=order)
 
@@ -292,6 +292,7 @@ def compute_position_error(course, bspline):
     inter_robot_pose = interpolate_course(bspline)
 
     absolute_error = []
+    max_absolute_error = 0
 
     if(len(inter_course.x) != len(inter_robot_pose.x)):
         print("Paths have not the same number of point, error may be bad",len(inter_course.x),len(inter_robot_pose.x))
@@ -301,7 +302,9 @@ def compute_position_error(course, bspline):
         error_y = abs(inter_robot_pose.y[i]-inter_course.y[i])
         error_z = abs(inter_robot_pose.z[i]-inter_course.z[i])
         absolute_error.append(math.sqrt(error_x**2+error_y**2+error_z**2)*1000)
-    
+        if absolute_error[i] > max_absolute_error:
+            max_absolute_error = absolute_error[i]
+    print(max_absolute_error)
     return inter_robot_pose.x, absolute_error
 
 def plot_error_one_file(x, absolute_error_3degree, absolute_error_5degree, absolute_error_bspline):   
@@ -338,6 +341,9 @@ if __name__ == "__main__":
     #        u_middle=u_middle+float(1.0/number_u_points)
     #        u.append(u_middle)
 
+
+    d_hz = 0.05
+
     k = len(course.x)-1
     u = []
     for i in range(0, 2*k+2):
@@ -345,7 +351,9 @@ if __name__ == "__main__":
             u.append(0)
         else:
             u.append(1)
-    n_waypoints = int(arc_length // 0.0001)
+    n_waypoints = int(arc_length // d_hz)
+
+    print(n_waypoints)
 
     parameter = np.linspace(0, 1, num=n_waypoints)
 
@@ -360,16 +368,16 @@ if __name__ == "__main__":
     #normal = build_vector(deriv2_bspline_position)
 
     #bspline_course_tck_3 = bspline3Dtck(course,3)
-    bspline_course_tck_3, smooth3 = bspline3Dtck_iterative(course,3)
-    deriv_bspline_course_tck_3 = deriv_bspline3D(1,parameter, u, course, k, 3, smooth3)
+    bspline_course_tck_3, smooth3 = bspline3Dtck_iterative(course,3,d_hz)
+    deriv_bspline_course_tck_3 = deriv_bspline3D(1,parameter, u, course, k, 3, smooth3,d_hz)
 
     #bspline_course_tck_5 = bspline3Dtck(course,5)
-    bspline_course_tck_5, smooth5 = bspline3Dtck_iterative(course,5)
-    deriv_bspline_course_tck_5 = deriv_bspline3D(1,parameter, u, course, k, 5, smooth5)
+    bspline_course_tck_5, smooth5 = bspline3Dtck_iterative(course,5,d_hz)
+    deriv_bspline_course_tck_5 = deriv_bspline3D(1,parameter, u, course, k, 5, smooth5,d_hz)
 
 
-    plot_three_courses2d(course,  bspline_course_tck_5, bspline_course_tck_3)
-    plot_dev_courses2d(course, bspline_course_tck_5, deriv_bspline_course_tck_5)
+    #plot_three_courses2d(course,  bspline_course_tck_5, bspline_course_tck_3)
+    #plot_dev_courses2d(course, bspline_course_tck_5, deriv_bspline_course_tck_5)
 
     #binormal = []
     #for i in range(0, len(tangent)):

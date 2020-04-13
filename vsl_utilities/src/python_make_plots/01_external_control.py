@@ -619,7 +619,7 @@ def rsi_one_path_class(filename):
     rsi_store_only_course_variables(rsi_index_switch[4]-38,rsi_index_switch[5]+1+6, rsi_robot_state, rsi_robot_state_velocity, rsi_robot_state_acceleration,
                                     rsi_robot_state_course, rsi_robot_state_course_velocity, rsi_robot_state_course_acceleration)
 
-    #plot_all_joint_of_one_file(rsi_robot_state_course, rsi_robot_state_course_velocity, rsi_robot_state_course_acceleration)
+    plot_all_joint_of_one_file(rsi_robot_state_course, rsi_robot_state_course_velocity, rsi_robot_state_course_acceleration)
 
     #plot_ee_state_of_one_file(rsi_robot_state_course, rsi_robot_state_course_velocity)
 
@@ -640,7 +640,7 @@ def rsi_one_path_class(filename):
 
     #plot_all_joint_of_one_file(rsi_robot_state_course_no_smooth, rsi_robot_state_course_no_smooth_velocity, rsi_robot_state_course_no_smooth_acceleration)
 
-    plot_ee_state_of_one_file(rsi_robot_state_course_no_smooth, rsi_robot_state_course_no_smooth_velocity)
+    #plot_ee_state_of_one_file(rsi_robot_state_course_no_smooth, rsi_robot_state_course_no_smooth_velocity)
 
     #plot_path_of_one_file(rsi_robot_state_course_no_smooth, 0)
     #plot_inter_path_of_one_file(rsi_robot_state_course_no_smooth)

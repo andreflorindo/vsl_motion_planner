@@ -62,7 +62,7 @@ class PoseBuilderPython:
     TABLE_WIDTH = 1.2
     TABLE_LENGTH = 2.5
     APPROACH_TABLE = 0.002
-    XY_EXTENSION_DISTANCE = 0.02  # meters
+    XY_EXTENSION_DISTANCE = 0.04  # meters
     XY_RAISE_DISTANCE = 0.10  # meters
     ANGLE_RAISE = 10  # degrees
     Z_RAISE_DISTANCE = XY_RAISE_DISTANCE*math.tan(ANGLE_RAISE*math.pi/180)
@@ -230,7 +230,6 @@ class PoseBuilderPython:
             else:
                 self.smoothness=self.smoothness+0.0000001
                 proceed= False
-        print(self.smoothness)
 
         bspline_course = CourseClass()
         bspline_course.x, bspline_course.y, bspline_course.z = splev(u_new, tck, der=0)
@@ -498,6 +497,7 @@ class PoseBuilderPython:
         # raise_course_npoints = int((self.XY_RAISE_DISTANCE/math.cos(self.ANGLE_RAISE*math.pi/180)) // self.config.distance_waypoints)
         course_extension_npoints = 1
         raise_course_npoints = 10
+        n_extension = int(self.XY_EXTENSION_DISTANCE // self.config.distance_waypoints)
 
         if i == 0:
             signal = 1
@@ -507,8 +507,6 @@ class PoseBuilderPython:
             diff_normal_x = normal.x[i+1]-normal.x[i]
             diff_normal_y = normal.y[i+1]-normal.y[i]
             diff_normal_z = normal.z[i+1]-normal.z[i]
-            print(tangent.x[i+1],tangent.x[i],diff_tangent_x)
-            print(normal.x[i+1],normal.x[i],diff_normal_x)
 
         else:
             signal = -1
@@ -520,12 +518,20 @@ class PoseBuilderPython:
             diff_normal_z = normal.z[i]-normal.z[i-1]
 
         for f in range(1, raise_course_npoints+course_extension_npoints+1):
-            new_tangent.x.append(tangent.x[i]-signal*f*diff_tangent_x)
-            new_tangent.y.append(tangent.y[i]-signal*f*diff_tangent_y)
-            new_tangent.z.append(tangent.z[i]-signal*f*diff_tangent_z)
-            new_normal.x.append(normal.x[i]-signal*f*diff_normal_x)
-            new_normal.y.append(normal.y[i]-signal*f*diff_normal_y)
-            new_normal.z.append(normal.z[i]-signal*f*diff_normal_z)
+            if f < course_extension_npoints+1:
+                new_tangent.x.append(tangent.x[i]-signal*f*n_extension*diff_tangent_x)
+                new_tangent.y.append(tangent.y[i]-signal*f*n_extension*diff_tangent_y)
+                new_tangent.z.append(tangent.z[i]-signal*f*n_extension*diff_tangent_z)
+                new_normal.x.append(normal.x[i]-signal*f*n_extension*diff_normal_x)
+                new_normal.y.append(normal.y[i]-signal*f*n_extension*diff_normal_y)
+                new_normal.z.append(normal.z[i]-signal*f*n_extension*diff_normal_z)
+            else:
+                new_tangent.x.append(new_tangent.x[f-2])
+                new_tangent.y.append(new_tangent.y[f-2])
+                new_tangent.z.append(new_tangent.z[f-2])
+                new_normal.x.append(new_normal.x[f-2])
+                new_normal.y.append(new_normal.y[f-2])
+                new_normal.z.append(new_normal.z[f-2])
 
         for f in range(1, course_extension_npoints+1):
             smooth_course_approximation.x.append(course.x[i] - signal * (f / course_extension_npoints) * (
@@ -725,17 +731,17 @@ class PoseBuilderPython:
                 (self.req_layer-1) + self.config.add_z_distance
             self.course_poses.poses.append(single_course_pose)
 
-        if(self.config.smooth_start):
-            self.introduceSmoothStart(
-                0, bspline_course_extrapolated, tangent, normal, binormal)
-            self.introduceSmoothStart(
-                self.n_waypoints-1, bspline_course_extrapolated, tangent, normal, binormal)
-
-        # if(self.config.smooth_start):
-        #    self.introduceCurvedSmoothStart(
+        #if(self.config.smooth_start):
+        #    self.introduceSmoothStart(
         #        0, bspline_course_extrapolated, tangent, normal, binormal)
-        #    self.introduceCurvedSmoothStart(
+        #    self.introduceSmoothStart(
         #        self.n_waypoints-1, bspline_course_extrapolated, tangent, normal, binormal)
+
+        if(self.config.smooth_start):
+            self.introduceCurvedSmoothStart(
+                0, bspline_course_extrapolated, tangent, normal, binormal)
+            self.introduceCurvedSmoothStart(
+                self.n_waypoints-1, bspline_course_extrapolated, tangent, normal, binormal)
 
         return True
 
