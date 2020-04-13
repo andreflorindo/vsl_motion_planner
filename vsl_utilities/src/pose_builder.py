@@ -22,6 +22,7 @@ import math
 import matplotlib.pyplot as pyplot
 from mpl_toolkits.mplot3d import Axes3D
 from scipy.interpolate import BSpline, splprep, splev
+from scipy.signal import argrelextrema
 # from scipy.spatial.transform import Rotation
 from tf.transformations import quaternion_from_matrix, rotation_matrix, translation_from_matrix
 import re
@@ -78,6 +79,7 @@ class PoseBuilderPython:
         self.pose_builder_server = []
         self.n_waypoints = []
         self.arc_length = []
+        self.smoothness = []
         # self.pose_builder_publisher = []
 
     def initServer(self):
@@ -217,8 +219,18 @@ class PoseBuilderPython:
 
 
     def buildInterpolatedBSpline(self):
-        tck, u = splprep([self.course.x,self.course.y,self.course.z], k=3, s=0.000001)
-        u_new = np.linspace(u.min(), u.max(), self.n_waypoints)
+        self.smoothness=0.0000001
+        proceed=False
+        while(proceed==False):
+            tck, u = splprep([self.course.x,self.course.y,self.course.z], k=5, s=self.smoothness)
+            u_new = np.linspace(u.min(), u.max(), self.n_waypoints)
+            deriv2_bspline_x, deriv2_bspline_y, deriv2_bspline_z = splev(u_new, tck, der=2)
+            if(self.checkSmoothness(deriv2_bspline_y) == True):
+                proceed = True
+            else:
+                self.smoothness=self.smoothness+0.0000001
+                proceed= False
+        print(self.smoothness)
 
         bspline_course = CourseClass()
         bspline_course.x, bspline_course.y, bspline_course.z = splev(u_new, tck, der=0)
@@ -232,6 +244,15 @@ class PoseBuilderPython:
             bspline_course.x, bspline_course.y, bspline_course.z = splev(u_new, tck, der=0)
    
         return bspline_course
+
+    def checkSmoothness(self,course):
+        proceed = False
+        course_array = np.asarray(course)
+        maxInd = argrelextrema(course_array, np.greater)
+        if len(maxInd[0]) < 5:
+            proceed = True
+        return proceed
+
 
     def computeArcLengthBetweenWaypoints(self, x1, y1, z1, x2, y2, z2):
         arc_length_waypoints = math.sqrt((x2-x1)**2+(y2-y1)**2+(z2-z1)**2)
@@ -262,7 +283,7 @@ class PoseBuilderPython:
         return deriv_bspline_course
 
     def buildDerivativeInterpolatedBSpline(self, order):
-        tck, u = splprep([self.course.x,self.course.y,self.course.z], k=3, s=0.000001)
+        tck, u = splprep([self.course.x,self.course.y,self.course.z], k=5, s=self.smoothness)
         u_new = np.linspace(u.min(), u.max(), self.n_waypoints)
         deriv_bspline_course = CourseClass()
         deriv_bspline_course.x, deriv_bspline_course.y, deriv_bspline_course.z = splev(u_new, tck, der=order)
@@ -600,6 +621,11 @@ class PoseBuilderPython:
 
         self.course = self.readfileContent(self.config.course_filename)
         n_points = len(self.course.x)
+
+        if n_points < 6:
+            rospy.logerr(
+                'pose_builder_python: Interpolation not possible since course has less than 5 waypoints')
+            sys.exit(-1)
 
         # Computes number of waypoints
         self.arc_length = self.computeArcLengthCourse(self.course)
