@@ -51,6 +51,7 @@ struct VSLOMPLMoveitPlannerConfiguration
     std::string planner_id;
     double max_joint_speed_scaling_between_traj;
     double ee_speed;
+    double distance_waypoints;
     int layer;
     int course;
 };

@@ -18,7 +18,8 @@ void VSLOMPLMoveitPlanner::initOmpl()
         ph.getParam("layer", config_.layer) &&
         ph.getParam("course", config_.course) &&
         ph.getParam("max_joint_speed_scaling_between_traj", config_.max_joint_speed_scaling_between_traj) &&
-        ph.getParam("ee_speed", config_.ee_speed))
+        ph.getParam("ee_speed", config_.ee_speed) &&
+        ph.getParam("distance_waypoints", config_.distance_waypoints))
     {
         ROS_INFO_STREAM("Loaded application parameters");
     }
@@ -115,7 +116,7 @@ void VSLOMPLMoveitPlanner::createMotionPlanRequest(std::vector<geometry_msgs::Po
     moveit_msgs::RobotTrajectory initial_point_trajectory;
 
     const double jump_threshold = 0.00;
-    const double eef_step = 0.01;
+    const double eef_step = config_.distance_waypoints;
     double initial_fraction = move_group.computeCartesianPath(initial_pose, eef_step, jump_threshold, initial_point_trajectory);
 
     initial_point_plan.trajectory_ = initial_point_trajectory;
