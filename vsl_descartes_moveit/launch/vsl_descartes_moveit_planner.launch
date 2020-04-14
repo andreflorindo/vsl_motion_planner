@@ -17,7 +17,8 @@
   <arg name="course" default="16"/> <!-- m/s -->
   <arg name="distance_waypoints" default="0.004"/> <!--0.00574--> <!-- meters --> 
   <arg name="smooth_start" default="true"/> <!-- If true, add an initial extension path to provide smooth accelerations and decelerations -->
-  <arg name="interpolate" default="false"/> <!-- If true, creates a spline which interpolates cartesian points. If false, creates a bspline much smoother  -->
+  <arg name="interpolate" default="true"/> <!-- If true, creates a bspline that interpolates the given points. If false, given points are used as control points to create a much smoother bspline -->
+  <arg name="exact_waypoints" default="false"/>
   <arg name="add_x_distance" default="0.0"/> <!-- meters. Positive goes to the front, futher from the base-->
   <arg name="add_y_distance" default="0.0"/> <!-- meters. Positive goes to the left-->
   <arg name="add_z_distance" default="0.7"/> <!-- meters. Positive goes higher -->
@@ -40,7 +41,8 @@
     <param name="tow_width" value="$(arg tow_width)"/>  
     <param name="tow_thickness" value="$(arg tow_thickness)"/> 
     <param name="smooth_start" value="$(arg smooth_start)"/> 
-    <param name="interpolate" value="$(arg interpolate)"/>  
+    <param name="interpolate" value="$(arg interpolate)"/>
+    <param name="exact_waypoints" value="$(arg exact_waypoints)"/>    
   </node>
 
   <node name="course_display" pkg="vsl_utilities" type="course_display" output="screen"/>
@@ -71,8 +73,7 @@
     <param name="tip_link" value="$(arg tip_link)"/>  
     <param name="base_link" value="$(arg base_link)"/>
     <param name="world_frame" value="$(arg world_frame)"/>   
-    <!-- <rosparam param="trajectory/seed_pose">[1.3, -0.6, 0.8, 0.0, 1.3, 0.07]</rosparam>  -->
-    <rosparam param="trajectory/seed_pose">[1.50, -1.10, 1.40, 0.0, 1.30, 0.90]</rosparam> 
+    <rosparam param="trajectory/seed_pose">[1.00, -1.40, 1.70, 0.0, 1.20, -1.20]</rosparam> 
     <param name="max_joint_speed_scaling_between_traj" value="$(arg max_velocity_scaling)"/>
     <param name="ee_speed" value="$(arg ee_speed)"/>
     <param name="layer" value="$(arg layer)"/>

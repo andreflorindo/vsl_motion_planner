@@ -50,7 +50,8 @@ class RobotState:
 def ros_read_path(robot_state_from_file, robot_state_from_file_velocity, robot_state_from_file_acceleration):
     infile = open(
         #'/home/andreflorindo/workspaces/vsl_motion_planner_ws/src/vsl_utilities/trial_txt_files/13_03_2020/sim_ee_request.txt', 'r')
-        '/home/andre/workspaces/tesseract_ws/descartes_sim_ee_request.txt', 'r')
+        #'/home/andre/workspaces/tesseract_ws/old_bags/descartes_sim_ee_request.txt', 'r')
+        '/home/andre/workspaces/tesseract_ws/bags_04_12/descartes_sparse_25Hz_sim_ee_request.txt', 'r')
     next(infile)
     for line in infile:
         input = re.findall(
@@ -104,7 +105,9 @@ def ros_read_path(robot_state_from_file, robot_state_from_file_velocity, robot_s
 
     infile = open(
         #'/home/andreflorindo/workspaces/vsl_motion_planner_ws/src/vsl_utilities/trial_txt_files/13_03_2020/sim_joint_request.txt', 'r')
-        '/home/andre/workspaces/tesseract_ws/descartes_sim_joint_request.txt', 'r')
+        #'/home/andre/workspaces/tesseract_ws/old_bags/descartes_sim_joint_request.txt', 'r')
+        '/home/andre/workspaces/tesseract_ws/bags_04_12/descartes_sparse_25Hz_sim_joint_request.txt', 'r')
+        
     next(infile)
     for line in infile:
         input = re.findall(
@@ -153,7 +156,7 @@ def ros_read_path(robot_state_from_file, robot_state_from_file_velocity, robot_s
 
     infile = open(
         # '/home/andreflorindo/workspaces/vsl_motion_planner_ws/src/vsl_utilities/trial_txt_files/01_11_2019/simulated_joint_states_01_11.txt', 'r')
-        '/home/andre/workspaces/tesseract_ws/descartes_rsi_joint_request.txt', 'r')
+        '/home/andre/workspaces/tesseract_ws/old_bags/descartes_rsi_joint_request.txt', 'r')
     next(infile)
     for line in infile:
         input = re.findall(
@@ -202,7 +205,7 @@ def ros_read_path(robot_state_from_file, robot_state_from_file_velocity, robot_s
 
     infile = open(
         #'/home/andreflorindo/workspaces/vsl_motion_planner_ws/src/vsl_utilities/trial_txt_files/13_03_2020/sim_ee_request.txt', 'r')
-        '/home/andre/workspaces/tesseract_ws/descartes_rsi_ee_request.txt', 'r')
+        '/home/andre/workspaces/tesseract_ws/old_bags/descartes_rsi_ee_request.txt', 'r')
     next(infile)
     for line in infile:
         input = re.findall(
@@ -225,11 +228,12 @@ def rsi_read_path(robot_state_from_file):
     i = 0
     infile = open(
         # '/home/andreflorindo/workspaces/vsl_motion_planner_ws/src/vsl_utilities/trial_txt_files/01_11_2019/rsi_xml_doc_01_11.txt', 'r')
-        '/home/andre/workspaces/tesseract_ws/descartes_rsi.txt', 'r')
+        #'/home/andre/workspaces/tesseract_ws/old_bags/descartes_rsi.txt', 'r')
+        '/home/andre/workspaces/tesseract_ws/bags_04_09/inter_25Hz_rsi.txt', 'r')
     for line in infile:
         input = re.findall(r"[-+]?\d*\.\d+|\d+", line)
         if len(input) != 0:
-            robot_state_from_file.ee_states.time.append(i*0.004)
+            robot_state_from_file.ee_states.time.append(float(input[38])*0.001)
             robot_state_from_file.ee_states.x.append(float(input[1])*0.001)
             robot_state_from_file.ee_states.y.append(float(input[2])*0.001)
             robot_state_from_file.ee_states.z.append(float(input[3])*0.001)
@@ -239,7 +243,7 @@ def rsi_read_path(robot_state_from_file):
                 float(input[5])*np.pi/180)
             robot_state_from_file.ee_states.rz.append(
                 float(input[6])*np.pi/180)
-            robot_state_from_file.joint_states.time.append(i*0.004)
+            robot_state_from_file.joint_states.time.append(float(input[38])*0.001)
             robot_state_from_file.joint_states.a1.append(
                 float(input[14])*np.pi/180)
             robot_state_from_file.joint_states.a2.append(
@@ -334,7 +338,7 @@ def rsi_clean_path(robot_state_from_file, robot_state):
         if robot_state_from_file.joint_states.a1[i] != robot_state_from_file.joint_states.a1[i-1] or j != 0:
             if j==0:
                 print(i)
-            robot_state.joint_states.time.append(0.004*j)
+            robot_state.joint_states.time.append(robot_state_from_file.joint_states.time[i])
             robot_state.joint_states.a1.append(
                 robot_state_from_file.joint_states.a1[i])
             robot_state.joint_states.a2.append(
@@ -347,7 +351,7 @@ def rsi_clean_path(robot_state_from_file, robot_state):
                 robot_state_from_file.joint_states.a5[i])
             robot_state.joint_states.a6.append(
                 robot_state_from_file.joint_states.a6[i])
-            robot_state.ee_states.time.append(0.004*j)
+            robot_state.ee_states.time.append(robot_state_from_file.ee_states.time[i])
             robot_state.ee_states.x.append(
                 robot_state_from_file.ee_states.x[i])
             robot_state.ee_states.y.append(
@@ -734,7 +738,7 @@ def plot_path(ros_robot_state,rsi_robot_state):
 
 
 def ros_store_only_course_variables(index_switch, index_switch_joint_request_kuka, robot_state, robot_state_velocity, robot_state_acceleration, robot_state_course, robot_state_course_velocity, robot_state_course_acceleration):
-    for i in range(index_switch_joint_request_kuka[4], index_switch_joint_request_kuka[5]+1):
+    for i in range(index_switch_joint_request_kuka[4]-1, index_switch_joint_request_kuka[5]+1):
         # Joint Request kuka
         robot_state_course.joint_request_kuka.time.append(
             robot_state.joint_request_kuka.time[i])
@@ -929,7 +933,7 @@ def ros_store_only_course_variables(index_switch, index_switch_joint_request_kuk
 
 def rsi_store_only_course_variables(index_switch, robot_state, robot_state_velocity, robot_state_acceleration, robot_state_course, robot_state_course_velocity, robot_state_course_acceleration):
     #for i in range(index_switch[4], index_switch[5]+1):
-    for i in range(index_switch[4]-8, index_switch[5]+1+4): # <------- Change here the index if required DELAY
+    for i in range(index_switch[4]-38, index_switch[5]+1+6): # <------- Change here the index if required DELAY
         # Joint States
         robot_state_course.joint_states.time.append(
             robot_state.joint_states.time[i])
@@ -1025,9 +1029,9 @@ def rsi_store_only_course_variables(index_switch, robot_state, robot_state_veloc
 
 def write_joint_request_file(joint_request):
     infile = open(
-        '/home/andreflorindo/workspaces/vsl_motion_planner_ws/src/vsl_descartes_moveit/trial_txt_files/03_12_2019/descartes_joint_request.txt', 'w')
-
-    for i in range(1, len(joint_request.time)):
+        '/home/andre/workspaces/tesseract_ws/src/vsl_motion_planner/vsl_msgs/examples/descartes_sparse_25Hz_sim_joint_request.txt', 'w')
+    print( len(joint_request.time))
+    for i in range(0, len(joint_request.time)):
         infile.write("%f %f %f %f %f %f\n" % (joint_request.a1[i],
                                               joint_request.a2[i],
                                               joint_request.a3[i],
@@ -1108,4 +1112,4 @@ if __name__ == "__main__":
     #                   ros_robot_state_velocity.joint_request.time, ros_robot_state_velocity.joint_request.a1, ros_robot_state_velocity.joint_states.time, ros_robot_state_velocity.joint_states.a1, rsi_robot_state_velocity.joint_states.time, rsi_robot_state_velocity.joint_states.a1,
     #                   ros_robot_state_acceleration.joint_request.time, ros_robot_state_acceleration.joint_request.a1, ros_robot_state_acceleration.joint_states.time, ros_robot_state_acceleration.joint_states.a1, rsi_robot_state_acceleration.joint_states.time, rsi_robot_state_acceleration.joint_states.a1)
 
-    # write_joint_request_file(ros_robot_state_course.joint_request)
+    write_joint_request_file(ros_robot_state_course.joint_request)

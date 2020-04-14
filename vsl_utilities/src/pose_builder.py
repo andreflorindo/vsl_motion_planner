@@ -22,6 +22,7 @@ import math
 import matplotlib.pyplot as pyplot
 from mpl_toolkits.mplot3d import Axes3D
 from scipy.interpolate import BSpline, splprep, splev
+from scipy.signal import argrelextrema
 # from scipy.spatial.transform import Rotation
 from tf.transformations import quaternion_from_matrix, rotation_matrix, translation_from_matrix
 import re
@@ -54,6 +55,7 @@ class PoseBuilderConfiguration:
         self.tow_thickness = []
         self.smooth_start = bool
         self.interpolate = bool
+        self.exact_waypoints = bool
 
 
 class PoseBuilderPython:
@@ -61,9 +63,9 @@ class PoseBuilderPython:
     TABLE_WIDTH = 1.2
     TABLE_LENGTH = 2.5
     APPROACH_TABLE = 0.002
-    XY_EXTENSION_DISTANCE = 0.02  # meters
+    XY_EXTENSION_DISTANCE = 0.04  # meters
     XY_RAISE_DISTANCE = 0.10  # meters
-    ANGLE_RAISE = 10  # degrees
+    ANGLE_RAISE = 10.0  # degrees
     Z_RAISE_DISTANCE = XY_RAISE_DISTANCE*math.tan(ANGLE_RAISE*math.pi/180)
     SERVER_TIMEOUT = 5.0  # seconds
     POSE_BUILDER_SERVICE = "single_course"
@@ -78,6 +80,8 @@ class PoseBuilderPython:
         self.pose_builder_server = []
         self.n_waypoints = []
         self.arc_length = []
+        self.smoothness = []
+        self.index_position = []
         # self.pose_builder_publisher = []
 
     def initServer(self):
@@ -96,6 +100,8 @@ class PoseBuilderPython:
                 '~smooth_start')
             self.config.interpolate = rospy.get_param(
                 '~interpolate')
+            self.config.exact_waypoints = rospy.get_param(
+                '~exact_waypoints')
 
             rospy.loginfo('pose_builder_python: Loaded Server parameters')
         else:
@@ -217,8 +223,17 @@ class PoseBuilderPython:
 
 
     def buildInterpolatedBSpline(self):
-        tck, u = splprep([self.course.x,self.course.y,self.course.z], k=3, s=0.000001)
-        u_new = np.linspace(u.min(), u.max(), self.n_waypoints)
+        self.smoothness=0.0000001
+        proceed=False
+        while(proceed==False):
+            tck, u = splprep([self.course.x,self.course.y,self.course.z], k=5, s=self.smoothness)
+            u_new = np.linspace(u.min(), u.max(), self.n_waypoints)
+            deriv2_bspline_x, deriv2_bspline_y, deriv2_bspline_z = splev(u_new, tck, der=2)
+            if(self.checkSmoothness(deriv2_bspline_y) == True):
+                proceed = True
+            else:
+                self.smoothness=self.smoothness+0.0000001
+                proceed= False
 
         bspline_course = CourseClass()
         bspline_course.x, bspline_course.y, bspline_course.z = splev(u_new, tck, der=0)
@@ -232,6 +247,14 @@ class PoseBuilderPython:
             bspline_course.x, bspline_course.y, bspline_course.z = splev(u_new, tck, der=0)
    
         return bspline_course
+
+    def checkSmoothness(self,course):
+        proceed = False
+        course_array = np.asarray(course)
+        maxInd = argrelextrema(course_array, np.greater)
+        if len(maxInd[0]) < 5:
+            proceed = True
+        return proceed
 
     def computeArcLengthBetweenWaypoints(self, x1, y1, z1, x2, y2, z2):
         arc_length_waypoints = math.sqrt((x2-x1)**2+(y2-y1)**2+(z2-z1)**2)
@@ -252,22 +275,67 @@ class PoseBuilderPython:
         deriv_xd = xd.derivative(order)
         deriv_yd = yd.derivative(order)
         deriv_zd = zd.derivative(order)
-        
-        parameter = np.linspace(0, 1, self.n_waypoints)
 
         deriv_bspline_course = CourseClass()
+        parameter = np.linspace(0, 1, self.n_waypoints)
         deriv_bspline_course.x = deriv_xd(parameter)
         deriv_bspline_course.y = deriv_yd(parameter)
         deriv_bspline_course.z = deriv_zd(parameter)
+
         return deriv_bspline_course
 
     def buildDerivativeInterpolatedBSpline(self, order):
-        tck, u = splprep([self.course.x,self.course.y,self.course.z], k=3, s=0.000001)
+        tck, u = splprep([self.course.x,self.course.y,self.course.z], k=5, s=self.smoothness)
         u_new = np.linspace(u.min(), u.max(), self.n_waypoints)
         deriv_bspline_course = CourseClass()
         deriv_bspline_course.x, deriv_bspline_course.y, deriv_bspline_course.z = splev(u_new, tck, der=order)
     
         return deriv_bspline_course
+
+    def buildExactBSpline(self):
+        self.n_waypoints = 10000
+        self.config.distance_waypoints = self.computeArcLengthBetweenWaypoints(self.course.x[1], self.course.y[1], self.course.z[1], self.course.x[0], self.course.y[0], self.course.z[0])
+        tck, u = splprep([self.course.x,self.course.y,self.course.z], k=3, s=0.0) #0.000001
+        u_new = np.linspace(u.min(), u.max(), self.n_waypoints)
+        bspline_course = CourseClass()
+        bspline_course.x, bspline_course.y, bspline_course.z = splev(u_new, tck, der=0)
+        self.index_position = self.recognizeWaypoints(bspline_course)
+        bspline_exact_course = self.storeWaypoints(bspline_course)
+        self.n_waypoints = len(bspline_exact_course.x)
+        return bspline_exact_course
+
+    def buildDerivativeExactBSpline(self, order):
+        self.n_waypoints = 10000
+        tck, u = splprep([self.course.x,self.course.y,self.course.z], k=3, s=0.0) #0.000001
+        u_new = np.linspace(u.min(), u.max(), self.n_waypoints)
+        deriv_bspline_course = CourseClass()
+        deriv_bspline_course.x, deriv_bspline_course.y, deriv_bspline_course.z = splev(u_new, tck, der=order)
+        deriv_bspline_exact_course = self.storeWaypoints(deriv_bspline_course)
+        self.n_waypoints = len(deriv_bspline_exact_course.x)
+        return deriv_bspline_exact_course
+
+    def recognizeWaypoints(self, bspline_course):
+        position = []
+        for j in range(0, len(self.course.x)):
+            percentage = 0.05
+            for i in range(0, len(bspline_course.x)):
+                if bspline_course.x[i] >= (1-percentage)*self.course.x[j] and bspline_course.x[i] <= (1+percentage)*self.course.x[j]:
+                    if bspline_course.x[i] > self.course.x[j]:
+                        percentage = bspline_course.x[i]/self.course.x[j]-1
+                    else:
+                        percentage = 1-bspline_course.x[i]/self.course.x[j]
+                    k = i
+            position.append(k)
+        return position
+    
+    def storeWaypoints (self, bspline_course):
+        stored_waypoints = CourseClass()
+        for i in range(0, len(self.index_position)):
+            stored_waypoints.x.append(bspline_course.x[self.index_position[i]])
+            stored_waypoints.y.append(bspline_course.y[self.index_position[i]])
+            stored_waypoints.z.append(bspline_course.z[self.index_position[i]])
+        return stored_waypoints
+
 
     def buildVectorNorm(self, x, y, z):
         vector = CourseClass()
@@ -288,19 +356,11 @@ class PoseBuilderPython:
             vector.z.append(course_class.z[0])
         return vector
 
-    def getFrenetSerretVectors(self, u, k):
-
-        if (self.config.interpolate):
-            deriv1_bspline_course_extrapolated = self.buildDerivativeInterpolatedBSpline(1)
-            deriv2_bspline_course_extrapolated = self.buildDerivativeInterpolatedBSpline(2)
-        else:
-            deriv1_bspline_course_extrapolated = self.buildDerivativeBSpline(u, k, 1)
-            deriv2_bspline_course_extrapolated = self.buildDerivativeBSpline(u, k, 2)
-
+    def getFrenetSerretVectors(self, deriv1_bspline_course, deriv2_bspline_course):
         tangent = self.buildVectorNormfromClass(
-            deriv1_bspline_course_extrapolated)
+            deriv1_bspline_course)
         aux_normal = self.buildVectorNormfromClass(
-            deriv2_bspline_course_extrapolated)
+            deriv2_bspline_course)
 
         normal = CourseClass()
         binormal = CourseClass()
@@ -329,15 +389,9 @@ class PoseBuilderPython:
 
         return tangent, normal, binormal
 
-    def getParallelTransportVectors(self, u, k):
-        
-        if (self.config.interpolate):
-            deriv1_bspline_course_extrapolated = self.buildDerivativeInterpolatedBSpline(1)
-        else:
-            deriv1_bspline_course_extrapolated = self.buildDerivativeBSpline(u, k, 1)
-
+    def getParallelTransportVectors(self, deriv1_bspline_course):
         tangent = self.buildVectorNormfromClass(
-            deriv1_bspline_course_extrapolated)
+            deriv1_bspline_course)
         normal = CourseClass()
         binormal = CourseClass()
 
@@ -477,6 +531,7 @@ class PoseBuilderPython:
         # raise_course_npoints = int((self.XY_RAISE_DISTANCE/math.cos(self.ANGLE_RAISE*math.pi/180)) // self.config.distance_waypoints)
         course_extension_npoints = 1
         raise_course_npoints = 10
+        n_extension = int(self.XY_EXTENSION_DISTANCE // self.config.distance_waypoints)
 
         if i == 0:
             signal = 1
@@ -486,8 +541,6 @@ class PoseBuilderPython:
             diff_normal_x = normal.x[i+1]-normal.x[i]
             diff_normal_y = normal.y[i+1]-normal.y[i]
             diff_normal_z = normal.z[i+1]-normal.z[i]
-            print(tangent.x[i+1],tangent.x[i],diff_tangent_x)
-            print(normal.x[i+1],normal.x[i],diff_normal_x)
 
         else:
             signal = -1
@@ -499,12 +552,20 @@ class PoseBuilderPython:
             diff_normal_z = normal.z[i]-normal.z[i-1]
 
         for f in range(1, raise_course_npoints+course_extension_npoints+1):
-            new_tangent.x.append(tangent.x[i]-signal*f*diff_tangent_x)
-            new_tangent.y.append(tangent.y[i]-signal*f*diff_tangent_y)
-            new_tangent.z.append(tangent.z[i]-signal*f*diff_tangent_z)
-            new_normal.x.append(normal.x[i]-signal*f*diff_normal_x)
-            new_normal.y.append(normal.y[i]-signal*f*diff_normal_y)
-            new_normal.z.append(normal.z[i]-signal*f*diff_normal_z)
+            if f < course_extension_npoints+1:
+                new_tangent.x.append(tangent.x[i]-signal*f*n_extension*diff_tangent_x)
+                new_tangent.y.append(tangent.y[i]-signal*f*n_extension*diff_tangent_y)
+                new_tangent.z.append(tangent.z[i]-signal*f*n_extension*diff_tangent_z)
+                new_normal.x.append(normal.x[i]-signal*f*n_extension*diff_normal_x)
+                new_normal.y.append(normal.y[i]-signal*f*n_extension*diff_normal_y)
+                new_normal.z.append(normal.z[i]-signal*f*n_extension*diff_normal_z)
+            else:
+                new_tangent.x.append(new_tangent.x[f-2])
+                new_tangent.y.append(new_tangent.y[f-2])
+                new_tangent.z.append(new_tangent.z[f-2])
+                new_normal.x.append(new_normal.x[f-2])
+                new_normal.y.append(new_normal.y[f-2])
+                new_normal.z.append(new_normal.z[f-2])
 
         for f in range(1, course_extension_npoints+1):
             smooth_course_approximation.x.append(course.x[i] - signal * (f / course_extension_npoints) * (
@@ -600,11 +661,15 @@ class PoseBuilderPython:
 
         self.course = self.readfileContent(self.config.course_filename)
         n_points = len(self.course.x)
+        self.arc_length = self.computeArcLengthCourse(self.course)
+
+        if n_points < 6:
+            rospy.logerr(
+                'pose_builder_python: Interpolation not possible since course has less than 5 waypoints')
+            sys.exit(-1)
 
         # Computes number of waypoints
-        self.arc_length = self.computeArcLengthCourse(self.course)
         self.n_waypoints = int(self.arc_length // self.config.distance_waypoints)
-
         if self.n_waypoints < 2:
             rospy.logerr(
                 'pose_builder_python: The distance requested between waypoint is large, cannot interpolate course')
@@ -615,6 +680,7 @@ class PoseBuilderPython:
             sys.exit(-1)
         else:
             rospy.loginfo('pose_builder_python: Trajectory given with %d setpoints and length %f m ', n_points, self.arc_length)
+        rospy.loginfo('pose_builder_python: Trajectory will be interpolated to %d waypoints, with distances of %f m between waypoitns, a total trajectory %f m', self.n_waypoints, self.config.distance_waypoints, self.arc_length)
 
         # Builds curve degree and knot vector, should pass by all points. 
         # Only required if self.config.interpolate is false
@@ -626,20 +692,26 @@ class PoseBuilderPython:
             else:
                 u.append(1)
 
-       
-        if (self.config.interpolate):
-            # Uses waypoints to build the bspline
-            bspline_course_extrapolated = self.buildInterpolatedBSpline()
-        else: 
-            # Uses control points to build the bspline
-            bspline_course_extrapolated = self.buildBSpline(u, k) 
-
-        rospy.loginfo('pose_builder_python: Trajectory will be interpolated to %d waypoints, with distances of %f m between waypoitns, a total trajectory %f m', self.n_waypoints, self.config.distance_waypoints, self.arc_length)
+        if (self.config.exact_waypoints):
+            bspline_course_extrapolated = self.buildExactBSpline()
+            deriv1_bspline_course_extrapolated = self.buildDerivativeExactBSpline(1)
+            deriv2_bspline_course_extrapolated = self.buildDerivativeExactBSpline(2)
+        else:      
+            if (self.config.interpolate):
+                # Uses waypoints to build the bspline
+                bspline_course_extrapolated = self.buildInterpolatedBSpline()
+                deriv1_bspline_course_extrapolated = self.buildDerivativeInterpolatedBSpline(1)
+                deriv2_bspline_course_extrapolated = self.buildDerivativeInterpolatedBSpline(2)
+            else: 
+                # Uses control points to build the bspline
+                bspline_course_extrapolated = self.buildBSpline(u, k) 
+                deriv1_bspline_course_extrapolated = self.buildDerivativeBSpline(u, k, 1)
+                deriv2_bspline_course_extrapolated = self.buildDerivativeBSpline(u, k, 2)
 
         # Compute tangent, normal and binormal using the definition of Frenet Serret or Parallel Transport
-        # tangent, normal, binormal = self.getFrenetSerretVectors(u, k)
+        # tangent, normal, binormal = self.getFrenetSerretVectors(deriv1_bspline_course_extrapolated,deriv2_bspline_course_extrapolated)
         
-        tangent, normal, binormal = self.getParallelTransportVectors(u, k)
+        tangent, normal, binormal = self.getParallelTransportVectors(deriv1_bspline_course_extrapolated)
 
         # Construct transformation matrix and store in a geometry_msgs type
         self.course_poses.header.stamp = rospy.Time.now()
@@ -699,17 +771,17 @@ class PoseBuilderPython:
                 (self.req_layer-1) + self.config.add_z_distance
             self.course_poses.poses.append(single_course_pose)
 
-        if(self.config.smooth_start):
-            self.introduceSmoothStart(
-                0, bspline_course_extrapolated, tangent, normal, binormal)
-            self.introduceSmoothStart(
-                self.n_waypoints-1, bspline_course_extrapolated, tangent, normal, binormal)
-
-        # if(self.config.smooth_start):
-        #    self.introduceCurvedSmoothStart(
+        #if(self.config.smooth_start):
+        #    self.introduceSmoothStart(
         #        0, bspline_course_extrapolated, tangent, normal, binormal)
-        #    self.introduceCurvedSmoothStart(
+        #    self.introduceSmoothStart(
         #        self.n_waypoints-1, bspline_course_extrapolated, tangent, normal, binormal)
+
+        if(self.config.smooth_start):
+            self.introduceCurvedSmoothStart(
+                0, bspline_course_extrapolated, tangent, normal, binormal)
+            self.introduceCurvedSmoothStart(
+                self.n_waypoints-1, bspline_course_extrapolated, tangent, normal, binormal)
 
         return True
 
