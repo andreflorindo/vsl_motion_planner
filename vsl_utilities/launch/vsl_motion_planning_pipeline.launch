@@ -12,9 +12,10 @@
   <!-- <arg name="course_filename" default="/examples/ExampleRik4.txt"/> -->
   <arg name="layer" default="3"/>  <!-- Ratio from max joint speed -->
   <arg name="course" default="16"/> <!-- m/s -->
-  <arg name="distance_waypoints" default="0.002"/> <!--0.00574--> <!-- meters -->
+  <arg name="distance_waypoints" default="0.004"/> <!--0.00574--> <!-- meters -->
   <arg name="smooth_start" default="true"/> <!-- If true, add an initial extension path to provide smooth accelerations and decelerations -->
   <arg name="interpolate" default="true"/> <!-- If true, creates a bspline that interpolates the given points. If false, given points are used as control points to create a much smoother bspline -->
+  <arg name="exact_waypoints" default="false"/>
   <arg name="add_x_distance" default="0.0"/> <!-- meters. Positive goes to the front, futher from the base-->
   <arg name="add_y_distance" default="0.0"/> <!-- meters. Positive goes to the left-->
   <arg name="add_z_distance" default="0.7"/> <!-- meters. Positive goes higher -->
@@ -41,6 +42,7 @@
     <arg name="distance_waypoints" value="$(arg distance_waypoints)"/> 
     <arg name="smooth_start" value="$(arg smooth_start)"/> 
     <arg name="interpolate" value="$(arg interpolate)"/> 
+    <arg name="exact_waypoints" value="$(arg exact_waypoints)"/> 
     <arg name="add_x_distance" value="$(arg add_x_distance)"/> 
     <arg name="add_y_distance" value="$(arg add_y_distance)"/> 
     <arg name="add_z_distance" value="$(arg add_z_distance)"/> 
@@ -67,7 +69,8 @@
     <arg name="course" value="$(arg course)"/> 
     <arg name="distance_waypoints" value="$(arg distance_waypoints)"/> 
     <arg name="smooth_start" value="$(arg smooth_start)"/>
-    <arg name="interpolate" value="$(arg interpolate)"/>  
+    <arg name="interpolate" value="$(arg interpolate)"/> 
+    <arg name="exact_waypoints" value="$(arg exact_waypoints)"/>  
     <arg name="add_x_distance" value="$(arg add_x_distance)"/> 
     <arg name="add_y_distance" value="$(arg add_y_distance)"/> 
     <arg name="add_z_distance" value="$(arg add_z_distance)"/> 
@@ -94,7 +97,8 @@
     <arg name="course" value="$(arg course)"/> 
     <arg name="distance_waypoints" value="$(arg distance_waypoints)"/> 
     <arg name="smooth_start" value="$(arg smooth_start)"/>
-    <arg name="interpolate" value="$(arg interpolate)"/>  
+    <arg name="interpolate" value="$(arg interpolate)"/>
+    <arg name="exact_waypoints" value="$(arg exact_waypoints)"/>   
     <arg name="add_x_distance" value="$(arg add_x_distance)"/> 
     <arg name="add_y_distance" value="$(arg add_y_distance)"/> 
     <arg name="add_z_distance" value="$(arg add_z_distance)"/> 

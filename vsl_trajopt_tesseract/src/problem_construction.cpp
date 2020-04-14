@@ -150,7 +150,7 @@ ProblemConstructionInfo VSLTrajoptPlanner::trajoptPCI()
   // Repeats initial position given in the code n times, being that the only point of the initial trajectory
   pci.init_info.type = InitInfo::GIVEN_TRAJ;
   pci.init_info.data = start_pos.transpose().replicate(pci.basic_info.n_steps, 1);
-  // pci.init_info.data = readInitTraj("/examples/descartes_joint_request.txt");
+  //pci.init_info.data = readInitTraj("/examples/descartes_sparse_25Hz_sim_joint_request.txt");
 
   // Populate Cost Info
   std::shared_ptr<JointVelTermInfo> joint_vel = std::shared_ptr<JointVelTermInfo>(new JointVelTermInfo);

@@ -2,7 +2,7 @@
 <launch>
   <arg name="world_frame" default="kl2000_base_link"/> 
   <arg name="course_filename" default="/examples/ExampleAndreFlat.txt"/>
-  <arg name="distance_waypoints" default="0.00574"/> <!--0.00574--> <!-- meters -->
+  <arg name="distance_waypoints" default="0.004"/> <!--0.00574--> <!-- meters -->
   <arg name="smooth_start" default="true"/> <!-- m/s -->
   <arg name="add_x_distance" default="0.0"/> <!-- meters. Positive goes to the front, futher from the base-->
   <arg name="add_y_distance" default="0.0"/> <!-- meters. Positive goes to the left-->

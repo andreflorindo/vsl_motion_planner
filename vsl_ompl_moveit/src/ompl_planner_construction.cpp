@@ -115,7 +115,7 @@ void VSLOMPLMoveitPlanner::createMotionPlanRequest(std::vector<geometry_msgs::Po
     moveit_msgs::RobotTrajectory initial_point_trajectory;
 
     const double jump_threshold = 0.00;
-    const double eef_step = 0.01;
+    const double eef_step = 0.002;
     double initial_fraction = move_group.computeCartesianPath(initial_pose, eef_step, jump_threshold, initial_point_trajectory);
 
     initial_point_plan.trajectory_ = initial_point_trajectory;
