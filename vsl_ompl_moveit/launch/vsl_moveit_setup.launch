@@ -39,9 +39,7 @@
     <remap from="/position_trajectory_controller/command" to="/joint_path_command"/>
 
     <include file="$(find kr210_drivers)/launch/kr210_controller_bringup.launch" />
-
-    <param name="move_group/trajectory_execution/execution_duration_monitoring" value="false"/>
-
+    
     <node pkg="tf2_ros" type="buffer_server" name="tf2_buffer_server" output="screen">
       <param name="buffer_size" value="120.0"/>
     </node>    
@@ -55,6 +53,8 @@
     <arg name="info" value="true"/>
     <arg name="debug" value="$(arg debug)"/>
   </include>
+
+  <param name="move_group/trajectory_execution/execution_duration_monitoring" value="false"/>
 
   <!-- run the "real robot" interface nodes-->
   <!--   - this typically includes: robot_state, motion_interface, and joint_trajectory_action nodes -->

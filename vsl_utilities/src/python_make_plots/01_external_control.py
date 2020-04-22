@@ -8,6 +8,9 @@ from mpl_toolkits.mplot3d import Axes3D
 from scipy.interpolate import BSpline, make_interp_spline, splprep, splev
 import re
 
+plt.rcParams['xtick.labelsize']=12
+plt.rcParams['ytick.labelsize']=12
+
 class CourseClass:
     def __init__(self, x, y, z):
         self.x = x
@@ -50,7 +53,7 @@ class RobotState:
 
 def rsi_read_path(robot_state_from_file,filename):
     i = 0
-    #infile = open('/home/andre/workspaces/tesseract_ws/bags_04_09/inter_25Hz_rsi.txt', 'r')
+    #infile = open('/home/andre/workspaces/tesseract_ws/bags_04_09/external/inter_25Hz_rsi.txt', 'r')
     infile = open(filename, 'r')
     for line in infile:
         input = re.findall(r"[-+]?\d*\.\d+|\d+", line)
@@ -377,29 +380,29 @@ def rsi_store_only_course_variables(index_switch_1,index_switch_2, robot_state, 
 
 
 def make_joints_plots_of_one_file(joint_name, real_joint_states_time, real_joint_states, real_joint_states_velocity_time, real_joint_states_velocity, real_joint_states_acceleration_time, real_joint_states_acceleration):
-    plt.figure()
+    plt.figure(figsize=(8, 7))
 
     plt.subplot(311)
     plt.title(joint_name)
-    plt.ylabel('Angle(rad)')
+    plt.ylabel('Angle(rad)',fontsize=12)
     plt.plot(real_joint_states_time, real_joint_states,
              'g', label='Real Joint Traj. State')
-    #plt.legend()
+    #plt.legend(fontsize=12)
     plt.legend(loc='upper center', bbox_to_anchor=(0.5, 1.00), shadow=True, ncol=3)
 
     plt.subplot(312)
-    plt.ylabel('Speed(rad/s)')
+    plt.ylabel('Speed(rad/s)',fontsize=12)
     plt.plot(real_joint_states_velocity_time,
              real_joint_states_velocity, 'g', label='Real Joint Traj. State')
-    #plt.legend()
+    #plt.legend(fontsize=12)
     plt.legend(loc='upper center', bbox_to_anchor=(0.5, 1.00), shadow=True, ncol=3)
 
     plt.subplot(313)
-    plt.ylabel('Acceleration(rad/s^2)')
-    plt.xlabel('Time (s)')
+    plt.ylabel('Acceleration(rad/s^2)',fontsize=12)
+    plt.xlabel('Time (s)',fontsize=12)
     plt.plot(real_joint_states_acceleration_time,
              real_joint_states_acceleration, 'g', label='Real Joint Traj. State')
-    #plt.legend()
+    #plt.legend(fontsize=12)
     plt.legend(loc='upper center', bbox_to_anchor=(0.5, 1.00), shadow=True, ncol=3)
     plt.show()
 
@@ -412,35 +415,35 @@ def plot_all_joint_of_one_file(rsi_robot_state, rsi_robot_state_velocity, rsi_ro
     make_joints_plots_of_one_file('Joint A6', rsi_robot_state.joint_states.time, rsi_robot_state.joint_states.a6, rsi_robot_state_velocity.joint_states.time, rsi_robot_state_velocity.joint_states.a6, rsi_robot_state_acceleration.joint_states.time, rsi_robot_state_acceleration.joint_states.a6)
 
 def plot_ee_state_of_one_file(rsi_robot_state, rsi_robot_state_velocity):
-    plt.figure()
+    plt.figure(figsize=(8, 7))
 
     plt.subplot(411)
-    plt.ylabel('Distance x (m)')
+    plt.ylabel('Distance x (m)',fontsize=12)
     plt.plot(rsi_robot_state.ee_states.time, rsi_robot_state.ee_states.x,
              'g', label='Real Cart Traj. Performed')
-    #plt.legend()
+    #plt.legend(fontsize=12)
     plt.legend(loc='upper center', bbox_to_anchor=(0.5, 1.00), shadow=True, ncol=3)
 
     plt.subplot(412)
-    plt.ylabel('Distance y (m)')
+    plt.ylabel('Distance y (m)',fontsize=12)
     plt.plot(rsi_robot_state.ee_states.time, rsi_robot_state.ee_states.y,
              'g', label='Real Cart Traj. Performed')
-    #plt.legend()
+    #plt.legend(fontsize=12)
     plt.legend(loc='upper center', bbox_to_anchor=(0.5, 1.00), shadow=True, ncol=3)
 
     plt.subplot(413)
-    plt.ylabel('Distance z (m)')
+    plt.ylabel('Distance z (m)',fontsize=12)
     plt.plot(rsi_robot_state.ee_states.time, rsi_robot_state.ee_states.z,
              'g', label='Real Cart Traj. Performed')
-    #plt.legend()
+    #plt.legend(fontsize=12)
     plt.legend(loc='upper center', bbox_to_anchor=(0.5, 1.00), shadow=True, ncol=3)
 
     plt.subplot(414)
-    plt.ylabel('Laydown Speed (m/s)')
-    plt.xlabel('Time (s)')
+    plt.ylabel('Laydown Speed (m/s)',fontsize=12)
+    plt.xlabel('Time (s)',fontsize=12)
     plt.plot(rsi_robot_state_velocity.ee_states.time,
              rsi_robot_state_velocity.ee_states.linear, 'g', label='Real Cart Traj. Performed')
-    #plt.legend()
+    #plt.legend(fontsize=12)
     plt.legend(loc='upper center', bbox_to_anchor=(0.5, 1.00), shadow=True, ncol=3)
     plt.show()
 
@@ -480,35 +483,34 @@ def plot_path_of_one_file(rsi_robot_state, index_approach):
 
     course = read_course_path()
 
-    plt.figure()
-    plt.title('Path performed')
-    plt.ylabel('y(m)')
-    plt.xlabel('x(m)')
+    plt.figure(figsize=(8, 7))
+    plt.ylabel('y(m)',fontsize=12)
+    plt.xlabel('x(m)',fontsize=12)
     # Rotate ee_state by -90 degrees and make sure that it starts at same spot as the given course
     # x=x_course0+(y_ee-y_ee0) y=y_course0+(-x_ee+x_ee0)
     #plt.plot((course.y-course.y[0])+rsi_robot_state.ee_states.x[2], -(course.x-course.x[0])+rsi_robot_state.ee_states.y[2], 'k*', label='Original Path')
     plt.plot((course.x-course.x[0])+rsi_robot_state.ee_states.x[index_approach], (course.y-course.y[0])+rsi_robot_state.ee_states.y[index_approach], 'k*', label='Original Path')
     plt.plot(rsi_robot_state.ee_states.x, rsi_robot_state.ee_states.y, 'g', label='Real Path performed')
 
-    plt.legend()
+    plt.legend(fontsize=12)
     plt.show()
     #plot_path_3d(course, rsi_path, index_approach)
 
 def plot_path_3d(course, rsi_path, index_approach):
     # 3D plotting setup
-    fig = plt.figure()
+    fig = plt.figure(figsize=(8, 7))
     ax = fig.add_subplot(111, projection='3d')
     axis_size = 0.5
     ax.plot((course.x-course.x[0])+rsi_path.x[index_approach], (course.y-course.y[0])+rsi_path.y[index_approach], (course.z-course.z[0])+rsi_path.z[index_approach], label='Course', marker='.',
             color='red', linestyle='dashed', markerfacecolor='yellow')
     ax.plot(rsi_path.x, rsi_path.y, rsi_path.z, label='Bspline',
             color='blue', linestyle='dashed', markerfacecolor='yellow')
-    ax.legend()
-    ax.set_xlabel('X')
+    ax.legend(fontsize=12)
+    ax.set_xlabel('X',fontsize=12)
     ax.set_xlim(0, axis_size)
-    ax.set_ylabel('Y')
+    ax.set_ylabel('Y',fontsize=12)
     ax.set_ylim(0, axis_size)
-    ax.set_zlabel('Z')
+    ax.set_zlabel('Z',fontsize=12)
     ax.set_zlim(-axis_size/2, axis_size/2)
     plt.show()
 
@@ -551,15 +553,14 @@ def rsi_compute_position_error(rsi_robot_state):
     
     
 def plot_error_one_file(x, absolute_error):   
-    plt.figure()
-    plt.title('Absolute Position error')
-    plt.ylabel('Absolute error (mm)')
-    plt.xlabel('x(m)')
+    plt.figure(figsize=(8, 7))
+    plt.ylabel('Absolute error (mm)',fontsize=12)
+    plt.xlabel('x(m)',fontsize=12)
     # Rotate ee_state by -90 degrees and make sure that it starts at same spot as the given course
     # x=x_course0+(y_ee-y_ee0) y=y_course0+(-x_ee+x_ee0)
     #plt.plot((course.y-course.y[0])+rsi_robot_state.ee_states.x[2], -(course.x-course.x[0])+rsi_robot_state.ee_states.y[2], 'k*', label='Original Path')
     plt.plot(x, absolute_error, 'g')
-    plt.legend()
+    plt.legend(fontsize=12)
     plt.show()
 
 
@@ -570,17 +571,16 @@ def plot_inter_path_of_one_file(rsi_robot_state):
     rsi_path = CourseClass(rsi_robot_state.ee_states.x,rsi_robot_state.ee_states.y,rsi_robot_state.ee_states.z)
     inter_robot_pose = interpolate_course(rsi_path)
     
-    plt.figure()
-    plt.title('Path performed')
-    plt.ylabel('y(m)')
-    plt.xlabel('x(m)')
+    plt.figure(figsize=(8, 7))
+    plt.ylabel('y(m)',fontsize=12)
+    plt.xlabel('x(m)',fontsize=12)
     # Rotate ee_state by -90 degrees and make sure that it starts at same spot as the given course
     # x=x_course0+(y_ee-y_ee0) y=y_course0+(-x_ee+x_ee0)
     #plt.plot((course.y-course.y[0])+rsi_robot_state.ee_states.x[2], -(course.x-course.x[0])+rsi_robot_state.ee_states.y[2], 'k*', label='Original Path')
     plt.plot(inter_course.x-inter_course.x[0], inter_course.y, 'k*', label='Original Path')
     plt.plot(rsi_robot_state.ee_states.x, rsi_robot_state.ee_states.y, 'g.', label='Real Path performed')
     plt.plot(inter_robot_pose.x, inter_robot_pose.y, 'r.-', label='Real Path performed')
-    plt.legend()
+    plt.legend(fontsize=12)
     plt.show()
     #plot_path_3d(course, rsi_path, index_approach)
 
@@ -619,9 +619,9 @@ def rsi_one_path_class(filename):
     rsi_store_only_course_variables(rsi_index_switch[4]-38,rsi_index_switch[5]+1+6, rsi_robot_state, rsi_robot_state_velocity, rsi_robot_state_acceleration,
                                     rsi_robot_state_course, rsi_robot_state_course_velocity, rsi_robot_state_course_acceleration)
 
-    plot_all_joint_of_one_file(rsi_robot_state_course, rsi_robot_state_course_velocity, rsi_robot_state_course_acceleration)
+    #plot_all_joint_of_one_file(rsi_robot_state_course, rsi_robot_state_course_velocity, rsi_robot_state_course_acceleration)
 
-    #plot_ee_state_of_one_file(rsi_robot_state_course, rsi_robot_state_course_velocity)
+    plot_ee_state_of_one_file(rsi_robot_state_course, rsi_robot_state_course_velocity)
 
     # Plot A1 with A2
 
@@ -631,7 +631,7 @@ def rsi_one_path_class(filename):
 
     rsi_approach_index_1, rsi_approach_index_2 = rsi_find_approach_index(rsi_path)
 
-    plot_path_of_one_file(rsi_robot_state_course, rsi_approach_index_1)
+    #plot_path_of_one_file(rsi_robot_state_course, rsi_approach_index_1)
 
     # Plot path without approach
 
@@ -647,7 +647,7 @@ def rsi_one_path_class(filename):
 
     x, absolute_error = rsi_compute_position_error(rsi_robot_state_course_no_smooth)
 
-    #plot_error_one_file(x, absolute_error)
+    plot_error_one_file(x, absolute_error)
 
 
     return rsi_robot_state_course, rsi_robot_state_course_velocity, rsi_robot_state_course_acceleration
@@ -688,12 +688,13 @@ if __name__ == "__main__":
     rsi_inter_25hz_5_degree_velocity = RobotState()
     rsi_inter_25hz_5_degree_acceleration = RobotState()
 
-    #rsi_inter_5hz ,rsi_inter_5hz_velocity ,rsi_inter_5hz_acceleration = rsi_one_path_class('/home/andre/workspaces/tesseract_ws/bags_04_09/inter_5Hz_rsi.txt')
-    #rsi_inter_10hz ,rsi_inter_10hz_velocity ,rsi_inter_10hz_acceleration = rsi_one_path_class('/home/andre/workspaces/tesseract_ws/bags_04_09/inter_10Hz_rsi.txt')
-    #rsi_inter_15hz ,rsi_inter_15hz_velocity ,rsi_inter_15hz_acceleration = rsi_one_path_class('/home/andre/workspaces/tesseract_ws/bags_04_09/inter_15Hz_rsi.txt')
-    #rsi_inter_20hz ,rsi_inter_20hz_velocity ,rsi_inter_20hz_acceleration = rsi_one_path_class('/home/andre/workspaces/tesseract_ws/bags_04_09/inter_20Hz_rsi.txt')
-    rsi_inter_25hz ,rsi_inter_25hz_velocity ,rsi_inter_25hz_acceleration = rsi_one_path_class('/home/andre/workspaces/tesseract_ws/bags_04_09/inter_25Hz_rsi.txt')
-    rsi_inter_25hz_5_degree ,rsi_inter_25hz_5_degree_velocity ,rsi_inter_25hz_5_degree_acceleration = rsi_one_path_class('/home/andre/workspaces/tesseract_ws/bags_04_09/inter_25Hz_5_degree_rsi.txt')
+    #rsi_inter_5hz ,rsi_inter_5hz_velocity ,rsi_inter_5hz_acceleration = rsi_one_path_class('/home/andre/workspaces/tesseract_ws/bags_04_09/external/inter_5Hz_rsi.txt')
+    #rsi_inter_10hz ,rsi_inter_10hz_velocity ,rsi_inter_10hz_acceleration = rsi_one_path_class('/home/andre/workspaces/tesseract_ws/bags_04_09/external/inter_10Hz_rsi.txt')
+    #rsi_inter_15hz ,rsi_inter_15hz_velocity ,rsi_inter_15hz_acceleration = rsi_one_path_class('/home/andre/workspaces/tesseract_ws/bags_04_09/external/inter_15Hz_rsi.txt')
+    #rsi_inter_20hz ,rsi_inter_20hz_velocity ,rsi_inter_20hz_acceleration = rsi_one_path_class('/home/andre/workspaces/tesseract_ws/bags_04_09/external/inter_20Hz_rsi.txt')
+    rsi_inter_25hz ,rsi_inter_25hz_velocity ,rsi_inter_25hz_acceleration = rsi_one_path_class('/home/andre/workspaces/tesseract_ws/bags_04_09/external/inter_25Hz_rsi.txt')
+    rsi_inter_25hz_5_degree ,rsi_inter_25hz_5_degree_velocity ,rsi_inter_25hz_5_degree_acceleration = rsi_one_path_class('/home/andre/workspaces/tesseract_ws/bags_04_09/external/inter_25Hz_5_degree_rsi.txt')
+    #rsi_inter_25hz_5_degree ,rsi_inter_25hz_5_degree_velocity ,rsi_inter_25hz_5_degree_acceleration = rsi_one_path_class('/home/andre/workspaces/tesseract_ws/bags_04_14/motion/descartes_25Hz_course316_rsi.txt')
 
     #Bspline
     rsi_bspline_5hz = RobotState()
@@ -720,12 +721,12 @@ if __name__ == "__main__":
     rsi_bspline_50hz_velocity = RobotState()
     rsi_bspline_50hz_acceleration = RobotState()
 
-    #rsi_bspline_5hz ,rsi_bspline_5hz_velocity ,rsi_bspline_5hz_acceleration = rsi_one_path_class('/home/andre/workspaces/tesseract_ws/bags_04_09/bspline_5Hz_rsi.txt')
-    #rsi_bspline_10hz ,rsi_bspline_10hz_velocity ,rsi_bspline_10hz_acceleration = rsi_one_path_class('/home/andre/workspaces/tesseract_ws/bags_04_09/bspline_10Hz_rsi.txt')
-    #rsi_bspline_15hz ,rsi_bspline_15hz_velocity ,rsi_bspline_15hz_acceleration = rsi_one_path_class('/home/andre/workspaces/tesseract_ws/bags_04_09/bspline_15Hz_rsi.txt')
-    #rsi_bspline_20hz ,rsi_bspline_20hz_velocity ,rsi_bspline_20hz_acceleration = rsi_one_path_class('/home/andre/workspaces/tesseract_ws/bags_04_09/bspline_20Hz_rsi.txt')
-    #rsi_bspline_25hz ,rsi_bspline_25hz_velocity ,rsi_bspline_25hz_acceleration = rsi_one_path_class('/home/andre/workspaces/tesseract_ws/bags_04_09/bspline_25Hz_rsi.txt')
-    #rsi_bspline_50hz ,rsi_bspline_50hz_velocity ,rsi_bspline_50hz_acceleration = rsi_one_path_class('/home/andre/workspaces/tesseract_ws/bags_04_09/bspline_50Hz_rsi.txt')
+    #rsi_bspline_5hz ,rsi_bspline_5hz_velocity ,rsi_bspline_5hz_acceleration = rsi_one_path_class('/home/andre/workspaces/tesseract_ws/bags_04_09/external/bspline_5Hz_rsi.txt')
+    #rsi_bspline_10hz ,rsi_bspline_10hz_velocity ,rsi_bspline_10hz_acceleration = rsi_one_path_class('/home/andre/workspaces/tesseract_ws/bags_04_09/external/bspline_10Hz_rsi.txt')
+    #rsi_bspline_15hz ,rsi_bspline_15hz_velocity ,rsi_bspline_15hz_acceleration = rsi_one_path_class('/home/andre/workspaces/tesseract_ws/bags_04_09/external/bspline_15Hz_rsi.txt')
+    #rsi_bspline_20hz ,rsi_bspline_20hz_velocity ,rsi_bspline_20hz_acceleration = rsi_one_path_class('/home/andre/workspaces/tesseract_ws/bags_04_09/external/bspline_20Hz_rsi.txt')
+    #rsi_bspline_25hz ,rsi_bspline_25hz_velocity ,rsi_bspline_25hz_acceleration = rsi_one_path_class('/home/andre/workspaces/tesseract_ws/bags_04_09/external/bspline_25Hz_rsi.txt')
+    #rsi_bspline_50hz ,rsi_bspline_50hz_velocity ,rsi_bspline_50hz_acceleration = rsi_one_path_class('/home/andre/workspaces/tesseract_ws/bags_04_09/external/bspline_50Hz_rsi.txt')
 
 
 

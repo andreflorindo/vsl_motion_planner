@@ -55,6 +55,8 @@
     <arg name="debug" value="$(arg debug)"/>
   </include>
 
+  <param name="move_group/trajectory_execution/execution_duration_monitoring" value="false"/>
+
   <!-- run the "real robot" interface nodes-->
   <!--   - this typically includes: robot_state, motion_interface, and joint_trajectory_action nodes -->
   <!--   - replace these calls with appropriate robot-specific calls or launch files -->

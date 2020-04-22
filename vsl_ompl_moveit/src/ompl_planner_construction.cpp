@@ -115,18 +115,27 @@ void VSLOMPLMoveitPlanner::createMotionPlanRequest(std::vector<geometry_msgs::Po
     initial_pose.emplace_back(poses[0]);
     moveit_msgs::RobotTrajectory initial_point_trajectory;
 
-    const double jump_threshold = 0.00;
-    const double eef_step = config_.distance_waypoints;
-    double initial_fraction = move_group.computeCartesianPath(initial_pose, eef_step, jump_threshold, initial_point_trajectory);
+    double initial_jump_threshold = 0.00;
+    double initial_eef_step = 0.1;
+    double initial_fraction = move_group.computeCartesianPath(initial_pose, initial_eef_step, initial_jump_threshold, initial_point_trajectory);
 
+    // addTimeParameterizationToOmpl(initial_point_trajectory, config_.ee_speed, 1);
     initial_point_plan.trajectory_ = initial_point_trajectory;
-    // addTimeParameterizationToOmpl(initial_point_trajectory, 4, config_.max_joint_speed_scaling_between_traj);
-    move_group.execute(initial_point_plan);
+
+    if (move_group.execute(initial_point_plan))
+    {
+        ROS_INFO_STREAM("Robot path execution completed");
+    }
+    else
+    {
+        ROS_ERROR_STREAM("Failed to run robot path with error ");
+        exit(-1);
+    }
 
     moveit::planning_interface::MoveGroupInterface::Plan my_plan;
     moveit_msgs::RobotTrajectory trajectory;
-    // const double jump_threshold = 0.00;
-    // const double eef_step = 0.01;
+    double jump_threshold = 0.00;
+    double eef_step = config_.distance_waypoints;
     double fraction = move_group.computeCartesianPath(poses, eef_step, jump_threshold, trajectory);
 
     addTimeParameterizationToOmpl(trajectory, config_.ee_speed, 1);

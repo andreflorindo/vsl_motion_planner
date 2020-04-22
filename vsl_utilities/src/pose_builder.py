@@ -386,7 +386,6 @@ class PoseBuilderPython:
             normal.x.append(normal_class.x[0])
             normal.y.append(normal_class.y[0])
             normal.z.append(normal_class.z[0])
-
         return tangent, normal, binormal
 
     def getParallelTransportVectors(self, deriv1_bspline_course):
@@ -709,7 +708,7 @@ class PoseBuilderPython:
                 deriv2_bspline_course_extrapolated = self.buildDerivativeBSpline(u, k, 2)
 
         # Compute tangent, normal and binormal using the definition of Frenet Serret or Parallel Transport
-        # tangent, normal, binormal = self.getFrenetSerretVectors(deriv1_bspline_course_extrapolated,deriv2_bspline_course_extrapolated)
+        #tangent, normal, binormal = self.getFrenetSerretVectors(deriv1_bspline_course_extrapolated,deriv2_bspline_course_extrapolated)
         
         tangent, normal, binormal = self.getParallelTransportVectors(deriv1_bspline_course_extrapolated)
 
