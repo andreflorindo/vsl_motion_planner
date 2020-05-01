@@ -79,7 +79,7 @@ def plot_three_courses2d(course, bspline, bsplinetck3, bsplinetck5):
     pyplot.xlabel('x(m)',fontsize=12)
     pyplot.plot(course.x, course.y,'k*', label='Course provided')
     pyplot.plot(bsplinetck3.x, bsplinetck3.y, 'g', label='3rd degree B-spline')
-    pyplot.plot(bsplinetck5.x, bsplinetck5.y,'r', label='5th degree B-spline')
+    pyplot.plot(bsplinetck5.x, bsplinetck5.y,'r--', label='5th degree B-spline')
     pyplot.plot(bspline.x, bspline.y, 'b', label='Nth degree Bezier curve')
     pyplot.legend(loc='lower right', bbox_to_anchor=(1.0, 0.00), shadow=False, ncol=1,fontsize=12)
     pyplot.show()
@@ -90,11 +90,29 @@ def plot_tangent_normal(bspline, tangent, normal):
     pyplot.ylabel('x-axis component of the vector',fontsize=12)
     pyplot.xlabel('x(m)',fontsize=12)
     # x -> 0, y -> 1
-    pyplot.plot(bspline.x, tangent.x, label='Tangent', color='red')
-    pyplot.plot(bspline.x, normal.x, label='Normal', color='green')
+    #pyplot.plot(bspline.x, tangent.x, 'ro-',  markersize=3, label='Tangent')
+    #pyplot.plot(bspline.x, normal.x, 'go-',  markersize=3, label='Normal')
+    pyplot.plot(bspline.x, tangent.x, 'r', label='Tangent')
+    pyplot.plot(bspline.x, normal.x, 'g', label='Normal')
     pyplot.legend(fontsize=12)
     pyplot.show()
 
+def plot_tangent_one_file(bspline_course,tangent_bspline,normal_bspline,bspline_course_tck_3,tangent_bspline_tck_3,normal_bspline_tck_3,bspline_course_tck_5,tangent_bspline_tck_5,normal_bspline_tck_5):
+    greens = cm.YlGn(np.linspace(0, 1, 10))
+    reds = cm.YlOrRd(np.linspace(0, 1, 10))
+
+    pyplot.figure(figsize=(8, 7))
+    pyplot.ylabel('x-axis component of the vector',fontsize=12)
+    pyplot.xlabel('x(m)',fontsize=12)
+    pyplot.plot(bspline_course_tck_3.x, tangent_bspline_tck_3.x,'-', color= reds[9], label='Tangent 3rd Degree B-spline')
+    pyplot.plot(bspline_course_tck_5.x, tangent_bspline_tck_5.x,'--', color= reds[6], label='Tangent 5th Degree B-spline')
+    pyplot.plot(bspline_course.x, tangent_bspline.x,'-',color= reds[3], label='Tangent Bezier curve')
+
+    pyplot.plot(bspline_course_tck_3.x, normal_bspline_tck_3.x,'-', color= greens[9], label='Normal 3rd Degree B-spline')
+    pyplot.plot(bspline_course_tck_5.x, normal_bspline_tck_5.x,'--', color= greens[6], label='Normal 5th Degree B-spline')
+    pyplot.plot(bspline_course.x, normal_bspline.x,'-',color= greens[3], label='Normal Bezier curve')
+    pyplot.legend(loc='upper right', bbox_to_anchor=(2, 1.0), shadow=False, ncol=2, fontsize=12)
+    pyplot.show()
 
 def plot_both_courses3d(course, bspline):
     # 3D plotting setup
@@ -326,7 +344,6 @@ def compute_arc_length(course):
     for i in range(1, len(course.x)):
         arc_length = arc_length + math.sqrt((course.x[i]-course.x[i-1])**2 + (
             course.y[i]-course.y[i-1])**2+(course.z[i]-course.z[i-1])**2)
-    print('arc length', arc_length)
     return arc_length
 
 
@@ -381,6 +398,17 @@ def compute_position_error(course, bspline):
         if absolute_error[i] > max_absolute_error:
             max_absolute_error = absolute_error[i]
     print('Absolute position error', max_absolute_error)
+
+    #pyplot.figure(figsize=(8, 7))
+    #pyplot.ylabel('y(m)',fontsize=12)
+    #pyplot.xlabel('x(m)',fontsize=12)
+    #pyplot.plot(inter_course.x, inter_course.y, 'r*--', markersize=3, label='Real Course Interpolated')
+    #pyplot.plot(inter_robot_pose.x , inter_robot_pose.y, 'bo-', markersize=3, label='Obtained Course interpolated')
+    #pyplot.plot(course.x, course.y, 'k^', markersize=6, label='Real Course ')
+    #pyplot.plot(bspline.x , bspline.y, 'gs', markersize=6, label='Obtained Course')
+    #pyplot.legend(fontsize=12)
+    #pyplot.show()
+
     return inter_robot_pose.x, absolute_error
 
 
@@ -389,7 +417,7 @@ def plot_error_one_file(x, absolute_error_3degree, absolute_error_5degree, absol
     pyplot.ylabel('Absolute position error (mm)',fontsize=12)
     pyplot.xlabel('x(m)',fontsize=12)
     pyplot.plot(x, absolute_error_3degree, 'g', label='3rd degree B-spline')
-    pyplot.plot(x, absolute_error_5degree, 'r', label='5th degree B-spline')
+    pyplot.plot(x, absolute_error_5degree, 'r--', label='5th degree B-spline')
     pyplot.plot(x, absolute_error_bspline, 'b', label='Nth degree Bezier curve')
     pyplot.legend(fontsize=12)
     pyplot.show()
@@ -582,6 +610,21 @@ def plot_frequency_error (course):
     pyplot.show()    
 
 
+def plot_error (course, bspline, x, error):
+    pyplot.figure(figsize=(8, 7))
+    pyplot.ylabel('y(m)',fontsize=12)
+    pyplot.xlabel('x(m)',fontsize=12)
+    pyplot.plot(bspline.x, bspline.y, 'bs-', markersize=6, label='Course after fitting')
+    pyplot.plot(course.x, course.y,'k*', label= 'Course provided')
+    pyplot.legend(fontsize=12)
+    pyplot.show()  
+
+    pyplot.figure(figsize=(8, 7))
+    pyplot.ylabel('Absolute position error (mm)',fontsize=12)
+    pyplot.xlabel('x(m)',fontsize=12)
+    pyplot.plot(x, error, 'k')
+    pyplot.show()  
+
 
 if __name__ == "__main__":
 
@@ -614,7 +657,7 @@ if __name__ == "__main__":
         else:
             u.append(1)
 
-    d_hz = 0.01
+    d_hz = 0.02
     n_waypoints = int(arc_length // d_hz)
 
     parameter = np.linspace(0, 1, num=n_waypoints)
@@ -662,17 +705,24 @@ if __name__ == "__main__":
     x, error_5 = compute_position_error(course, bspline_course_tck_5)
     x, error_bspline = compute_position_error(course, bspline_course)
 
-    plot_three_courses2d(course, bspline_course ,bspline_course_tck_3, bspline_course_tck_5)        #three_courses.eps
-    plot_error_one_file(x, error_3, error_5, error_bspline)                                         #three_courses_error.eps
+    #plot_error(course, bspline_course_tck_5,x, error_5)                                             #course1_final.eps, course1_error.eps
+
+    #plot_three_courses2d(course, bspline_course ,bspline_course_tck_3, bspline_course_tck_5)        #three_courses.eps
+    #plot_error_one_file(x, error_3, error_5, error_bspline)                                         #three_courses_error.eps
+    
 
     #plot_tangent_normal(bspline_course,tangent_bspline,normal_bspline)
     #plot_tangent_normal(bspline_course_tck_3,tangent_bspline_tck_3,normal_bspline_tck_3)
     #plot_tangent_normal(bspline_course_tck_5,tangent_bspline_tck_5,normal_bspline_tck_5)
     #plot_tangent_normal(bspline_exact,tangent_bspline_exact,normal_bspline_exact)                #real_tangent.eps
+    plot_tangent_one_file(bspline_course,tangent_bspline,normal_bspline,
+                            bspline_course_tck_3,tangent_bspline_tck_3,normal_bspline_tck_3,
+                            bspline_course_tck_5,tangent_bspline_tck_5,normal_bspline_tck_5)      #three_courses_tangent.eps
 
 
 
     #arc_length2 = compute_arc_length(bspline_course_tck_5)                                        #Arc-length
+    #print('arc lenght', arc_length2)
     #radius2 = compute_radius3D(deriv_bspline_course_tck_5, deriv2_bspline_course_tck_5)            #Turning Radius
 
     #plot_smoothing_tangent_normal(course)                                                  #tangent_smoothing, error_smoothing.eps

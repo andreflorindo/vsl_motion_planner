@@ -945,7 +945,7 @@ def ros_compute_position_error(ros_robot_state):
 
 def plot_error_one_file(x, absolute_error):
     plt.figure(figsize=(8, 7))
-    plt.ylabel('Absolute error (mm)',fontsize=12)
+    plt.ylabel('Absolute position error (mm)',fontsize=12)
     plt.xlabel('x(m)',fontsize=12)
     # Rotate ee_state by -90 degrees and make sure that it starts at same spot as the given course
     # x=x_course0+(y_ee-y_ee0) y=y_course0+(-x_ee+x_ee0)
