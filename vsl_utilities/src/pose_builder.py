@@ -465,28 +465,22 @@ class PoseBuilderPython:
 
         for f in range(0, course_extension_npoints+raise_course_npoints):
             single_course_pose = Pose()
-            ee_x = [tangent.x[i], tangent.y[i], tangent.z[i]]
-            ee_y = [normal.x[i], normal.y[i], normal.z[i]]
+            ee_x = [-tangent.x[i], -tangent.y[i], -tangent.z[i]]
+            ee_y = [-normal.x[i], -normal.y[i], -normal.z[i]]
             ee_z = [-binormal.x[i], -binormal.y[i], -binormal.z[i]]
 
-            tf_rot = np.array(((ee_x[0], ee_y[0],  ee_z[0], 0.0),
-                            (ee_x[1],  ee_y[1], ee_z[1], 0.0),
-                            (ee_x[2],   ee_y[2],  ee_z[2], 0.0),
-                            (0.0,  0.0,  0.0, 1.0)))
-
-            tf_trans = np.array(((0.0, 0.0,  0.0, smooth_course_approximation.x[f]),
-                            (0.0, 0.0, 0.0, smooth_course_approximation.y[f]),
-                            (0.0,   0.0, 0.0, smooth_course_approximation.z[f]),
+            tf = np.array(((ee_x[0], ee_y[0],  ee_z[0], smooth_course_approximation.x[f]),
+                            (ee_x[1],  ee_y[1], ee_z[1], smooth_course_approximation.y[f]),
+                            (ee_x[2],   ee_y[2],  ee_z[2], smooth_course_approximation.z[f]),
                             (0.0,  0.0,  0.0, 1.0)))
 
             # Rotation
             rot = rotation_matrix(-math.pi/2, (0, 0, 1))
 
-            tf_rot_final = np.dot(tf_rot,rot)
-            tf_trans_final = np.dot(rot,tf_trans)
+            tf_rot = np.dot(rot,tf)
 
-            q = quaternion_from_matrix(tf_rot_final)
-            t = translation_from_matrix(tf_trans_final)
+            q = quaternion_from_matrix(tf_rot)
+            t = translation_from_matrix(tf_rot)
 
             single_course_pose.orientation.x = q[0]
             single_course_pose.orientation.y = q[1]
@@ -584,28 +578,22 @@ class PoseBuilderPython:
 
         for f in range(0, course_extension_npoints+raise_course_npoints):
             single_course_pose = Pose()
-            ee_x = [new_tangent.x[f], new_tangent.y[f], new_tangent.z[f]]
-            ee_y = [new_normal.x[f], new_normal.y[f], new_normal.z[f]]
+            ee_x = [-new_tangent.x[f], -new_tangent.y[f], -new_tangent.z[f]]
+            ee_y = [-new_normal.x[f], -new_normal.y[f], -new_normal.z[f]]
             ee_z = [-binormal.x[i], -binormal.y[i], -binormal.z[i]]
 
-            tf_rot = np.array(((ee_x[0], ee_y[0],  ee_z[0], 0.0),
-                            (ee_x[1],  ee_y[1], ee_z[1], 0.0),
-                            (ee_x[2],   ee_y[2],  ee_z[2], 0.0),
-                            (0.0,  0.0,  0.0, 1.0)))
-
-            tf_trans = np.array(((0.0, 0.0,  0.0, smooth_course_approximation.x[f]),
-                            (0.0, 0.0, 0.0, smooth_course_approximation.y[f]),
-                            (0.0,   0.0, 0.0, smooth_course_approximation.z[f]),
+            tf = np.array(((ee_x[0], ee_y[0],  ee_z[0], smooth_course_approximation.x[f]),
+                            (ee_x[1],  ee_y[1], ee_z[1], smooth_course_approximation.y[f]),
+                            (ee_x[2],   ee_y[2],  ee_z[2], smooth_course_approximation.z[f]),
                             (0.0,  0.0,  0.0, 1.0)))
 
             # Rotation
             rot = rotation_matrix(-math.pi/2, (0, 0, 1))
 
-            tf_rot_final = np.dot(tf_rot,rot)
-            tf_trans_final = np.dot(rot,tf_trans)
+            tf_rot = np.dot(rot,tf)
 
-            q = quaternion_from_matrix(tf_rot_final)
-            t = translation_from_matrix(tf_trans_final)
+            q = quaternion_from_matrix(tf_rot)
+            t = translation_from_matrix(tf_rot)
 
             single_course_pose.orientation.x = q[0]
             single_course_pose.orientation.y = q[1]
@@ -719,28 +707,22 @@ class PoseBuilderPython:
         for i in range(0, self.n_waypoints):
             single_course_pose = Pose()
             # Modify axes direction in relation to the base frame
-            ee_x = [tangent.x[i], tangent.y[i], tangent.z[i]]
-            ee_y = [normal.x[i], normal.y[i], normal.z[i]]
+            ee_x = [-tangent.x[i], -tangent.y[i], -tangent.z[i]]
+            ee_y = [-normal.x[i], -normal.y[i], -normal.z[i]]
             ee_z = [-binormal.x[i], -binormal.y[i], -binormal.z[i]]
 
-            tf_rot = np.array(((ee_x[0], ee_y[0],  ee_z[0], 0.0),
-                            (ee_x[1],  ee_y[1], ee_z[1], 0.0),
-                            (ee_x[2],   ee_y[2],  ee_z[2], 0.0),
-                            (0.0,  0.0,  0.0, 1.0)))
-
-            tf_trans = np.array(((0.0, 0.0,  0.0, bspline_course_extrapolated.x[i]),
-                            (0.0, 0.0, 0.0, bspline_course_extrapolated.y[i]),
-                            (0.0,   0.0, 0.0, bspline_course_extrapolated.z[i]),
+            tf = np.array(((ee_x[0], ee_y[0],  ee_z[0], bspline_course_extrapolated.x[i]),
+                            (ee_x[1],  ee_y[1], ee_z[1], bspline_course_extrapolated.y[i]),
+                            (ee_x[2],   ee_y[2],  ee_z[2], bspline_course_extrapolated.z[i]),
                             (0.0,  0.0,  0.0, 1.0)))
 
             # Rotation
             rot = rotation_matrix(-math.pi/2, (0, 0, 1))
 
-            tf_rot_final = np.dot(tf_rot,rot)
-            tf_trans_final = np.dot(rot,tf_trans)
+            tf_rot = np.dot(rot,tf)
 
-            q = quaternion_from_matrix(tf_rot_final)
-            t = translation_from_matrix(tf_trans_final)
+            q = quaternion_from_matrix(tf_rot)
+            t = translation_from_matrix(tf_rot)
             
             single_course_pose.orientation.x = q[0]
             single_course_pose.orientation.y = q[1]
