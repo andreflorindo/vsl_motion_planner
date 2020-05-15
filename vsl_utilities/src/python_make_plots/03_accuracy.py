@@ -6,11 +6,11 @@ import math
 import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D
 from scipy.interpolate import BSpline, make_interp_spline, splprep, splev
+from scipy.signal import argrelextrema
 import re
 
 plt.rcParams['xtick.labelsize']=12
 plt.rcParams['ytick.labelsize']=12
-
 
 class CourseClass:
     def __init__(self, x, y, z):
@@ -898,21 +898,49 @@ def plot_path_3d(course, ros_path, index_approach):
 
 
 def interpolate_course(course):
-    d_250hz = 0.1*(1.0/250.0)
-    tck, u = splprep([course.x, course.y, course.z],
-                     k=3, s=0.000000)  # s=0.000001
-    arc_length = compute_arc_length(course)
-    n_waypoints = int(arc_length // d_250hz)
+    tck, u = splprep([course.x, course.y, course.z], k=3, s=0.000000)
+    n_waypoints = 1630
     u_new = np.linspace(u.min(), u.max(), n_waypoints)
     inter_x, inter_y, inter_z = splev(u_new, tck, der=0)
     inter_course = CourseClass(inter_x, inter_y, inter_z)
-
     return inter_course
 
 
+def bspline3Dtck_iterative(course, degree, d_hz):
+    smooth = 0.0000001
+    proceed = False
+    while(proceed == False):
+        tck, u = splprep([course.x, course.y, course.z],
+                         k=degree, s=smooth)  # 0.000001
+        arc_length = compute_arc_length(course)
+        n_waypoints = int(arc_length // d_hz)
+        u_new = np.linspace(u.min(), u.max(), n_waypoints)
+        bspline_x, bspline_y, bspline_z = splev(u_new, tck, der=0)
+        deriv_bspline_x, deriv_bspline_y, deriv_bspline_z = splev(
+            u_new, tck, der=2)
+        if(check_smoothness(deriv_bspline_y) == True):
+            proceed = True
+        else:
+            smooth = smooth+0.0000001
+            proceed = False
+    print(smooth)
+    bspline_course = CourseClass(bspline_x, bspline_y, bspline_z)
+    return bspline_course, smooth
+
+def check_smoothness(course_x):
+    proceed = True
+    course_x_array = np.asarray(course_x)
+    maxInd = argrelextrema(course_x_array, np.greater)
+    if len(maxInd[0]) > 5:
+        proceed = False
+    return proceed
+
 def ros_compute_position_error(ros_robot_state):
+    d_hz=0.020
     course = read_course_path()
-    inter_course = interpolate_course(course)
+    bspline_course_tck_5, smooth5 = bspline3Dtck_iterative(course, 5, d_hz)
+    inter_course = interpolate_course(bspline_course_tck_5)
+    #inter_course = interpolate_course(course)
 
     ros_path = CourseClass(ros_robot_state.ee_request.x,
                            ros_robot_state.ee_request.y, ros_robot_state.ee_request.z)
@@ -939,6 +967,16 @@ def ros_compute_position_error(ros_robot_state):
         error_z = abs(inter_robot_pose.z[i] -
                       (inter_course.z[i]-inter_course.z[0]))
         absolute_error.append(math.sqrt(error_x**2+error_y**2+error_z**2)*1000)
+
+
+    plt.figure(figsize=(8, 7))
+    plt.ylabel('y(m)',fontsize=12)
+    plt.xlabel('x(m)',fontsize=12)
+    plt.plot(inter_course.x, inter_course.y, 'r*--', markersize=6, label='Send Course Interpolated')
+    plt.plot(inter_robot_pose.x+inter_course.x[0] , inter_robot_pose.y+inter_course.y[0], 'bo-', markersize=3, label='Obtained Course interpolated')
+    plt.plot(course.x, course.y, 'k^', markersize=6, label='Real Course ')
+    plt.legend(fontsize=12)
+    plt.show()
 
     return inter_course.x, absolute_error
 
@@ -987,7 +1025,7 @@ def ros_find_approach_index(ros_path):
     course = read_course_path()
     arc_length_course = compute_arc_length(course)
 
-    while(z<0.1*math.tan(10*math.pi/180)):
+    while(z<0.1*math.tan(10*math.pi/180)-0.0001):
         index = index + 1
         z = ros_path.z[index]
     while(arc_length<0.027):   #Reduce or increase distance to approximate solution ANDRE 0.02875
@@ -1048,7 +1086,7 @@ def ros_one_path_class(file_joint_request, file_ee_request, file_joint_request_k
     ros_store_only_course_variables(ros_index_switch[4], ros_index_switch[5], ros_index_switch_joint_kuka[4],ros_index_switch_joint_kuka[5], ros_robot_state, ros_robot_state_velocity,
                                     ros_robot_state_acceleration, ros_robot_state_course, ros_robot_state_course_velocity, ros_robot_state_course_acceleration)
 
-    #plot_all_joint_of_one_file(ros_robot_state_course, ros_robot_state_course_velocity, ros_robot_state_course_acceleration)
+    plot_all_joint_of_one_file(ros_robot_state_course, ros_robot_state_course_velocity, ros_robot_state_course_acceleration)
 
     #plot_ee_state_of_one_file(ros_robot_state_course, ros_robot_state_course_velocity)
 
@@ -1069,9 +1107,9 @@ def ros_one_path_class(file_joint_request, file_ee_request, file_joint_request_k
     ros_store_only_course_variables(ros_approach_index_1, ros_approach_index_2, ros_approach_index_kuka_1, ros_approach_index_kuka_2, ros_robot_state_course, ros_robot_state_course_velocity, ros_robot_state_course_acceleration,
                                     ros_robot_state_course_no_smooth, ros_robot_state_course_no_smooth_velocity, ros_robot_state_course_no_smooth_acceleration)
 
-    #plot_all_joint_of_one_file(ros_robot_state_course_no_smooth, ros_robot_state_course_no_smooth_velocity, ros_robot_state_course_no_smooth_acceleration)
+    plot_all_joint_of_one_file(ros_robot_state_course_no_smooth, ros_robot_state_course_no_smooth_velocity, ros_robot_state_course_no_smooth_acceleration)
 
-    plot_ee_state_of_one_file(ros_robot_state_course_no_smooth, ros_robot_state_course_no_smooth_velocity)
+    #plot_ee_state_of_one_file(ros_robot_state_course_no_smooth, ros_robot_state_course_no_smooth_velocity)
 
     #plot_path_of_one_file(ros_robot_state_course_no_smooth, 0)
     #plot_inter_path_of_one_file(ros_robot_state_course_no_smooth)
@@ -1094,6 +1132,8 @@ def plot_acceleration_three_courses(degree5, degree3, bspline):
 
 if __name__ == "__main__":
 
+
+    # Course Acceleration
     ros_descartes_25hz = RobotState()
     ros_descartes_25hz_velocity = RobotState()
     ros_descartes_25hz_acceleration = RobotState()
@@ -1106,22 +1146,22 @@ if __name__ == "__main__":
     ros_descartes_25hz_bspline_velocity = RobotState()
     ros_descartes_25hz_bspline_acceleration = RobotState()
 
-    ros_descartes_25hz, ros_descartes_25hz_velocity, ros_descartes_25hz_acceleration = ros_one_path_class(
-                '/home/andre/workspaces/tesseract_ws/bags_simulations/motion/descartes_dense_sim_25Hz_joint_request.txt',
-                '/home/andre/workspaces/tesseract_ws/bags_simulations/motion/descartes_dense_sim_25Hz_ee_request.txt',
-                '/home/andre/workspaces/tesseract_ws/bags_04_14/motion/descartes_25Hz_course316_joint_request.txt',
-                '/home/andre/workspaces/tesseract_ws/bags_04_14/motion/descartes_25Hz_course316_ee_request.txt')
+    #ros_descartes_25hz, ros_descartes_25hz_velocity, ros_descartes_25hz_acceleration = ros_one_path_class(
+    #            '/home/andre/workspaces/tesseract_ws/bags_simulations/course/descartes_dense_sim_25Hz_joint_request.txt',
+    #            '/home/andre/workspaces/tesseract_ws/bags_simulations/course/descartes_dense_sim_25Hz_ee_request.txt',
+    #            '/home/andre/workspaces/tesseract_ws/bags_04_14/external/descartes_25Hz_course316_joint_request.txt',
+    #            '/home/andre/workspaces/tesseract_ws/bags_04_14/external/descartes_25Hz_course316_ee_request.txt')
 
-    ros_descartes_25hz_3degree, ros_descartes_25hz_3degree_velocity, ros_descartes_25hz_3degree_acceleration = ros_one_path_class(
-                '/home/andre/workspaces/tesseract_ws/bags_simulations/motion/descartes_dense_sim_25Hz_3degree_joint_request.txt',
-                '/home/andre/workspaces/tesseract_ws/bags_simulations/motion/descartes_dense_sim_25Hz_3degree_ee_request.txt',
-                '/home/andre/workspaces/tesseract_ws/bags_04_14/motion/descartes_25Hz_course316_joint_request.txt',
-                '/home/andre/workspaces/tesseract_ws/bags_04_14/motion/descartes_25Hz_course316_ee_request.txt')
+    #ros_descartes_25hz_3degree, ros_descartes_25hz_3degree_velocity, ros_descartes_25hz_3degree_acceleration = ros_one_path_class(
+    #            '/home/andre/workspaces/tesseract_ws/bags_simulations/course/descartes_dense_sim_25Hz_3degree_joint_request.txt',
+    #            '/home/andre/workspaces/tesseract_ws/bags_simulations/course/descartes_dense_sim_25Hz_3degree_ee_request.txt',
+    #            '/home/andre/workspaces/tesseract_ws/bags_04_14/external/descartes_25Hz_course316_joint_request.txt',
+    #            '/home/andre/workspaces/tesseract_ws/bags_04_14/external/descartes_25Hz_course316_ee_request.txt')
 
-    ros_descartes_25hz_bspline, ros_descartes_25hz_bspline_velocity, ros_descartes_25hz_bspline_acceleration = ros_one_path_class(
-                '/home/andre/workspaces/tesseract_ws/bags_simulations/motion/descartes_dense_sim_25Hz_bspline_joint_request.txt',
-                '/home/andre/workspaces/tesseract_ws/bags_simulations/motion/descartes_dense_sim_25Hz_bspline_ee_request.txt',
-                '/home/andre/workspaces/tesseract_ws/bags_04_14/motion/descartes_25Hz_course316_joint_request.txt',
-                '/home/andre/workspaces/tesseract_ws/bags_04_14/motion/descartes_25Hz_course316_ee_request.txt')
+    #ros_descartes_25hz_bspline, ros_descartes_25hz_bspline_velocity, ros_descartes_25hz_bspline_acceleration = ros_one_path_class(
+    #            '/home/andre/workspaces/tesseract_ws/bags_simulations/course/descartes_dense_sim_25Hz_bspline_joint_request.txt',
+    #            '/home/andre/workspaces/tesseract_ws/bags_simulations/course/descartes_dense_sim_25Hz_bspline_ee_request.txt',
+    #            '/home/andre/workspaces/tesseract_ws/bags_04_14/external/descartes_25Hz_course316_joint_request.txt',
+    #            '/home/andre/workspaces/tesseract_ws/bags_04_14/external/descartes_25Hz_course316_ee_request.txt')
 
-    plot_acceleration_three_courses(ros_descartes_25hz_acceleration,ros_descartes_25hz_3degree_acceleration,ros_descartes_25hz_bspline_acceleration)
+    #plot_acceleration_three_courses(ros_descartes_25hz_acceleration,ros_descartes_25hz_3degree_acceleration,ros_descartes_25hz_bspline_acceleration)   #acceleration_three_courses

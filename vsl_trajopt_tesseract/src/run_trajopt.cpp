@@ -231,6 +231,12 @@ void VSLTrajoptPlanner::executeStartMotionwithMoveit(trajopt::TrajArray poses_ma
 void VSLTrajoptPlanner::addTimeParameterizationToTrajopt(moveit_msgs::RobotTrajectory &traj)
 {
   robot_trajectory::RobotTrajectory robot_trajectory(robot_model_loader_->getModel(), config_.group_name);
+  for (size_t i = 0; i < traj.joint_trajectory.points.size() -1; i++)
+  {
+    traj.joint_trajectory.points[i].velocities.clear();
+    traj.joint_trajectory.points[i].accelerations.clear();
+    traj.joint_trajectory.points[i].effort.clear();
+  }
 
   robot_trajectory.setRobotTrajectoryMsg(*kinematic_state_,traj);
   //time_parameterization_.computeTimeStamps(robot_trajectory, 0.05, 1);

@@ -6,6 +6,7 @@ import math
 import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D
 from scipy.interpolate import BSpline, make_interp_spline, splprep, splev
+from scipy.signal import argrelextrema
 import re
 
 plt.rcParams['xtick.labelsize']=12
@@ -515,42 +516,87 @@ def plot_path_3d(course, rsi_path, index_approach):
     plt.show()
 
 def interpolate_course(course):
-    d_250hz = ee_speed*(1.0/250.0)
-    tck, u = splprep([course.x,course.y,course.z], k=3, s=0.000000) #s=0.000001
-    arc_length = compute_arc_length(course)
-    n_waypoints = int(arc_length // d_250hz)
+    tck, u = splprep([course.x, course.y, course.z], k=3, s=0.000000)
+    n_waypoints = 1630
     u_new = np.linspace(u.min(), u.max(), n_waypoints)
     inter_x, inter_y, inter_z = splev(u_new, tck, der=0)
     inter_course = CourseClass(inter_x, inter_y, inter_z)
-
     return inter_course
 
-def rsi_compute_position_error(rsi_robot_state):
+
+def bspline3Dtck_iterative(course, degree, d_hz):
+    smooth = 0.0000001
+    proceed = False
+    while(proceed == False):
+        tck, u = splprep([course.x, course.y, course.z],
+                         k=degree, s=smooth)  # 0.000001
+        arc_length = compute_arc_length(course)
+        n_waypoints = int(arc_length // d_hz)
+        u_new = np.linspace(u.min(), u.max(), n_waypoints)
+        bspline_x, bspline_y, bspline_z = splev(u_new, tck, der=0)
+        deriv_bspline_x, deriv_bspline_y, deriv_bspline_z = splev(
+            u_new, tck, der=2)
+        if(check_smoothness(deriv_bspline_y) == True):
+            proceed = True
+        else:
+            smooth = smooth+0.0000001
+            proceed = False
+    print(smooth)
+    bspline_course = CourseClass(bspline_x, bspline_y, bspline_z)
+    return bspline_course, smooth
+
+def check_smoothness(course_x):
+    proceed = True
+    course_x_array = np.asarray(course_x)
+    maxInd = argrelextrema(course_x_array, np.greater)
+    if len(maxInd[0]) > 5:
+        proceed = False
+    return proceed
+
+def ros_compute_position_error(ros_robot_state):
+    d_hz=0.020
     course = read_course_path()
-    inter_course = interpolate_course(course)
+    bspline_course_tck_5, smooth5 = bspline3Dtck_iterative(course, 5, d_hz)
+    inter_course = interpolate_course(bspline_course_tck_5)
+    #inter_course = interpolate_course(course)
 
-    rsi_path = CourseClass(rsi_robot_state.ee_states.x,rsi_robot_state.ee_states.y,rsi_robot_state.ee_states.z)
+    ros_path = CourseClass(ros_robot_state.ee_request.x,
+                           ros_robot_state.ee_request.y, ros_robot_state.ee_request.z)
 
-    inter_robot_pose = interpolate_course(rsi_path)
+    inter_robot_pose = interpolate_course(ros_path)
 
     absolute_error = []
-    arc_length=[]
+    arc_length = []
     arc_length.append(0)
 
     if(len(inter_course.x) != len(inter_robot_pose.x)):
-        print("Paths have not the same number of point, error may be bad",len(inter_course.x),len(inter_robot_pose.x))
-    
-    for i in range (0,len(inter_course.x)-1):
-        arc_length.append(arc_length[i] + math.sqrt((inter_course.x[i+1]-inter_course.x[i])**2+(inter_course.y[i+1]-inter_course.y[i])**2+(inter_course.z[i+1]-inter_course.z[i])**2))
-    
-    for i in range (0,len(inter_course.x)):
-        error_x = abs(inter_robot_pose.x[i]-(inter_course.x[i]-inter_course.x[0]))
-        error_y = abs(inter_robot_pose.y[i]-(inter_course.y[i]-inter_course.y[0]))
-        error_z = abs(inter_robot_pose.z[i]-(inter_course.z[i]-inter_course.z[0]))
+        print("Paths have not the same number of point, error may be bad",
+              len(inter_course.x), len(inter_robot_pose.x))
+
+    for i in range(0, len(inter_course.x)-1):
+        arc_length.append(arc_length[i] + math.sqrt((inter_course.x[i+1]-inter_course.x[i])**2+(
+            inter_course.y[i+1]-inter_course.y[i])**2+(inter_course.z[i+1]-inter_course.z[i])**2))
+
+    for i in range(0, len(inter_course.x)):
+        error_x = abs(inter_robot_pose.x[i] -
+                      (inter_course.x[i]-inter_course.x[0]))
+        error_y = abs(inter_robot_pose.y[i] -
+                      (inter_course.y[i]-inter_course.y[0]))
+        error_z = abs(inter_robot_pose.z[i] -
+                      (inter_course.z[i]-inter_course.z[0]))
         absolute_error.append(math.sqrt(error_x**2+error_y**2+error_z**2)*1000)
-    
+
+
+    plt.figure(figsize=(8, 7))
+    plt.ylabel('y(m)',fontsize=12)
+    plt.xlabel('x(m)',fontsize=12)
+    plt.plot(inter_course.x, inter_course.y, 'r*--', markersize=6, label='Send Course Interpolated')
+    plt.plot(inter_robot_pose.x+inter_course.x[0] , inter_robot_pose.y+inter_course.y[0], 'bo-', markersize=3, label='Obtained Course interpolated')
+    plt.plot(course.x, course.y, 'k^', markersize=6, label='Real Course ')
+    plt.legend(fontsize=12)
+    plt.show()
+
     return inter_course.x, absolute_error
-    
     
 def plot_error_one_file(x, absolute_error):   
     plt.figure(figsize=(8, 7))
@@ -638,7 +684,7 @@ def rsi_one_path_class(filename):
     rsi_store_only_course_variables(rsi_approach_index_1,rsi_approach_index_2-10, rsi_robot_state_course, rsi_robot_state_course_velocity, rsi_robot_state_course_acceleration,
                                     rsi_robot_state_course_no_smooth, rsi_robot_state_course_no_smooth_velocity, rsi_robot_state_course_no_smooth_acceleration)
 
-    #plot_all_joint_of_one_file(rsi_robot_state_course_no_smooth, rsi_robot_state_course_no_smooth_velocity, rsi_robot_state_course_no_smooth_acceleration)
+    plot_all_joint_of_one_file(rsi_robot_state_course_no_smooth, rsi_robot_state_course_no_smooth_velocity, rsi_robot_state_course_no_smooth_acceleration)
 
     #plot_ee_state_of_one_file(rsi_robot_state_course_no_smooth, rsi_robot_state_course_no_smooth_velocity)
 
@@ -647,7 +693,7 @@ def rsi_one_path_class(filename):
 
     x, absolute_error = rsi_compute_position_error(rsi_robot_state_course_no_smooth)
 
-    plot_error_one_file(x, absolute_error)
+    #plot_error_one_file(x, absolute_error)
 
 
     return rsi_robot_state_course, rsi_robot_state_course_velocity, rsi_robot_state_course_acceleration
@@ -692,9 +738,9 @@ if __name__ == "__main__":
     #rsi_inter_10hz ,rsi_inter_10hz_velocity ,rsi_inter_10hz_acceleration = rsi_one_path_class('/home/andre/workspaces/tesseract_ws/bags_04_09/external/inter_10Hz_rsi.txt')
     #rsi_inter_15hz ,rsi_inter_15hz_velocity ,rsi_inter_15hz_acceleration = rsi_one_path_class('/home/andre/workspaces/tesseract_ws/bags_04_09/external/inter_15Hz_rsi.txt')
     #rsi_inter_20hz ,rsi_inter_20hz_velocity ,rsi_inter_20hz_acceleration = rsi_one_path_class('/home/andre/workspaces/tesseract_ws/bags_04_09/external/inter_20Hz_rsi.txt')
-    rsi_inter_25hz ,rsi_inter_25hz_velocity ,rsi_inter_25hz_acceleration = rsi_one_path_class('/home/andre/workspaces/tesseract_ws/bags_04_09/external/inter_25Hz_rsi.txt')
-    rsi_inter_25hz_5_degree ,rsi_inter_25hz_5_degree_velocity ,rsi_inter_25hz_5_degree_acceleration = rsi_one_path_class('/home/andre/workspaces/tesseract_ws/bags_04_09/external/inter_25Hz_5_degree_rsi.txt')
-    #rsi_inter_25hz_5_degree ,rsi_inter_25hz_5_degree_velocity ,rsi_inter_25hz_5_degree_acceleration = rsi_one_path_class('/home/andre/workspaces/tesseract_ws/bags_04_14/motion/descartes_25Hz_course316_rsi.txt')
+    #rsi_inter_25hz ,rsi_inter_25hz_velocity ,rsi_inter_25hz_acceleration = rsi_one_path_class('/home/andre/workspaces/tesseract_ws/bags_04_09/external/inter_25Hz_rsi.txt')
+    #rsi_inter_25hz_5_degree ,rsi_inter_25hz_5_degree_velocity ,rsi_inter_25hz_5_degree_acceleration = rsi_one_path_class('/home/andre/workspaces/tesseract_ws/bags_04_09/external/inter_25Hz_5_degree_rsi.txt')
+    rsi_inter_25hz_5_degree ,rsi_inter_25hz_5_degree_velocity ,rsi_inter_25hz_5_degree_acceleration = rsi_one_path_class('/home/andre/workspaces/tesseract_ws/bags_04_14/external/descartes_25Hz_course316_rsi.txt')
 
     #Bspline
     rsi_bspline_5hz = RobotState()

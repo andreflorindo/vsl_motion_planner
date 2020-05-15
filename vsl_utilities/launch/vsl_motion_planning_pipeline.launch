@@ -12,7 +12,7 @@
   <!-- <arg name="course_filename" default="/examples/ExampleRik4.txt"/> -->
   <arg name="layer" default="3"/>  <!-- Ratio from max joint speed -->
   <arg name="course" default="16"/> <!-- m/s -->
-  <arg name="distance_waypoints" default="0.004"/> <!--0.00574--> <!-- meters -->
+  <arg name="distance_waypoints" default="0.02"/> <!--0.00574--> <!-- meters -->
   <arg name="smooth_start" default="true"/> <!-- If true, add an initial extension path to provide smooth accelerations and decelerations -->
   <arg name="interpolate" default="true"/> <!-- If true, creates a bspline that interpolates the given points. If false, given points are used as control points to create a much smoother bspline -->
   <arg name="exact_waypoints" default="false"/>

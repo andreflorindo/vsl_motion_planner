@@ -43,6 +43,9 @@ TESSERACT_COMMON_IGNORE_WARNINGS_POP
 #include <moveit/move_group_interface/move_group_interface.h>
 #include <moveit/robot_model_loader/robot_model_loader.h>
 #include <const_ee_speed_time_parameterization.h>
+//#include <moveit/trajectory_processing/iterative_time_parameterization.h>
+//#include <moveit/trajectory_processing/iterative_spline_parameterization.h>
+//#include <moveit/trajectory_processing/time_optimal_trajectory_generation.h>
 
 namespace vsl_motion_planner
 {
@@ -108,6 +111,12 @@ private:
   mutable robot_state::RobotStatePtr kinematic_state_;
   const robot_model::JointModelGroup *joint_model_group_;
   robot_model::RobotModelConstPtr kinematic_model_;
+
+
+  // Time Parameterization
+  //trajectory_processing::IterativeParabolicTimeParameterization time_parameterization_;
+  //trajectory_processing::IterativeSplineParameterization time_parameterization_;
+  //trajectory_processing::TimeOptimalTrajectoryGeneration time_parameterization_;
 
   /**
    * @brief Check rviz and make sure the rviz environment revision number is zero.

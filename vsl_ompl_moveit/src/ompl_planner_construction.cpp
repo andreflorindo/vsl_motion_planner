@@ -131,11 +131,10 @@ void VSLOMPLMoveitPlanner::createMotionPlanRequest(std::vector<geometry_msgs::Po
         ROS_ERROR_STREAM("Failed to run robot path with error ");
         exit(-1);
     }
-
     moveit::planning_interface::MoveGroupInterface::Plan my_plan;
     moveit_msgs::RobotTrajectory trajectory;
     double jump_threshold = 0.00;
-    double eef_step = config_.distance_waypoints;
+    double eef_step = config_.distance_waypoints;  // If the distance between points has decimal numbers it is required to add that. ex: 0.02038125;
     double fraction = move_group.computeCartesianPath(poses, eef_step, jump_threshold, trajectory);
 
     addTimeParameterizationToOmpl(trajectory, config_.ee_speed, 1);
@@ -157,6 +156,13 @@ void VSLOMPLMoveitPlanner::createMotionPlanRequest(std::vector<geometry_msgs::Po
 void VSLOMPLMoveitPlanner::addTimeParameterizationToOmpl(moveit_msgs::RobotTrajectory &traj, double ee_speed, double max_speed_scaling)
 {
     robot_trajectory::RobotTrajectory robot_trajectory(robot_model_loader_->getModel(), config_.group_name);
+
+    for (size_t i = 0; i < traj.joint_trajectory.points.size() -1; i++)
+    {
+        traj.joint_trajectory.points[i].velocities.clear();
+        traj.joint_trajectory.points[i].accelerations.clear();
+        traj.joint_trajectory.points[i].effort.clear();
+    }
 
     robot_trajectory.setRobotTrajectoryMsg(*kinematic_state_, traj);
     //time_parameterization_.computeTimeStamps(robot_trajectory, 0.05, 1);

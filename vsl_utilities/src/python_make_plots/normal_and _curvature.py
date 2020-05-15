@@ -555,11 +555,11 @@ def plot_smoothing_tangent_normal(course):
     pyplot.figure(figsize=(8, 7))
     pyplot.ylabel('y(m)',fontsize=12)
     pyplot.xlabel('x(m)',fontsize=12)
-    pyplot.plot(course.x, course.y,'k*', label='Tow Course received')
     pyplot.plot(b2.x, b2.y, 'r--', label='s=1E-7')
     pyplot.plot(b3.x, b3.y, 'y-', label='s=3E-7')
     pyplot.plot(b4.x, b4.y, 'g--', label='s=6E-7')
     pyplot.plot(b5.x, b5.y, 'b-', label='s=12E-7')
+    pyplot.plot(course.x, course.y,'k*', markersize=8, label='Tow Course received')
     pyplot.legend(loc='lower right', bbox_to_anchor=(1.0, 0.00), shadow=False, ncol=1,fontsize=12)
     pyplot.show()
 
@@ -578,6 +578,8 @@ def plot_smoothing_tangent_normal(course):
     pyplot.plot(b4.x, normal_b4.x, '--', color= greens[6], label='Normal s=6E-7')
     pyplot.plot(b5.x, normal_b5.x, '-',color= greens[3], label='Normal s=12E-7')
     pyplot.legend(loc='upper right', bbox_to_anchor=(1.7, 1.0), shadow=False, ncol=2, fontsize=12)
+
+    
     pyplot.show()
 
 
@@ -715,9 +717,9 @@ if __name__ == "__main__":
     #plot_tangent_normal(bspline_course_tck_3,tangent_bspline_tck_3,normal_bspline_tck_3)
     #plot_tangent_normal(bspline_course_tck_5,tangent_bspline_tck_5,normal_bspline_tck_5)
     #plot_tangent_normal(bspline_exact,tangent_bspline_exact,normal_bspline_exact)                #real_tangent.eps
-    plot_tangent_one_file(bspline_course,tangent_bspline,normal_bspline,
-                            bspline_course_tck_3,tangent_bspline_tck_3,normal_bspline_tck_3,
-                            bspline_course_tck_5,tangent_bspline_tck_5,normal_bspline_tck_5)      #three_courses_tangent.eps
+    #plot_tangent_one_file(bspline_course,tangent_bspline,normal_bspline,
+    #                        bspline_course_tck_3,tangent_bspline_tck_3,normal_bspline_tck_3,
+    #                        bspline_course_tck_5,tangent_bspline_tck_5,normal_bspline_tck_5)      #three_courses_tangent.eps
 
 
 
@@ -725,7 +727,7 @@ if __name__ == "__main__":
     #print('arc lenght', arc_length2)
     #radius2 = compute_radius3D(deriv_bspline_course_tck_5, deriv2_bspline_course_tck_5)            #Turning Radius
 
-    #plot_smoothing_tangent_normal(course)                                                  #tangent_smoothing, error_smoothing.eps
+    plot_smoothing_tangent_normal(course)                                                  #tangent_smoothing, error_smoothing.eps
 
     #plot_frequency_error(course)                                                                       #frequency_error.eps
 
