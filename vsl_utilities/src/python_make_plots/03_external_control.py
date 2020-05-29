@@ -50,7 +50,6 @@ class RobotState:
         self.ee_request = EEStates()
         self.ee_states = EEStates()
         self.ee_request_kuka = EEStates()
-        self.e_request_kuka = EEStates()
 
 def rsi_read_path(robot_state_from_file,filename):
     i = 0
@@ -213,6 +212,7 @@ def compute_derivative(time, variable):
 
     return v
 
+
 def rsi_fill_derivative_class(robot_state, robot_state_velocity):
     robot_state_velocity.joint_states.time = robot_state.joint_states.time
     robot_state_velocity.ee_states.time = robot_state.ee_states.time
@@ -247,6 +247,132 @@ def rsi_fill_derivative_class(robot_state, robot_state_velocity):
     for i in range(0, len(robot_state_velocity.ee_states.time)):
         robot_state_velocity.ee_states.linear.append(math.sqrt(
             robot_state_velocity.ee_states.x[i]**2 + robot_state_velocity.ee_states.y[i]**2+robot_state_velocity.ee_states.z[i]**2))
+
+def compute_nice_velocity(time, variable):
+    v = []
+    for i in range(0, len(time)):
+        if(i==0):
+            q1 = variable[i+1]
+            q2 = variable[i]
+            q3 = q1
+            dt1= time[i+1] - time[i]
+            dt2= dt1
+        elif (i < len(time)- 1):
+            q1 = variable[i-1]
+            q2 = variable[i]
+            q3 = variable[i+1]
+            dt1= time[i] - time[i-1]
+            dt2= time[i+1] - time[i]
+        else:
+            q1 = variable[i-1]
+            q2 = variable[i]
+            q3 = q1
+            dt1= time[i] - time[i-1]
+            dt2= dt1
+            
+        dv1 = (q2-q1)/dt1
+        dv2 = (q3-q2)/dt2
+        vi=(dv1+dv2)/(2)
+        v.append(vi)
+    return v
+
+def compute_nice_acceleration(time, variable):
+    a = []
+    for i in range(0, len(time)):
+        if(i==0):
+            q1 = variable[i+1]
+            q2 = variable[i]
+            q3 = q1
+            dt1= time[i+1] - time[i]
+            dt2= dt1
+        elif (i < len(time)- 1):
+            q1 = variable[i-1]
+            q2 = variable[i]
+            q3 = variable[i+1]
+            dt1= time[i] - time[i-1]
+            dt2= time[i+1] - time[i]
+        else:
+            q1 = variable[i-1]
+            q2 = variable[i]
+            q3 = q1
+            dt1= time[i] - time[i-1]
+            dt2= dt1   
+        dv1 = (q2-q1)/dt1
+        dv2 = (q3-q2)/dt2
+        ai = 2.0*(dv2-dv1)/(dt1+dt2)
+        a.append(ai)
+    return a
+
+def rsi_fill_nice_velocity_class(robot_state, robot_state_velocity):
+    robot_state_velocity.joint_states.time = robot_state.joint_states.time
+    robot_state_velocity.ee_states.time = robot_state.ee_states.time
+
+    # Joint States velocity
+    robot_state_velocity.joint_states.a1 = compute_nice_velocity(
+        robot_state.joint_states.time, robot_state.joint_states.a1)
+    robot_state_velocity.joint_states.a2 = compute_nice_velocity(
+        robot_state.joint_states.time, robot_state.joint_states.a2)
+    robot_state_velocity.joint_states.a3 = compute_nice_velocity(
+        robot_state.joint_states.time, robot_state.joint_states.a3)
+    robot_state_velocity.joint_states.a4 = compute_nice_velocity(
+        robot_state.joint_states.time, robot_state.joint_states.a4)
+    robot_state_velocity.joint_states.a5 = compute_nice_velocity(
+        robot_state.joint_states.time, robot_state.joint_states.a5)
+    robot_state_velocity.joint_states.a6 = compute_nice_velocity(
+        robot_state.joint_states.time, robot_state.joint_states.a6)
+
+    # EE States Velocity
+    robot_state_velocity.ee_states.x = compute_nice_velocity(
+        robot_state.ee_states.time, robot_state.ee_states.x)
+    robot_state_velocity.ee_states.y = compute_nice_velocity(
+        robot_state.ee_states.time, robot_state.ee_states.y)
+    robot_state_velocity.ee_states.z = compute_nice_velocity(
+        robot_state.ee_states.time, robot_state.ee_states.z)
+    robot_state_velocity.ee_states.rx = compute_nice_velocity(
+        robot_state.ee_states.time, robot_state.ee_states.rx)
+    robot_state_velocity.ee_states.ry = compute_nice_velocity(
+        robot_state.ee_states.time, robot_state.ee_states.ry)
+    robot_state_velocity.ee_states.rz = compute_nice_velocity(
+        robot_state.ee_states.time, robot_state.ee_states.rz)
+    for i in range(0, len(robot_state_velocity.ee_states.time)):
+        robot_state_velocity.ee_states.linear.append(math.sqrt(
+            robot_state_velocity.ee_states.x[i]**2 + robot_state_velocity.ee_states.y[i]**2+robot_state_velocity.ee_states.z[i]**2))
+
+def rsi_fill_nice_acceleration_class(robot_state, robot_state_velocity):
+    robot_state_velocity.joint_states.time = robot_state.joint_states.time
+    robot_state_velocity.ee_states.time = robot_state.ee_states.time
+
+    # Joint States velocity
+    robot_state_velocity.joint_states.a1 = compute_nice_acceleration(
+        robot_state.joint_states.time, robot_state.joint_states.a1)
+    robot_state_velocity.joint_states.a2 = compute_nice_acceleration(
+        robot_state.joint_states.time, robot_state.joint_states.a2)
+    robot_state_velocity.joint_states.a3 = compute_nice_acceleration(
+        robot_state.joint_states.time, robot_state.joint_states.a3)
+    robot_state_velocity.joint_states.a4 = compute_nice_acceleration(
+        robot_state.joint_states.time, robot_state.joint_states.a4)
+    robot_state_velocity.joint_states.a5 = compute_nice_acceleration(
+        robot_state.joint_states.time, robot_state.joint_states.a5)
+    robot_state_velocity.joint_states.a6 = compute_nice_acceleration(
+        robot_state.joint_states.time, robot_state.joint_states.a6)
+
+    # EE States Velocity
+    robot_state_velocity.ee_states.x = compute_nice_acceleration(
+        robot_state.ee_states.time, robot_state.ee_states.x)
+    robot_state_velocity.ee_states.y = compute_nice_acceleration(
+        robot_state.ee_states.time, robot_state.ee_states.y)
+    robot_state_velocity.ee_states.z = compute_nice_acceleration(
+        robot_state.ee_states.time, robot_state.ee_states.z)
+    robot_state_velocity.ee_states.rx = compute_nice_acceleration(
+        robot_state.ee_states.time, robot_state.ee_states.rx)
+    robot_state_velocity.ee_states.ry = compute_nice_acceleration(
+        robot_state.ee_states.time, robot_state.ee_states.ry)
+    robot_state_velocity.ee_states.rz = compute_nice_acceleration(
+        robot_state.ee_states.time, robot_state.ee_states.rz)
+    for i in range(0, len(robot_state_velocity.ee_states.time)):
+        robot_state_velocity.ee_states.linear.append(math.sqrt(
+            robot_state_velocity.ee_states.x[i]**2 + robot_state_velocity.ee_states.y[i]**2+robot_state_velocity.ee_states.z[i]**2))
+
 
 def rsi_find_switch_point(robot_state_velocity):
     index_switch = []
@@ -655,8 +781,13 @@ def rsi_one_path_class(filename):
 
     rsi_clean_path(rsi_robot_state_from_file, rsi_robot_state)
 
-    rsi_fill_derivative_class(rsi_robot_state, rsi_robot_state_velocity)
-    rsi_fill_derivative_class(rsi_robot_state_velocity,rsi_robot_state_acceleration)
+    #rsi_fill_derivative_class(rsi_robot_state, rsi_robot_state_velocity)
+    #rsi_fill_derivative_class(rsi_robot_state_velocity,rsi_robot_state_acceleration)
+
+    rsi_fill_nice_velocity_class(rsi_robot_state, rsi_robot_state_velocity)
+    rsi_fill_nice_acceleration_class(rsi_robot_state, rsi_robot_state_acceleration)
+
+    #plot_all_joint_of_one_file(rsi_robot_state, rsi_robot_state_velocity, rsi_robot_state_acceleration)
 
     rsi_index_switch = rsi_find_switch_point(rsi_robot_state_velocity)
 
@@ -667,7 +798,7 @@ def rsi_one_path_class(filename):
 
     #plot_all_joint_of_one_file(rsi_robot_state_course, rsi_robot_state_course_velocity, rsi_robot_state_course_acceleration)
 
-    plot_ee_state_of_one_file(rsi_robot_state_course, rsi_robot_state_course_velocity)
+    #plot_ee_state_of_one_file(rsi_robot_state_course, rsi_robot_state_course_velocity)
 
     # Plot A1 with A2
 
@@ -684,14 +815,14 @@ def rsi_one_path_class(filename):
     rsi_store_only_course_variables(rsi_approach_index_1,rsi_approach_index_2-10, rsi_robot_state_course, rsi_robot_state_course_velocity, rsi_robot_state_course_acceleration,
                                     rsi_robot_state_course_no_smooth, rsi_robot_state_course_no_smooth_velocity, rsi_robot_state_course_no_smooth_acceleration)
 
-    plot_all_joint_of_one_file(rsi_robot_state_course_no_smooth, rsi_robot_state_course_no_smooth_velocity, rsi_robot_state_course_no_smooth_acceleration)
+    #plot_all_joint_of_one_file(rsi_robot_state_course_no_smooth, rsi_robot_state_course_no_smooth_velocity, rsi_robot_state_course_no_smooth_acceleration)
 
     #plot_ee_state_of_one_file(rsi_robot_state_course_no_smooth, rsi_robot_state_course_no_smooth_velocity)
 
     #plot_path_of_one_file(rsi_robot_state_course_no_smooth, 0)
     #plot_inter_path_of_one_file(rsi_robot_state_course_no_smooth)
 
-    x, absolute_error = rsi_compute_position_error(rsi_robot_state_course_no_smooth)
+    #x, absolute_error = rsi_compute_position_error(rsi_robot_state_course_no_smooth)
 
     #plot_error_one_file(x, absolute_error)
 
@@ -710,71 +841,14 @@ if __name__ == "__main__":
     d_25hz = ee_speed*(1.0/25.0)
 
     #Inter 
-    rsi_inter_5hz = RobotState()
-    rsi_inter_5hz_velocity = RobotState()
-    rsi_inter_5hz_acceleration = RobotState()
+    rsi_course316_5hz = RobotState()
+    rsi_course316_velocity = RobotState()
+    rsi_course316_acceleration = RobotState()
 
-    rsi_inter_10hz = RobotState()
-    rsi_inter_10hz_velocity = RobotState()
-    rsi_inter_10hz_acceleration = RobotState()
+    rsi_course316_25hz = RobotState()
+    rsi_course316_25hz_velocity = RobotState()
+    rsi_course316_25hz_acceleration = RobotState()
 
-    rsi_inter_15hz = RobotState()
-    rsi_inter_15hz_velocity = RobotState()
-    rsi_inter_15hz_acceleration = RobotState()
-
-    rsi_inter_20hz = RobotState()
-    rsi_inter_20hz_velocity = RobotState()
-    rsi_inter_20hz_acceleration = RobotState()
-
-    rsi_inter_25hz = RobotState()
-    rsi_inter_25hz_velocity = RobotState()
-    rsi_inter_25hz_acceleration = RobotState()
-
-    rsi_inter_25hz_5_degree = RobotState()
-    rsi_inter_25hz_5_degree_velocity = RobotState()
-    rsi_inter_25hz_5_degree_acceleration = RobotState()
-
-    #rsi_inter_5hz ,rsi_inter_5hz_velocity ,rsi_inter_5hz_acceleration = rsi_one_path_class('/home/andre/workspaces/tesseract_ws/bags_04_09/external/inter_5Hz_rsi.txt')
-    #rsi_inter_10hz ,rsi_inter_10hz_velocity ,rsi_inter_10hz_acceleration = rsi_one_path_class('/home/andre/workspaces/tesseract_ws/bags_04_09/external/inter_10Hz_rsi.txt')
-    #rsi_inter_15hz ,rsi_inter_15hz_velocity ,rsi_inter_15hz_acceleration = rsi_one_path_class('/home/andre/workspaces/tesseract_ws/bags_04_09/external/inter_15Hz_rsi.txt')
-    #rsi_inter_20hz ,rsi_inter_20hz_velocity ,rsi_inter_20hz_acceleration = rsi_one_path_class('/home/andre/workspaces/tesseract_ws/bags_04_09/external/inter_20Hz_rsi.txt')
-    #rsi_inter_25hz ,rsi_inter_25hz_velocity ,rsi_inter_25hz_acceleration = rsi_one_path_class('/home/andre/workspaces/tesseract_ws/bags_04_09/external/inter_25Hz_rsi.txt')
-    #rsi_inter_25hz_5_degree ,rsi_inter_25hz_5_degree_velocity ,rsi_inter_25hz_5_degree_acceleration = rsi_one_path_class('/home/andre/workspaces/tesseract_ws/bags_04_09/external/inter_25Hz_5_degree_rsi.txt')
-    rsi_inter_25hz_5_degree ,rsi_inter_25hz_5_degree_velocity ,rsi_inter_25hz_5_degree_acceleration = rsi_one_path_class('/home/andre/workspaces/tesseract_ws/bags_04_14/external/descartes_25Hz_course316_rsi.txt')
-
-    #Bspline
-    rsi_bspline_5hz = RobotState()
-    rsi_bspline_5hz_velocity = RobotState()
-    rsi_bspline_5hz_acceleration = RobotState()
-
-    rsi_bspline_10hz = RobotState()
-    rsi_bspline_10hz_velocity = RobotState()
-    rsi_bspline_10hz_acceleration = RobotState()
-
-    rsi_bspline_15hz = RobotState()
-    rsi_bspline_15hz_velocity = RobotState()
-    rsi_bspline_15hz_acceleration = RobotState()
-
-    rsi_bspline_20hz = RobotState()
-    rsi_bspline_20hz_velocity = RobotState()
-    rsi_bspline_20hz_acceleration = RobotState()
-
-    rsi_bspline_25hz = RobotState()
-    rsi_bspline_25hz_velocity = RobotState()
-    rsi_bspline_25hz_acceleration = RobotState()
-
-    rsi_bspline_50hz = RobotState()
-    rsi_bspline_50hz_velocity = RobotState()
-    rsi_bspline_50hz_acceleration = RobotState()
-
-    #rsi_bspline_5hz ,rsi_bspline_5hz_velocity ,rsi_bspline_5hz_acceleration = rsi_one_path_class('/home/andre/workspaces/tesseract_ws/bags_04_09/external/bspline_5Hz_rsi.txt')
-    #rsi_bspline_10hz ,rsi_bspline_10hz_velocity ,rsi_bspline_10hz_acceleration = rsi_one_path_class('/home/andre/workspaces/tesseract_ws/bags_04_09/external/bspline_10Hz_rsi.txt')
-    #rsi_bspline_15hz ,rsi_bspline_15hz_velocity ,rsi_bspline_15hz_acceleration = rsi_one_path_class('/home/andre/workspaces/tesseract_ws/bags_04_09/external/bspline_15Hz_rsi.txt')
-    #rsi_bspline_20hz ,rsi_bspline_20hz_velocity ,rsi_bspline_20hz_acceleration = rsi_one_path_class('/home/andre/workspaces/tesseract_ws/bags_04_09/external/bspline_20Hz_rsi.txt')
-    #rsi_bspline_25hz ,rsi_bspline_25hz_velocity ,rsi_bspline_25hz_acceleration = rsi_one_path_class('/home/andre/workspaces/tesseract_ws/bags_04_09/external/bspline_25Hz_rsi.txt')
-    #rsi_bspline_50hz ,rsi_bspline_50hz_velocity ,rsi_bspline_50hz_acceleration = rsi_one_path_class('/home/andre/workspaces/tesseract_ws/bags_04_09/external/bspline_50Hz_rsi.txt')
-
-
-
-
+    rsi_course316_5hz ,rsi_course316_5hz_velocity ,rsi_course316_5hz_acceleration = rsi_one_path_class('/home/andre/workspaces/tesseract_ws/bags_04_14/external/descartes_5Hz_course316_rsi.txt')
+    rsi_course316_25hz ,rsi_course316_25hz_velocity ,rsi_course316_25hz_acceleration = rsi_one_path_class('/home/andre/workspaces/tesseract_ws/bags_04_14/external/descartes_25Hz_course316_rsi.txt')
 

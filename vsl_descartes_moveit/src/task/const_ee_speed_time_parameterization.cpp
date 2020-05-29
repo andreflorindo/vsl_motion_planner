@@ -491,7 +491,7 @@ bool ConstEESpeedTimeParameterization::checkEESpeed(robot_trajectory::RobotTraje
 
     if (num_correct_speed < 0.8*(num_points-2*ACCELERATE_NUMBER_POINTS))
     {
-        ROS_WARN_STREAM("Cartesian speed of " << ee_speed_request << " m/s cannot be reach at half of the waypoints, reducing to a smaller value");
+        ROS_WARN_STREAM("Cartesian speed of " << ee_speed_request << " m/s cannot be reach at most of the waypoints, reducing to a smaller value");
         return false;
     }
     else

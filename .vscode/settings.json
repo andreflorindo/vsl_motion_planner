@@ -73,5 +73,6 @@
         "*.ipp": "cpp",
         "regex": "cpp",
         "core": "cpp"
-    }
+    },
+    "ros.distro": "kinetic"
 }

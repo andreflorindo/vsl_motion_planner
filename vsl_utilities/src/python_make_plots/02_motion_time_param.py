@@ -50,7 +50,6 @@ class RobotState:
         self.ee_request = EEStates()
         self.ee_states = EEStates()
         self.ee_request_kuka = EEStates()
-        self.e_request_kuka = EEStates()
 
 
 def ros_read_path(robot_state_from_file, robot_state_from_file_velocity, robot_state_from_file_acceleration, file_joint_request, file_ee_request, file_joint_request_kuka, file_ee_request_kuka):
@@ -1398,15 +1397,21 @@ if __name__ == "__main__":
                 '/home/andre/workspaces/tesseract_ws/bags_04_14/external/descartes_5Hz_course316_joint_request.txt',
                 '/home/andre/workspaces/tesseract_ws/bags_04_14/external/descartes_5Hz_course316_ee_request.txt')
 
+    #topp_5hz, topp_5hz_velocity, topp_5hz_acceleration, topp_x, topp_error = ros_one_path_class(
+    #            '/home/andre/workspaces/tesseract_ws/bags_simulations/time/topp_5Hz_joint_request.txt',
+    #            '/home/andre/workspaces/tesseract_ws/bags_simulations/time/topp_5Hz_ee_request.txt',
+    #            '/home/andre/workspaces/tesseract_ws/bags_04_14/external/descartes_5Hz_course316_joint_request.txt',
+    #            '/home/andre/workspaces/tesseract_ws/bags_04_14/external/descartes_5Hz_course316_ee_request.txt')
+
     topp_5hz, topp_5hz_velocity, topp_5hz_acceleration, topp_x, topp_error = ros_one_path_class(
-                '/home/andre/workspaces/tesseract_ws/bags_simulations/time/topp_5Hz_joint_request.txt',
-                '/home/andre/workspaces/tesseract_ws/bags_simulations/time/topp_5Hz_ee_request.txt',
+                '/home/andre/workspaces/tesseract_ws/bags_simulations/time/topp_much_accurate_joint_request.txt',
+                '/home/andre/workspaces/tesseract_ws/bags_simulations/time/topp_much_accurate_ee_request.txt',
                 '/home/andre/workspaces/tesseract_ws/bags_04_14/external/descartes_5Hz_course316_joint_request.txt',
                 '/home/andre/workspaces/tesseract_ws/bags_04_14/external/descartes_5Hz_course316_ee_request.txt')
 
-    plot_variable_three_courses('Position at A6($rad$)', 'x(m)', parabolic_5hz.ee_request.x,parabolic_5hz.joint_request.a6,               #three_bad_a6.eps
-                                spline_5hz.ee_request.x, spline_5hz.joint_request.a6, 
-                                topp_5hz.ee_request.x, topp_5hz.joint_request.a6)
+    #plot_variable_three_courses('Position at A6($rad$)', 'x(m)', parabolic_5hz.ee_request.x,parabolic_5hz.joint_request.a6,               #three_bad_a6.eps
+    #                            spline_5hz.ee_request.x, spline_5hz.joint_request.a6, 
+    #                            topp_5hz.ee_request.x, topp_5hz.joint_request.a6)
 
     #plot_variable_three_courses('Position at A6($rad$)', 'Time(s)', parabolic_5hz.joint_request.time,parabolic_5hz.joint_request.a6,               #three_bad_a6.eps
     #                            spline_5hz.joint_request.time, spline_5hz.joint_request.a6, 
@@ -1424,9 +1429,9 @@ if __name__ == "__main__":
     #                            spline_5hz_velocity.ee_request.time, spline_5hz_velocity.ee_request.linear, 
     #                            topp_5hz_velocity.ee_request.time, topp_5hz_velocity.ee_request.linear)
 
-    plot_variable_three_courses('Absolute position error (mm)', 'x(m)', parabolic_x,parabolic_error,      #three_bad_error.eps
-                                spline_x, spline_error, 
-                                topp_x, topp_error)  
+    #plot_variable_three_courses('Absolute position error (mm)', 'x(m)', parabolic_x,parabolic_error,      #three_bad_error.eps
+    #                            spline_x, spline_error, 
+    #                            topp_x, topp_error)  
 
     constant_speed_all_5hz = RobotState()
     constant_speed_all_5hz_velocity = RobotState()

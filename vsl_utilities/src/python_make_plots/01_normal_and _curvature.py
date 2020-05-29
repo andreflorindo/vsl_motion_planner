@@ -399,15 +399,15 @@ def compute_position_error(course, bspline):
             max_absolute_error = absolute_error[i]
     print('Absolute position error', max_absolute_error)
 
-    #pyplot.figure(figsize=(8, 7))
-    #pyplot.ylabel('y(m)',fontsize=12)
-    #pyplot.xlabel('x(m)',fontsize=12)
-    #pyplot.plot(inter_course.x, inter_course.y, 'r*--', markersize=3, label='Real Course Interpolated')
-    #pyplot.plot(inter_robot_pose.x , inter_robot_pose.y, 'bo-', markersize=3, label='Obtained Course interpolated')
-    #pyplot.plot(course.x, course.y, 'k^', markersize=6, label='Real Course ')
-    #pyplot.plot(bspline.x , bspline.y, 'gs', markersize=6, label='Obtained Course')
-    #pyplot.legend(fontsize=12)
-    #pyplot.show()
+    pyplot.figure(figsize=(8, 7))
+    pyplot.ylabel('y(m)',fontsize=12)
+    pyplot.xlabel('x(m)',fontsize=12)
+    pyplot.plot(inter_course.x, inter_course.y, 'r*--', markersize=3, label='Real Course Interpolated')
+    pyplot.plot(inter_robot_pose.x , inter_robot_pose.y, 'bo-', markersize=3, label='Obtained Course interpolated')
+    pyplot.plot(course.x, course.y, 'k^', markersize=6, label='Real Course ')
+    pyplot.plot(bspline.x , bspline.y, 'gs', markersize=6, label='Obtained Course')
+    pyplot.legend(fontsize=12)
+    pyplot.show()
 
     return inter_robot_pose.x, absolute_error
 
@@ -636,6 +636,7 @@ if __name__ == "__main__":
 
     course = read_path()
     arc_length = compute_arc_length(course)
+    print(arc_length)
     #plot_course2d(course)                                              #course316.eps
 
     #k = 4
@@ -707,7 +708,7 @@ if __name__ == "__main__":
     x, error_5 = compute_position_error(course, bspline_course_tck_5)
     x, error_bspline = compute_position_error(course, bspline_course)
 
-    #plot_error(course, bspline_course_tck_5,x, error_5)                                             #course1_final.eps, course1_error.eps
+    plot_error(course, bspline_course_tck_5,x, error_5)                                             #course1_final.eps, course1_error.eps
 
     #plot_three_courses2d(course, bspline_course ,bspline_course_tck_3, bspline_course_tck_5)        #three_courses.eps
     #plot_error_one_file(x, error_3, error_5, error_bspline)                                         #three_courses_error.eps
@@ -723,11 +724,11 @@ if __name__ == "__main__":
 
 
 
-    #arc_length2 = compute_arc_length(bspline_course_tck_5)                                        #Arc-length
-    #print('arc lenght', arc_length2)
+    arc_length2 = compute_arc_length(bspline_course_tck_5)                                        #Arc-length
+    print(arc_length2)
     #radius2 = compute_radius3D(deriv_bspline_course_tck_5, deriv2_bspline_course_tck_5)            #Turning Radius
 
-    plot_smoothing_tangent_normal(course)                                                  #tangent_smoothing, error_smoothing.eps
+    #plot_smoothing_tangent_normal(course)                                                  #tangent_smoothing, error_smoothing.eps
 
     #plot_frequency_error(course)                                                                       #frequency_error.eps
 

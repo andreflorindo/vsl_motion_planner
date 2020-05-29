@@ -53,7 +53,8 @@ class EEVelocity:
 def rsi_read_path(robot_state_from_file):
     i = 0
     infile = open(
-        '/home/andreflorindo/workspaces/vsl_motion_planner_ws/src/vsl_utilities/trial_txt_files/rsi_xml_doc_01_11.txt', 'r')
+        #'/home/andreflorindo/workspaces/vsl_motion_planner_ws/src/vsl_utilities/trial_txt_files/rsi_xml_doc_01_11.txt', 'r')
+        '/home/andre/workspaces/tesseract_ws/src/vsl_motion_planner/vsl_descartes_moveit/trial_txt_files/01_11_2019/rsi_xml_doc_01_11.txt', 'r')
     for line in infile:
         input = re.findall(r"[-+]?\d*\.\d+|\d+", line)
         if len(input) != 0:
@@ -103,7 +104,8 @@ def rsi_read_path(robot_state_from_file):
 
 def kuka_read_path(robot_state_from_file):
     input = np.loadtxt(
-        "/home/andreflorindo/workspaces/vsl_motion_planner_ws/src/vsl_utilities/trial_txt_files/kuka_robot_01_11.dat", dtype='f')
+        #"/home/andreflorindo/workspaces/vsl_motion_planner_ws/src/vsl_utilities/trial_txt_files/kuka_robot_01_11.dat", dtype='f')
+        '/home/andre/workspaces/tesseract_ws/src/vsl_motion_planner/vsl_descartes_moveit/trial_txt_files/01_11_2019//kuka_robot_01_11.dat', dtype='f')
     for i in range(0, len(input)):
         robot_state_from_file.time.append(input[i][0]*0.001)
         robot_state_from_file.joint_request.a1.append(input[i][1]*np.pi/180)
@@ -656,5 +658,5 @@ if __name__ == "__main__":
 
     plot_all_joint(kuka_robot_state, kuka_robot_state_velocity, kuka_robot_state_acceleration,
                    rsi_robot_state, rsi_robot_state_velocity, rsi_robot_state_acceleration)
-    # plot_ee_state(kuka_robot_state, kuka_ee_velocity, rsi_robot_state, rsi_ee_velocity)
+    #plot_ee_state(kuka_robot_state, kuka_ee_velocity, rsi_robot_state, rsi_ee_velocity)
     # plot_path(rsi_robot_state, kuka_robot_state, rsi_index_switch, kuka_index_switch)
