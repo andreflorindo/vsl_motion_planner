@@ -24,6 +24,7 @@ def read_path():
     input = np.loadtxt(
         # "/home/andreflorindo/workspaces/tesseract_vsl_motion_planner_ws/src/vsl_motion_planner/vsl_msgs/examples/simplePath.txt", dtype='f')
         "/home/andre/workspaces/tesseract_ws/src/vsl_motion_planner/vsl_msgs/examples/simplePath.txt", dtype='f')
+        #"/home/andre/workspaces/tesseract_ws/src/vsl_motion_planner/vsl_msgs/examples/circularPath.txt", dtype='f')
     x = []
     y = []
     z = []
@@ -356,7 +357,7 @@ def compute_radius2D(dp, ddp):
     return radius
 
 
-def compute_radius3D(dp, ddp):
+def compute_radius3D(p,dp, ddp):
     radius = []
     for i in range(0, len(dp.x)):
         num = math.sqrt(dp.x[i]**2+dp.y[i]**2+dp.z[i]**2)**3
@@ -365,13 +366,16 @@ def compute_radius3D(dp, ddp):
         radius.append(abs(num/denom))
     radius_array = np.asarray(radius)
     min_radius = np.amin(radius_array)
-    print('min radius', min_radius)
+    for i in range(0, len(radius_array)):
+        ab=radius_array[i]
+        if ab==min_radius:
+            index = i
+    print('min radius', min_radius, p.x[index])
     return radius
 
 
-def interpolate_course(course):
+def interpolate_course(course,n_waypoints):
     tck, u = splprep([course.x, course.y, course.z], k=3, s=0.000000)
-    n_waypoints = 1630
     u_new = np.linspace(u.min(), u.max(), n_waypoints)
     inter_x, inter_y, inter_z = splev(u_new, tck, der=0)
     inter_course = CourseClass(inter_x, inter_y, inter_z)
@@ -380,8 +384,8 @@ def interpolate_course(course):
 
 
 def compute_position_error(course, bspline):
-    inter_course = interpolate_course(course)
-    inter_robot_pose = interpolate_course(bspline)
+    inter_course = interpolate_course(course,1630*10)
+    inter_robot_pose = interpolate_course(bspline,1630)
 
     absolute_error = []
     max_absolute_error = 0
@@ -660,7 +664,7 @@ if __name__ == "__main__":
         else:
             u.append(1)
 
-    d_hz = 0.02
+    d_hz = 0.02  #0.02
     n_waypoints = int(arc_length // d_hz)
 
     parameter = np.linspace(0, 1, num=n_waypoints)
@@ -704,9 +708,9 @@ if __name__ == "__main__":
     tangent_bspline_exact, normal_bspline_exact, binormal = getParallelTransportVectors(deriv_bspline_exact)
 
 
-    x, error_3 = compute_position_error(course, bspline_course_tck_3)
+    #x, error_3 = compute_position_error(course, bspline_course_tck_3)
     x, error_5 = compute_position_error(course, bspline_course_tck_5)
-    x, error_bspline = compute_position_error(course, bspline_course)
+    #x, error_bspline = compute_position_error(course, bspline_course)
 
     plot_error(course, bspline_course_tck_5,x, error_5)                                             #course1_final.eps, course1_error.eps
 
@@ -724,9 +728,10 @@ if __name__ == "__main__":
 
 
 
-    arc_length2 = compute_arc_length(bspline_course_tck_5)                                        #Arc-length
-    print(arc_length2)
-    #radius2 = compute_radius3D(deriv_bspline_course_tck_5, deriv2_bspline_course_tck_5)            #Turning Radius
+    #arc_length2 = compute_arc_length(bspline_course_tck_5)                                        #Arc-length
+    #print(arc_length2)
+    #radius2 = compute_radius3D(bspline_course_tck_5,deriv_bspline_course_tck_5, deriv2_bspline_course_tck_5)            #Turning Radius
+    #print(radius2)
 
     #plot_smoothing_tangent_normal(course)                                                  #tangent_smoothing, error_smoothing.eps
 

@@ -773,6 +773,28 @@ def ros_find_switch_point_joint_kuka(robot_state_velocity):
     return index_switch
 
 
+def arrange_ee_pose(ros_robot_state,file_course,d_hz):
+
+    course = read_course_path(file_course)
+    bspline_course_tck_5, smooth5 = bspline3Dtck_iterative(course, 5, d_hz)
+    inter_course = interpolate_course(bspline_course_tck_5,1630)
+
+    buffer_x = ros_robot_state.ee_request.x[0]
+    buffer_y = ros_robot_state.ee_request.y[0]
+
+    for i in range(0, len(ros_robot_state.ee_states.x)):
+        ros_robot_state.ee_states.x[i] = ros_robot_state.ee_states.x[i]+(inter_course.x[0]-buffer_x)
+        ros_robot_state.ee_states.y[i] = ros_robot_state.ee_states.y[i]+(inter_course.y[0]-buffer_y)
+
+    for i in range(0, len(ros_robot_state.ee_request_kuka.x)):
+        ros_robot_state.ee_request_kuka.x[i] = ros_robot_state.ee_request_kuka.x[i]+(inter_course.x[0]-buffer_x)
+        ros_robot_state.ee_request_kuka.y[i] = ros_robot_state.ee_request_kuka.y[i]+(inter_course.y[0]-buffer_y)
+
+    for i in range(0, len(ros_robot_state.ee_request.x)):    
+        ros_robot_state.ee_request.x[i] = ros_robot_state.ee_request.x[i]+(inter_course.x[0]-buffer_x)
+        ros_robot_state.ee_request.y[i] = ros_robot_state.ee_request.y[i]+(inter_course.y[0]-buffer_y)
+
+
 def read_course_path(file_course):
     input = np.loadtxt(file_course, dtype='f')
     x = []
@@ -805,14 +827,16 @@ def plot_path_of_one_file(d_hz, ros_robot_state, file_course):
     plt.ylabel('y(m)',fontsize=12)
     plt.xlabel('x(m)',fontsize=12)
     #Use inter_path_request to avoid overlapping the first point    
-    plt.plot(inter_path_states.x+(inter_course.x[0]-inter_path_request.x[0]), inter_path_states.y+(inter_course.y[0]-inter_path_request.y[0]), 'g-o', label='Path states')
-    plt.plot(inter_path_command.x+(inter_course.x[0]-inter_path_request.x[0]), inter_path_command.y+(inter_course.y[0]-inter_path_request.y[0]), 'b--^', label='Path commanded')
-    plt.plot(inter_path_request.x+(inter_course.x[0]-inter_path_request.x[0]), inter_path_request.y+(inter_course.y[0]-inter_path_request.y[0]), 'r--*', label='Path requested')
+    plt.plot(inter_path_states.x+(inter_course.x[0]-inter_path_request.x[0]), inter_path_states.y+(inter_course.y[0]-inter_path_request.y[0]), 'g', linewidth=3, label='Path state')
+    plt.plot(inter_path_command.x+(inter_course.x[0]-inter_path_request.x[0]), inter_path_command.y+(inter_course.y[0]-inter_path_request.y[0]), 'b--',linewidth=2, label='Path command')
+    plt.plot(inter_path_request.x+(inter_course.x[0]-inter_path_request.x[0]), inter_path_request.y+(inter_course.y[0]-inter_path_request.y[0]), 'r:*', linewidth=1,markersize=3, label='Path request')
     plt.plot(inter_course.x , inter_course.y, 'k', label='Fiber Course')
     plt.legend(fontsize=12)
     plt.show()
 
     #plot_path_3d(inter_path_states, inter_path_command, inter_path_request,inter_course)
+
+
 
 def plot_path_3d(inter_path_states, inter_path_command, inter_path_request,inter_course):
     # 3D plotting setup
@@ -1097,7 +1121,12 @@ def error(inter_course,inter_robot_pose):
 
 def optimize_error(inter_course,inter_robot_pose):
     cycle=1
-    while cycle<=250:
+    p = 10
+    prev_index = 0
+    prev_prev_index = 0
+    count=0
+
+    while cycle<=100:
         abs_error = []
         abs_x=[]
         abs_y=[]
@@ -1128,35 +1157,47 @@ def optimize_error(inter_course,inter_robot_pose):
             if buf<abs(abs_x[i]):
                 buf=abs(abs_x[i])
                 index=i
-                buffer_x = 0
-                buffer_y = abs_y[index]/(100)
+                buffer_x = abs_x[index]/(p)
+                buffer_y = 0
                 buffer_z = 0
             if buf<abs(abs_y[i]):
                 buf=abs(abs_y[i])
                 index=i
                 buffer_x = 0
-                buffer_y = abs_y[index]/(100)
+                buffer_y = abs_y[index]/(p)
                 buffer_z = 0
             if buf<abs(abs_z[i]):
                 buf=abs(abs_z[i])
                 index=i
                 buffer_x = 0
                 buffer_y = 0
-                buffer_z = abs_z[index]/(10)
-
-        print(buf)
-        print('Error', abs_error[index],abs_x[index], abs_y[index],abs_z[index], index)
-        #buffer_x = abs_x[index]/4
-        #buffer_y = abs_y[index]/4
-        #buffer_z = abs_z[index]/4
+                buffer_z = abs_z[index]/(p)
+        
+        print(buffer_x*1000, buffer_y*1000, buffer_z*1000 )
+        print('Error', abs_error[index],abs_x[index]*1000, abs_y[index]*1000,abs_z[index]*1000, index, inter_robot_pose.x[index+3])
+        #buffer_x = abs_x[index]/10
+        #buffer_y = abs_y[index]/10
+        #buffer_z = abs_z[index]/1000
 
         for i in range(0, len(inter_robot_pose.x)):
             inter_robot_pose.x[i] = (inter_robot_pose.x[i]-buffer_x)
             inter_robot_pose.y[i] = (inter_robot_pose.y[i]-buffer_y)
             inter_robot_pose.z[i] = (inter_robot_pose.z[i]-buffer_z)
+
+        if (prev_index != index):
+            if (prev_prev_index == index):
+                count=count+1
+            else:
+                count=0
         
+        if(count==20):
+            break
+
+        prev_prev_index = prev_index
+        prev_index = index
         cycle=cycle+1
-        
+
+
     return inter_robot_pose
 
     
@@ -1179,7 +1220,7 @@ def ros_compute_position_error(d_hz, ros_robot_state,file_course):
                            ros_robot_state.ee_request_kuka.y, ros_robot_state.ee_request_kuka.z)
     path_command_length=compute_arc_length(path_command)
     print('Path command length',path_command_length)
-    inter_path_command = interpolate_course(path_command,1630)
+    inter_path_command = interpolate_course(path_command,1630*2)
 
     path_states = CourseClass(ros_robot_state.ee_states.x,
                            ros_robot_state.ee_states.y, ros_robot_state.ee_states.z)
@@ -1199,20 +1240,17 @@ def ros_compute_position_error(d_hz, ros_robot_state,file_course):
     if(len(inter_course.x) != len(inter_path_states.x)):
         print("Paths states have not the same number of point, error may be bad",
               len(inter_course.x), len(inter_path_states.x))
-
-    short_path_command = interpolate_course(path_command,150)
-    short_path_states = interpolate_course(path_states,100)
     
-    #new_inter_path_states = find_correct_position_state(inter_path_command, inter_path_states,0.2)
+    inter_path_states = find_correct_position_state(inter_path_command, inter_path_states, 0.5)
 
+    new_inter_path_states = optimize_error(inter_path_request,inter_path_states)
 
-    new_inter_path_states=optimize_error(inter_path_command,inter_path_states)
-
+    #new_inter_path_states = inter_path_states
 
     plt.figure(figsize=(8, 7))
     plt.ylabel('y(m)',fontsize=12)
     plt.xlabel('x(m)',fontsize=12)
-    #Use inter_path_request to avoid overlapping the first point    
+    ##Use inter_path_request to avoid overlapping the first point    
     plt.plot(new_inter_path_states.x+(inter_course.x[0]-inter_path_request.x[0]), new_inter_path_states.y+(inter_course.y[0]-inter_path_request.y[0]), 'g-o', label='Path states')
     plt.plot(inter_path_command.x+(inter_course.x[0]-inter_path_request.x[0]), inter_path_command.y+(inter_course.y[0]-inter_path_request.y[0]), 'b--^', label='Path commanded')
     plt.plot(inter_path_request.x+(inter_course.x[0]-inter_path_request.x[0]), inter_path_request.y+(inter_course.y[0]-inter_path_request.y[0]), 'r--', label='Path requested')
@@ -1220,7 +1258,7 @@ def ros_compute_position_error(d_hz, ros_robot_state,file_course):
     plt.legend(fontsize=12)
     plt.show()
 
-    error_path_command = 0
+    #error_path_command = 0
     error_path_command = error(inter_path_request,inter_path_command)
     error_path_states = error(inter_path_request,new_inter_path_states)
 
@@ -1311,18 +1349,25 @@ def plot_error_one_file(x, absolute_error):
     plt.xlabel('x(m)',fontsize=12)
     x=list(x)
 
-    if(absolute_error[len(absolute_error)-1]>0.4):
-        print('Error at is not displayed at the end')
+    if(absolute_error[len(absolute_error)-1]>0.25):
+        print('Error is not displayed at the end')
+        x.pop(len(absolute_error)-1)
+        absolute_error.pop(len(absolute_error)-1)
+    if(absolute_error[len(absolute_error)-1]>0.25):
+        print('Error is not displayed at the end')
         x.pop(len(absolute_error)-1)
         absolute_error.pop(len(absolute_error)-1)
 
-    if(absolute_error[0]>0.4):
-        print('Error at is not displayed at the start')
+    if(absolute_error[0]>0.25):
+        print('Error is not displayed at the start')
+        x.pop(0)
+        absolute_error.pop(0)
+    if(absolute_error[0]>0.25):
+        print('Error is not displayed at the start')
         x.pop(0)
         absolute_error.pop(0)
         
-    plt.plot(x, absolute_error, 'g')
-    plt.legend(fontsize=12)
+    plt.plot(x, absolute_error, 'k')
     plt.show()
 
 
@@ -1350,28 +1395,31 @@ def plot_inter_path_of_one_file(ros_robot_state,file_course):
     plt.show()
     #plot_path_3d(course, ros_path, index_approach)
 
-def ros_find_approach_index(ros_path,file_course):
+def ros_find_approach_index(ros_path,file_course,d_hz):
     arc_length = 0 
     index = 0
     z=0
     
     course = read_course_path(file_course)
-    arc_length_course = compute_arc_length(course)
+    bspline_course_tck_5, smooth5 = bspline3Dtck_iterative(course, 5, d_hz)
+    inter_course = interpolate_course(bspline_course_tck_5,1630)
+    arc_length_course = compute_arc_length(inter_course)
 
-    while(z<0.1*math.tan(10*math.pi/180)-0.0001):
-        index = index + 1
+    while(z<=0.1*math.tan(10*math.pi/180)): 
         z = ros_path.z[index]
-    while(arc_length<0.028):   #Reduce or increase distance to approximate solution ANDRE 0.02875
+        index = index + 1
+    index = index -1
+    while(arc_length<=0.029):   #Reduce or increase distance to approximate solution ANDRE 0.02875
         arc_length = arc_length + math.sqrt((ros_path.x[index+1]-ros_path.x[index])**2+(ros_path.y[index+1]-ros_path.y[index])**2)
         index = index + 1
-    index_1= index
+    index_1= index-1
 
     arc_length = 0 
-    while(arc_length<arc_length_course*1.002):   #Reduce or increase distance to approximate solution ANDRE
+    while(arc_length<=arc_length_course):   #Reduce or increase distance to approximate solution ANDRE
         arc_length = arc_length + math.sqrt((ros_path.x[index+1]-ros_path.x[index])**2+(ros_path.y[index+1]-ros_path.y[index])**2)
         index = index + 1
     index_2=index-1
-    print('Difference between index',index_2-index_1)
+    print('Number of waypoints',(index_2-index_1)+1)
 
     return index_1, index_2
 
@@ -2058,8 +2106,44 @@ def plot_variable(y_title, y2_title, x_title,ros_robot_state, variable):
     ax.legend(fontsize=12)
     plt.show()
 
+def plot_all_variables(robot_course, robot_course_velocity, robot_course_acceleration):
+    ##A1
+    plot_variable('Position at Joint A1 ($rad$)', 'Position at Joint A1 ($\degree$)', 'Time (s)',robot_course, 'a1')
+    plot_variable('Velocity at Joint A1 ($rad/s$)', 'Velocity at Joint A1 ($\degree/s$)', 'Time (s)',robot_course_velocity, 'a1')
+    plot_variable('Acceleration at Joint A1 ($rad/s^2$)', 'Acceleration at Joint A1 ($\degree/s^2$)', 'Time (s)',robot_course_acceleration, 'a1')
+    ##A2
+    plot_variable('Position at Joint A2 ($rad$)', 'Position at Joint A2 ($\degree$)', 'Time (s)',robot_course, 'a2')
+    plot_variable('Velocity at Joint A2 ($rad/s$)', 'Velocity at Joint A2 ($\degree/s$)', 'Time (s)',robot_course_velocity, 'a2')
+    plot_variable('Acceleration at Joint A2 ($rad/s^2$)', 'Acceleration at Joint A2 ($\degree/s^2$)', 'Time (s)',robot_course_acceleration, 'a2')
+    ##A3
+    plot_variable('Position at Joint A3 ($rad$)', 'Position at Joint A3 ($\degree$)', 'Time (s)',robot_course, 'a3')
+    plot_variable('Velocity at Joint A3 ($rad/s$)', 'Velocity at Joint A3 ($\degree/s$)', 'Time (s)',robot_course_velocity, 'a3')
+    plot_variable('Acceleration at Joint A3 ($rad/s^2$)', 'Acceleration at Joint A3 ($\degree/s^2$)', 'Time (s)',robot_course_acceleration, 'a3')
+    ##A4
+    plot_variable('Position at Joint A4 ($rad$)', 'Position at Joint A4 ($\degree$)', 'Time (s)',robot_course, 'a4')
+    plot_variable('Velocity at Joint A4 ($rad/s$)', 'Velocity at Joint A4 ($\degree/s$)', 'Time (s)',robot_course_velocity, 'a4')
+    plot_variable('Acceleration at Joint A4 ($rad/s^2$)', 'Acceleration at Joint A4 ($\degree/s^2$)', 'Time (s)',robot_course_acceleration, 'a4')
+    ##A5
+    plot_variable('Position at Joint A5 ($rad$)', 'Position at Joint A5 ($\degree$)', 'Time (s)',robot_course, 'a5')
+    plot_variable('Velocity at Joint A5 ($rad/s$)', 'Velocity at Joint A5 ($\degree/s$)', 'Time (s)',robot_course_velocity, 'a5')
+    plot_variable('Acceleration at Joint A5 ($rad/s^2$)', 'Acceleration at Joint A5 ($\degree/s^2$)', 'Time (s)',robot_course_acceleration, 'a5')   
+    #A6
+    plot_variable('Position at Joint A6 ($rad$)', 'Position at Joint A6 ($\degree$)', 'Time (s)',robot_course, 'a6')
+    plot_variable('Velocity at Joint A6 ($rad/s$)', 'Velocity at Joint A6 ($\degree/s$)', 'Time (s)',robot_course_velocity, 'a6')
+    plot_variable('Acceleration at Joint A6 ($rad/s^2$)', 'Acceleration at Joint A6 ($\degree/s^2$)', 'Time (s)',robot_course_acceleration, 'a6')
+    #XYZ
+    plot_variable('X component of EE Pose (m)','','Time (s)', robot_course,'x')
+    plot_variable('Y component of EE Pose (m)','','Time (s)', robot_course,'y')
+    plot_variable('Z component of EE Pose (m)','','Time (s)', robot_course,'z')
+    plot_variable('Laydown Speed (m/s)','','Time (s)', robot_course_velocity,'linear')
+    #ABC
+    plot_variable('A component of EE Pose ($rad$)','A component of EE Pose ($\degree$)','Time (s)', robot_course,'rx')
+    plot_variable('B component of EE Pose ($rad$)','B component of EE Pose ($\degree$)','Time (s)', robot_course,'ry')
+    plot_variable('C component of EE Pose ($rad$)','C component of EE Pose ($\degree$)','Time (s)', robot_course,'rz')
+    plot_variable('EE Rotation Speed ($rad/s$)','EE Rotation Speed ($\degree/s$)','Time (s)', robot_course_velocity,'rx')
 
-def rsi_one_path_class(a, b, d_hz, file_course, file_joint_request, file_ee_request, file_joint_request_kuka, file_ee_request_kuka, file_rsi):
+
+def rsi_one_path_class(a, b,c, d_hz, file_course, file_joint_request, file_ee_request, file_joint_request_kuka, file_ee_request_kuka, file_rsi):
     ros_robot_state_from_file = RobotState()    
     ros_robot_state_from_file_velocity = RobotState()
     ros_robot_state_from_file_acceleration = RobotState()
@@ -2082,7 +2166,7 @@ def rsi_one_path_class(a, b, d_hz, file_course, file_joint_request, file_ee_requ
     
     rsi_clean_path(ros_robot_state_from_file, ros_robot_state)
 
-    #plot_variable('Joint A6 Angle (rad)','Time (s)',ros_robot_state, 'a6')
+    #plot_all_variables(ros_robot_state_from_file,ros_robot_state_course_velocity, ros_robot_state_course_acceleration)
 
     ros_index_switch = ros_find_switch_point(ros_robot_state_velocity)
     ros_index_switch_joint_kuka = ros_find_switch_point_joint_kuka(ros_robot_state_velocity)
@@ -2113,9 +2197,7 @@ def rsi_one_path_class(a, b, d_hz, file_course, file_joint_request, file_ee_requ
 
     #plot_ee_rotation_of_one_file(ros_robot_state_course, ros_robot_state_course_velocity)
 
-    plot_variable('Position at Joint A6 ($rad$)', 'Position at Joint A6 ($\degree$)', 'Time (s)',ros_robot_state_course, 'a6')
-    #plot_variable('Velocity at Joint A6 ($rad/s$)', 'Velocity at Joint A6 ($\degree/s$)', 'Time (s)',ros_robot_state_course_velocity, 'a6')
-    #plot_variable('Acceleration at Joint A6 ($rad/s^2$)', 'Acceleration at Joint A6 ($\degree/s^2$)', 'Time (s)',ros_robot_state_course_acceleration, 'a6')
+    #plot_all_variables(ros_robot_state_course,ros_robot_state_course_velocity, ros_robot_state_course_acceleration)
 
     #plot_path_of_one_file(d_hz,ros_robot_state_course, file_course)
 
@@ -2124,18 +2206,20 @@ def rsi_one_path_class(a, b, d_hz, file_course, file_joint_request, file_ee_requ
 
     rsi_path = CourseClass(ros_robot_state_course.ee_states.x,ros_robot_state_course.ee_states.y,ros_robot_state_course.ee_states.z)
 
-    ros_approach_index_1, ros_approach_index_2 = ros_find_approach_index(ros_path,file_course)
-    ros_approach_index_kuka_1, ros_approach_index_kuka_2 = ros_find_approach_index(ros_path_kuka,file_course)
+    ros_approach_index_1, ros_approach_index_2 = ros_find_approach_index(ros_path,file_course,d_hz)
+    ros_approach_index_kuka_1, ros_approach_index_kuka_2 = ros_find_approach_index(ros_path_kuka,file_course,d_hz)
 
-    rsi_approach_index_1, rsi_approach_index_2 = ros_find_approach_index(rsi_path,file_course)
+    rsi_approach_index_1, rsi_approach_index_2 = ros_find_approach_index(rsi_path,file_course,d_hz)
 
     # Plot path without approach
 
-    ros_store_only_course_variables(ros_approach_index_1, ros_approach_index_2, ros_approach_index_kuka_1, ros_approach_index_kuka_2, ros_robot_state_course, ros_robot_state_course_velocity, ros_robot_state_course_acceleration,
+    ros_store_only_course_variables(ros_approach_index_1, ros_approach_index_2, ros_approach_index_kuka_1-c, ros_approach_index_kuka_2-c, ros_robot_state_course, ros_robot_state_course_velocity, ros_robot_state_course_acceleration,
                                     ros_robot_state_course_no_smooth, ros_robot_state_course_no_smooth_velocity, ros_robot_state_course_no_smooth_acceleration,1)
 
     rsi_store_only_course_variables(rsi_approach_index_1-b, rsi_approach_index_2-b, ros_robot_state_course, ros_robot_state_course_velocity, ros_robot_state_course_acceleration,
                                     ros_robot_state_course_no_smooth, ros_robot_state_course_no_smooth_velocity, ros_robot_state_course_no_smooth_acceleration,1)
+
+    arrange_ee_pose(ros_robot_state_course_no_smooth,file_course,d_hz)
 
     #print_differences(ros_robot_state_course_no_smooth.joint_states.time,ros_robot_state_course_no_smooth.joint_states.a6)
     
@@ -2143,19 +2227,17 @@ def rsi_one_path_class(a, b, d_hz, file_course, file_joint_request, file_ee_requ
 
     #plot_ee_state_of_one_file(ros_robot_state_course_no_smooth, ros_robot_state_course_no_smooth_velocity)
 
-    #plot_ee_rotation_of_one_file(ros_robot_state_course_no_smooth, ros_robot_state_course_no_smooth_velocity)
+    #plot_ee_rotation_of_one_file(ros_robot_state_course_no_smooth, ros_robot_state_course_no_smooth_velocity)   
 
+    #plot_path_of_one_file(d_hz,ros_robot_state_course_no_smooth, file_course)                   #path.eps
 
-    plot_variable('Position at Joint A6 ($rad$)', 'Position at Joint A6 ($\degree$)', 'Time (s)',ros_robot_state_course_no_smooth, 'a6')
-    #plot_variable('Velocity at Joint A6 ($rad/s$)', 'Velocity at Joint A6 ($\degree/s$)', 'Time (s)',ros_robot_state_course_no_smooth_velocity, 'a6')
-    #plot_variable('Acceleration at Joint A6 ($rad/s^2$)', 'Acceleration at Joint A6 ($\degree/s^2$)', 'Time (s)',ros_robot_state_course_no_smooth_acceleration, 'a6')
-
-    #plot_path_of_one_file(d_hz,ros_robot_state_course_no_smooth, file_course)
+    #plot_all_variables(ros_robot_state_course_no_smooth,ros_robot_state_course_no_smooth_velocity, ros_robot_state_course_no_smooth_acceleration)     #p_a1.eps, ..., ee_laydwon.eps
+    
     #plot_inter_path_of_one_file(ros_robot_state_course_no_smooth,file_course)
 
-    #command_x, error_path_command, state_x, error_path_states = ros_compute_position_error(d_hz,ros_robot_state_course_no_smooth,file_course)
+    command_x, error_path_command, state_x, error_path_states = ros_compute_position_error(d_hz,ros_robot_state_course_no_smooth,file_course)
     #plot_error_one_file(command_x, error_path_command)
-    #plot_error_one_file(state_x, error_path_states)
+    plot_error_one_file(state_x, error_path_states)                                                          #error.eps
 
     return ros_robot_state_course_no_smooth, ros_robot_state_course_no_smooth_velocity, ros_robot_state_course_no_smooth_acceleration
 
@@ -2207,17 +2289,22 @@ if __name__ == "__main__":
     robot_course_velocity = RobotState()
     robot_course_acceleration = RobotState()
 
-    ######### Layer 3 Course 16, 5Hz ###############
-    robot_course, robot_course_velocity, robot_course_acceleration = rsi_one_path_class(0,2,d_5hz,  #joints 1,-1
-                '/home/andre/workspaces/tesseract_ws/src/vsl_motion_planner/vsl_msgs/examples/simplePath.txt',
-                '/home/andre/workspaces/tesseract_ws/bags_simulations/external/course_316_5Hz_joint_request.txt',
-                '/home/andre/workspaces/tesseract_ws/bags_simulations/external/course_316_5Hz_ee_request.txt',
-                '/home/andre/workspaces/tesseract_ws/bags_04_14/external/descartes_5Hz_course316_joint_request.txt',
-                '/home/andre/workspaces/tesseract_ws/bags_04_14/external/descartes_5Hz_course316_ee_request.txt',
-                '/home/andre/workspaces/tesseract_ws/bags_04_14/external/descartes_5Hz_course316_rsi.txt')
+
+    #a - get rsi closer to the course with smoothing
+    #b - get rsi closer to the course without smoothing
+    #c - get ros command closer to the course without smoothing
+
+    ######### Layer 3 Course 16, 5Hz ###############                                   
+    #robot_course, robot_course_velocity, robot_course_acceleration = rsi_one_path_class(0,0,2,d_5hz,    #0,0,2 joint  %0,0,0 ee
+    #            '/home/andre/workspaces/tesseract_ws/src/vsl_motion_planner/vsl_msgs/examples/simplePath.txt',
+    #            '/home/andre/workspaces/tesseract_ws/bags_simulations/external/course_316_5Hz_joint_request.txt',
+    #            '/home/andre/workspaces/tesseract_ws/bags_simulations/external/course_316_5Hz_ee_request.txt',
+    #            '/home/andre/workspaces/tesseract_ws/bags_04_14/external/descartes_5Hz_course316_joint_request.txt',
+    #            '/home/andre/workspaces/tesseract_ws/bags_04_14/external/descartes_5Hz_course316_ee_request.txt',
+    #            '/home/andre/workspaces/tesseract_ws/bags_04_14/external/descartes_5Hz_course316_rsi.txt')
 
     ######### Layer 3 Course 16, 25Hz ###############
-    #robot_course, robot_course_velocity, robot_course_acceleration = rsi_one_path_class(1,2,d_25hz, #joints 1,2
+    #robot_course, robot_course_velocity, robot_course_acceleration = rsi_one_path_class(1,1,0,d_25hz,   #1,1,0 joint  %1,1,0 ee
     #            '/home/andre/workspaces/tesseract_ws/src/vsl_motion_planner/vsl_msgs/examples/simplePath.txt',
     #            '/home/andre/workspaces/tesseract_ws/bags_simulations/course/descartes_dense_sim_25Hz_joint_request.txt',
     #            '/home/andre/workspaces/tesseract_ws/bags_simulations/course/descartes_dense_sim_25Hz_ee_request.txt',
@@ -2226,61 +2313,22 @@ if __name__ == "__main__":
     #            '/home/andre/workspaces/tesseract_ws/bags_04_14/external/descartes_25Hz_course316_rsi.txt')
 
     ######### Layer 1 Course 28,  5Hz ###############
-    #robot_course, robot_course_velocity, robot_course_acceleration = rsi_one_path_class(1,1,d_5hz,
-    #            '/home/andre/workspaces/tesseract_ws/src/vsl_motion_planner/vsl_msgs/examples/circularPath.txt',
-    #            '/home/andre/workspaces/tesseract_ws/bags_simulations/external/course_128_5Hz_joint_request.txt',
-    #            '/home/andre/workspaces/tesseract_ws/bags_simulations/external/course_128_5Hz_ee_request.txt',
-    #            '/home/andre/workspaces/tesseract_ws/bags_04_14/external/descartes_5Hz_course128_joint_request.txt',
-    #            '/home/andre/workspaces/tesseract_ws/bags_04_14/external/descartes_5Hz_course128_ee_request.txt',
-    #            '/home/andre/workspaces/tesseract_ws/bags_04_14/external/descartes_5Hz_course128_rsi.txt')
+    robot_course, robot_course_velocity, robot_course_acceleration = rsi_one_path_class(1,1,0,d_5hz,    #1,1,0 joint  %1,1,0 ee
+                '/home/andre/workspaces/tesseract_ws/src/vsl_motion_planner/vsl_msgs/examples/circularPath.txt',
+                '/home/andre/workspaces/tesseract_ws/bags_simulations/external/course_128_5Hz_joint_request.txt',
+                '/home/andre/workspaces/tesseract_ws/bags_simulations/external/course_128_5Hz_ee_request.txt',
+                '/home/andre/workspaces/tesseract_ws/bags_04_14/external/descartes_5Hz_course128_joint_request.txt',
+                '/home/andre/workspaces/tesseract_ws/bags_04_14/external/descartes_5Hz_course128_ee_request.txt',
+                '/home/andre/workspaces/tesseract_ws/bags_04_14/external/descartes_5Hz_course128_rsi.txt')
 
-    ######### Layer 1 Course 28, 5Hz ###############
-    #robot_course, robot_course_velocity, robot_course_acceleration = rsi_one_path_class(1,1,d_25hz,
+    ######### Layer 1 Course 28, 25Hz ###############
+    #robot_course, robot_course_velocity, robot_course_acceleration = rsi_one_path_class(1,1,0,d_25hz,   #1,1,0 joint  %1,1,0 ee
     #            '/home/andre/workspaces/tesseract_ws/src/vsl_motion_planner/vsl_msgs/examples/circularPath.txt',
     #            '/home/andre/workspaces/tesseract_ws/bags_simulations/external/course_128_25Hz_joint_request.txt',
     #            '/home/andre/workspaces/tesseract_ws/bags_simulations/external/course_128_25Hz_ee_request.txt',
     #            '/home/andre/workspaces/tesseract_ws/bags_04_14/external/descartes_25Hz_course128_joint_request.txt',
     #            '/home/andre/workspaces/tesseract_ws/bags_04_14/external/descartes_25Hz_course128_ee_request.txt',
     #            '/home/andre/workspaces/tesseract_ws/bags_04_14/external/descartes_25Hz_course128_rsi.txt')
-
-
-    ##A1
-    #plot_variable('Position at Joint A1 ($rad$)', 'Position at Joint A1 ($\degree$)', 'Time (s)',robot_course, 'a1')
-    #plot_variable('Velocity at Joint A1 ($rad/s$)', 'Velocity at Joint A1 ($\degree/s$)', 'Time (s)',robot_course_velocity, 'a1')
-    #plot_variable('Acceleration at Joint A1 ($rad/s^2$)', 'Acceleration at Joint A1 ($\degree/s^2$)', 'Time (s)',robot_course_acceleration, 'a1')
-    ##A2
-    #plot_variable('Position at Joint A2 ($rad$)', 'Position at Joint A2 ($\degree$)', 'Time (s)',robot_course, 'a2')
-    #plot_variable('Velocity at Joint A2 ($rad/s$)', 'Velocity at Joint A2 ($\degree/s$)', 'Time (s)',robot_course_velocity, 'a2')
-    #plot_variable('Acceleration at Joint A2 ($rad/s^2$)', 'Acceleration at Joint A2 ($\degree/s^2$)', 'Time (s)',robot_course_acceleration, 'a2')
-    ##A3
-    #plot_variable('Position at Joint A3 ($rad$)', 'Position at Joint A3 ($\degree$)', 'Time (s)',robot_course, 'a3')
-    #plot_variable('Velocity at Joint A3 ($rad/s$)', 'Velocity at Joint A3 ($\degree/s$)', 'Time (s)',robot_course_velocity, 'a3')
-    #plot_variable('Acceleration at Joint A3 ($rad/s^2$)', 'Acceleration at Joint A3 ($\degree/s^2$)', 'Time (s)',robot_course_acceleration, 'a3')
-    ##A4
-    #plot_variable('Position at Joint A4 ($rad$)', 'Position at Joint A4 ($\degree$)', 'Time (s)',robot_course, 'a4')
-    #plot_variable('Velocity at Joint A4 ($rad/s$)', 'Velocity at Joint A4 ($\degree/s$)', 'Time (s)',robot_course_velocity, 'a4')
-    #plot_variable('Acceleration at Joint A4 ($rad/s^2$)', 'Acceleration at Joint A4 ($\degree/s^2$)', 'Time (s)',robot_course_acceleration, 'a4')
-    ##A5
-    #plot_variable('Position at Joint A5 ($rad$)', 'Position at Joint A5 ($\degree$)', 'Time (s)',robot_course, 'a5')
-    #plot_variable('Velocity at Joint A5 ($rad/s$)', 'Velocity at Joint A5 ($\degree/s$)', 'Time (s)',robot_course_velocity, 'a5')
-    #plot_variable('Acceleration at Joint A5 ($rad/s^2$)', 'Acceleration at Joint A5 ($\degree/s^2$)', 'Time (s)',robot_course_acceleration, 'a5')   
-    #A6
-    #plot_variable('Position at Joint A6 ($rad$)', 'Position at Joint A6 ($\degree$)', 'Time (s)',robot_course, 'a6')
-    #plot_variable('Velocity at Joint A6 ($rad/s$)', 'Velocity at Joint A6 ($\degree/s$)', 'Time (s)',robot_course_velocity, 'a6')
-    #plot_variable('Acceleration at Joint A6 ($rad/s^2$)', 'Acceleration at Joint A6 ($\degree/s^2$)', 'Time (s)',robot_course_acceleration, 'a6')
-    #XYZ
-    #plot_variable('X compoment of EE Pose (m)','','Time (s)', robot_course,'x')
-    #plot_variable('Y compoment of EE Pose (m)','','Time (s)', robot_course,'y')
-    #plot_variable('Z compoment of EE Pose (m)','','Time (s)', robot_course,'z')
-    #plot_variable('Laydown Speed (m/s)','','Time (s)', robot_course_velocity,'linear')
-    #ABC
-    #plot_variable('A compoment of EE Pose ($rad$)','A compoment of EE Pose ($\degree$)','Time (s)', robot_course,'rx')
-    #plot_variable('B compoment of EE Pose ($rad$)','B compoment of EE Pose ($\degree$)','Time (s)', robot_course,'ry')
-    #plot_variable('C compoment of EE Pose ($rad$)','C compoment of EE Pose ($\degree$)','Time (s)', robot_course,'rz')
-    #plot_variable('EE Rotation Speed ($rad/s$)','EE Rotation Speed ($\degree/s$)','Time (s)', robot_course_velocity,'rx')
-
-
-
 
     #######################################################################################################33
     ros_course316_5hz = RobotState()
@@ -2291,7 +2339,7 @@ if __name__ == "__main__":
     ros_course316_25hz_velocity = RobotState()
     ros_course316_25hz_acceleration = RobotState()
 
-    #ros_course316_5hz, ros_course316_5hz_velocity, ros_course316_5hz_acceleration = rsi_one_path_class(1,2,d_5hz,  #joints 1,-1
+    #ros_course316_5hz, ros_course316_5hz_velocity, ros_course316_5hz_acceleration = rsi_one_path_class(1,2,0,d_5hz,  #joints 1,-1
     #            '/home/andre/workspaces/tesseract_ws/src/vsl_motion_planner/vsl_msgs/examples/simplePath.txt',
     #            '/home/andre/workspaces/tesseract_ws/bags_simulations/external/course_316_5Hz_joint_request.txt',
     #            '/home/andre/workspaces/tesseract_ws/bags_simulations/external/course_316_5Hz_ee_request.txt',
@@ -2299,7 +2347,7 @@ if __name__ == "__main__":
     #            '/home/andre/workspaces/tesseract_ws/bags_04_14/external/descartes_5Hz_course316_ee_request.txt',
     #            '/home/andre/workspaces/tesseract_ws/bags_04_14/external/descartes_5Hz_course316_rsi.txt')
 
-    #ros_course316_25hz, ros_course316_25hz_velocity, ros_course316_25hz_acceleration = rsi_one_path_class(1,2,d_25hz, #joints 1,2
+    #ros_course316_25hz, ros_course316_25hz_velocity, ros_course316_25hz_acceleration = rsi_one_path_class(1,2,0,d_25hz, #joints 1,2
     #            '/home/andre/workspaces/tesseract_ws/src/vsl_motion_planner/vsl_msgs/examples/simplePath.txt',
     #            '/home/andre/workspaces/tesseract_ws/bags_simulations/course/descartes_dense_sim_25Hz_joint_request.txt',
     #            '/home/andre/workspaces/tesseract_ws/bags_simulations/course/descartes_dense_sim_25Hz_ee_request.txt',
@@ -2315,7 +2363,7 @@ if __name__ == "__main__":
     ros_course128_25hz_velocity = RobotState()
     ros_course128_25hz_acceleration = RobotState()
 
-    #ros_course128_5hz, ros_course128_5hz_velocity, ros_course128_5hz_acceleration = rsi_one_path_class(1,1,d_5hz,
+    #ros_course128_5hz, ros_course128_5hz_velocity, ros_course128_5hz_acceleration = rsi_one_path_class(1,1,0,d_5hz,
     #            '/home/andre/workspaces/tesseract_ws/src/vsl_motion_planner/vsl_msgs/examples/circularPath.txt',
     #            '/home/andre/workspaces/tesseract_ws/bags_simulations/external/course_128_5Hz_joint_request.txt',
     #            '/home/andre/workspaces/tesseract_ws/bags_simulations/external/course_128_5Hz_ee_request.txt',
@@ -2323,7 +2371,7 @@ if __name__ == "__main__":
     #            '/home/andre/workspaces/tesseract_ws/bags_04_14/external/descartes_5Hz_course128_ee_request.txt',
     #            '/home/andre/workspaces/tesseract_ws/bags_04_14/external/descartes_5Hz_course128_rsi.txt')
 
-    #ros_course128_25hz, ros_course128_25hz_velocity, ros_course128_25hz_acceleration = rsi_one_path_class(2,1,d_25hz,
+    #ros_course128_25hz, ros_course128_25hz_velocity, ros_course128_25hz_acceleration = rsi_one_path_class(2,1,0,d_25hz,
     #            '/home/andre/workspaces/tesseract_ws/src/vsl_motion_planner/vsl_msgs/examples/circularPath.txt',
     #            '/home/andre/workspaces/tesseract_ws/bags_simulations/external/course_128_25Hz_joint_request.txt',
     #            '/home/andre/workspaces/tesseract_ws/bags_simulations/external/course_128_25Hz_ee_request.txt',
